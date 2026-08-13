@@ -10,7 +10,7 @@ import { PulseFab } from '../../components/motion/PulseFab';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { useTheme } from '../../theme';
-import { useDashboardStats } from '../../hooks/useDashboard';
+import { useDashboardStats, useSalesByProduct } from '../../hooks/useDashboard';
 import { useShops } from '../../hooks/useShops';
 import { useShopStore } from '../../store/shopStore';
 import { formatCurrency } from '../../utils/money';
@@ -22,6 +22,7 @@ export default function Dashboard() {
   const activeShopId = useShopStore((s) => s.activeShopId);
   const activeShop = shops.find((s) => String(s.id) === String(activeShopId));
   const { data: stats, isLoading } = useDashboardStats();
+  const { data: topProducts, isError: topProductsError } = useSalesByProduct({ limit: 5 });
 
   const summary = stats?.summary || {};
   const chartData = (stats?.revenueAnalytics || []).map((d) => ({
@@ -115,6 +116,30 @@ export default function Dashboard() {
               <View key={item.id} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing.xs }}>
                 <Text style={[typography.body, { color: colors.ink.primary }]}>{item.name}</Text>
                 <Badge label={item.stock <= 0 ? 'Out' : `${item.stock} left`} tone={item.stock <= 0 ? 'danger' : 'warning'} />
+              </View>
+            ))
+          )}
+        </Card>
+
+        <Card>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm }}>
+            <Text style={[typography.h3, { color: colors.ink.primary }]}>Top products</Text>
+            <Badge label="Synced data" tone="brand" />
+          </View>
+          {topProductsError ? (
+            <Text style={[typography.caption, { color: colors.ink.secondary }]}>Couldn't load — check your connection.</Text>
+          ) : (topProducts?.data || []).length === 0 ? (
+            <Text style={[typography.caption, { color: colors.ink.secondary }]}>No sales yet for this shop.</Text>
+          ) : (
+            topProducts.data.map((product) => (
+              <View
+                key={product.productId}
+                style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing.xs }}
+              >
+                <Text style={[typography.body, { color: colors.ink.primary }]} numberOfLines={1}>
+                  {product.name}
+                </Text>
+                <Text style={[typography.bodyMedium, { color: colors.ink.primary }]}>{formatCurrency(product.revenue)}</Text>
               </View>
             ))
           )}

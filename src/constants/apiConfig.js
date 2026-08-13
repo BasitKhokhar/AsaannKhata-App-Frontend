@@ -4,4 +4,8 @@
 // host machine's localhost. For a physical device, replace this with your
 // machine's LAN IP (e.g. http://192.168.1.50:5000) — Wi-Fi must be on the
 // same network. For production, point this at your deployed API domain.
-export const API_BASE_URL = 'http://10.0.2.2:5000';
+//
+// Set EXPO_PUBLIC_API_BASE_URL (in .env, or per-profile in eas.json) to
+// override this default without editing source — e.g. for a physical
+// device on LAN, or for staging/production builds.
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://10.0.2.2:5000';

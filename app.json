@@ -41,7 +41,8 @@
           "photosPermission": "AsaanKhata uses your photos to set product images and shop logos."
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      "expo-file-system"
     ]
   }
 }
