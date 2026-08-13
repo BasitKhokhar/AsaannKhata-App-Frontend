@@ -1,3 +1,13 @@
+require("dotenv").config();
+
+// Falls back to the Android emulator alias when EXPO_PUBLIC_API_BASE_URL
+// isn't set. Set the real value in the EAS "development"/"preview"/
+// "production" environment (eas.json already tags each build profile with
+// its environment) so it's baked into `extra` at build time and readable
+// at runtime even when a bundled .env isn't shipped with the build.
+const apiBaseUrl =
+  process.env.EXPO_PUBLIC_API_BASE_URL || "http://10.0.2.2:5000";
+
 module.exports = ({ config }) => ({
   ...config,
   expo: {
@@ -48,6 +58,7 @@ module.exports = ({ config }) => ({
       "expo-file-system",
     ],
     extra: {
+      apiBaseUrl,
       eas: {
         projectId: process.env.EXPO_ID,
       },
