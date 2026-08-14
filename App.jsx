@@ -64,7 +64,7 @@ export default function App() {
 
   const ready = fontsLoaded && migrationsReady && sessionChecked && isHydrated;
 
-  useSyncTriggers();
+  useSyncTriggers(migrationsReady);
 
   const onLayoutRootView = useCallback(async () => {
     if (ready) {

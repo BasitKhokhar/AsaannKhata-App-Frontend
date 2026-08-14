@@ -21,7 +21,11 @@ export function ProgressDots({ count, activeIndex }) {
               height: 6,
               borderRadius: radii.sm / 2,
               backgroundColor: active ? colors.brand.primary : colors.surface.border,
-              overflow: 'hidden',
+              shadowColor: colors.brand.primary,
+              shadowOpacity: active ? 0.7 : 0,
+              shadowRadius: 6,
+              shadowOffset: { width: 0, height: 0 },
+              elevation: active ? 3 : 0,
             }}
           />
         );

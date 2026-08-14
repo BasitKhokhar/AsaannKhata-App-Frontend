@@ -9,6 +9,9 @@ export const motion = {
     pulse: 2400,
     gradientShift: 6000,
     dotGlow: 1200,
+    shimmer: 2200,
+    breathe: 2800,
+    countUp: 1200,
   },
   spring: {
     entrance: { damping: 16, stiffness: 140, mass: 0.9 },

@@ -8,10 +8,14 @@ const FOREGROUND_INTERVAL_MS = 5 * 60 * 1000;
 // Mounted once near the app root (see App.jsx) — funnels every sync trigger
 // (foreground, reconnect, 5-min interval) through the same runSync() so
 // there's one code path, matching the "Sync Now" button's manual call.
-export function useSyncTriggers() {
+// `enabled` must stay false until DB migrations finish — runSync() reads
+// tables (e.g. entitlement_cache) that don't exist until then.
+export function useSyncTriggers(enabled) {
   const wasOffline = useRef(false);
 
   useEffect(() => {
+    if (!enabled) return;
+
     runSync();
 
     const appStateSub = AppState.addEventListener('change', (state) => {
@@ -33,5 +37,5 @@ export function useSyncTriggers() {
       netInfoSub();
       clearInterval(interval);
     };
-  }, []);
+  }, [enabled]);
 }
