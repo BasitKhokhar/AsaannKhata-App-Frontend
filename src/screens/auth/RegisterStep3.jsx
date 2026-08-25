@@ -6,6 +6,7 @@ import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { RegisterWizardHeader } from './RegisterWizardHeader';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
+import { Card } from '../../components/ui/Card';
 import { useTheme } from '../../theme';
 import { useRegisterStore } from '../../store/registerStore';
 import { useRegisterMutation } from '../../hooks/useAuth';
@@ -91,9 +92,11 @@ export default function RegisterStep3() {
             const selected = planTier === option.tier;
             const plan = planForTier(option.tier);
             return (
-              <Pressable
+              <Card
                 key={option.tier}
                 onPress={() => setPlanTier(option.tier)}
+                level={selected ? 'md' : 'none'}
+                bordered={false}
                 style={{
                   borderRadius: radii.lg,
                   padding: spacing.md,
@@ -116,7 +119,7 @@ export default function RegisterStep3() {
                   ) : null}
                 </View>
                 <Text style={[typography.caption, { color: colors.ink.secondary, marginTop: 4 }]}>{option.blurb}</Text>
-              </Pressable>
+              </Card>
             );
           })}
 

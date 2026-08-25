@@ -80,7 +80,12 @@ export function BusinessSwitcherMockup() {
 function Pill({ label, highlight }) {
   const { colors, radii, typography, spacing } = useTheme();
   const bg = highlight ? colors.brand.accent : colors.brand.primary + '1A';
-  const fg = highlight ? colors.ink.primary : colors.ink.secondary;
+  // Highlighted pill's background is always the flat brand.accent gold
+  // (a light/warm hue in both themes, unlike the app's brand-surface
+  // gradients) — so its text needs a color that stays dark regardless of
+  // theme mode, not `ink.primary` which flips to near-white in dark mode
+  // and would go invisible against the gold fill.
+  const fg = highlight ? colors.brand.primaryDark : colors.ink.secondary;
   const dot = highlight ? colors.brand.primary : colors.brand.primary + '80';
 
   return (

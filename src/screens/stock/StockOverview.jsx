@@ -1,0 +1,227 @@
+import React, { useState } from 'react';
+import { View, Text, TextInput, Pressable } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { Boxes, AlertTriangle, ArrowUpCircle, ArrowDownCircle, PackageOpen, Plus, Search, Package } from 'lucide-react-native';
+import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
+import { StaggeredList } from '../../components/motion/StaggeredList';
+import { PulseFab } from '../../components/motion/PulseFab';
+import { Header } from '../../components/ui/Header';
+import { StatCard } from '../../components/ui/StatCard';
+import { SectionHeader } from '../../components/ui/SectionHeader';
+import { Chip } from '../../components/ui/Chip';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { Badge } from '../../components/ui/Badge';
+import { Sheet } from '../../components/ui/Sheet';
+import { SkeletonListRow } from '../../components/ui/Skeleton';
+import { useTheme } from '../../theme';
+import { useStockOverview, useStockTransactions } from '../../hooks/useStock';
+import { useProducts } from '../../hooks/useProducts';
+import { formatCurrency } from '../../utils/money';
+import { formatRelativeTime } from '../../utils/dates';
+
+const FILTERS = [
+  { key: 'all', label: 'All' },
+  { key: 'IN', label: 'Stock In' },
+  { key: 'OUT', label: 'Stock Out' },
+  { key: 'PACK_BREAK', label: 'Pack Break' },
+];
+
+const TYPE_META = {
+  IN: { icon: ArrowUpCircle, tone: 'success', label: 'Stock In' },
+  OUT: { icon: ArrowDownCircle, tone: 'danger', label: 'Stock Out' },
+  PACK_BREAK: { icon: PackageOpen, tone: 'warning', label: 'Pack Break' },
+};
+
+export default function StockOverview() {
+  const navigation = useNavigation();
+  const { colors, radii, typography, spacing } = useTheme();
+  const [filter, setFilter] = useState('all');
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  const { totalSkus, lowStockCount } = useStockOverview();
+  const { data: transactions = [], isLoading, isRefetching, refetch } = useStockTransactions();
+
+  const visible = filter === 'all' ? transactions : transactions.filter((t) => t.type === filter);
+
+  return (
+    <AnimatedScreen>
+      <SafeAreaView style={{ flex: 1 }}>
+        <Header title="Stock" showBack={false} />
+
+        <View style={{ paddingHorizontal: spacing.lg, gap: spacing.lg }}>
+          <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+            <StatCard
+              icon={<Boxes size={18} color={colors.brand.primary} />}
+              value={String(totalSkus)}
+              label="Total SKUs"
+            />
+            <StatCard
+              icon={<AlertTriangle size={18} color={colors.semantic.warning} />}
+              value={String(lowStockCount)}
+              label="Low stock"
+              tone={lowStockCount > 0 ? 'danger' : 'primary'}
+            />
+          </View>
+
+          <View>
+            <SectionHeader title="Transaction history" />
+            <View style={{ flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' }}>
+              {FILTERS.map((f) => (
+                <Chip key={f.key} label={f.label} selected={filter === f.key} onPress={() => setFilter(f.key)} />
+              ))}
+            </View>
+          </View>
+        </View>
+
+        {isLoading ? (
+          <View style={{ padding: spacing.lg }}>
+            <SkeletonListRow />
+            <SkeletonListRow />
+            <SkeletonListRow />
+          </View>
+        ) : visible.length === 0 ? (
+          <EmptyState
+            icon={<Package size={40} color={colors.brand.primary} strokeWidth={1.6} />}
+            title="No stock movements yet"
+            description="Stock In, Stock Out, and pack-break adjustments will show up here as an audit trail."
+            actionLabel="Adjust Stock"
+            onAction={() => setPickerOpen(true)}
+          />
+        ) : (
+          <StaggeredList
+            data={visible}
+            estimatedItemSize={72}
+            refreshing={isRefetching}
+            onRefresh={refetch}
+            contentContainerStyle={{ padding: spacing.lg, paddingTop: spacing.sm, paddingBottom: 96 }}
+            renderItem={({ item }) => {
+              const meta = TYPE_META[item.type] || TYPE_META.IN;
+              const Icon = meta.icon;
+              const signed = item.type === 'OUT' ? `-${item.quantity}` : `+${item.quantity}`;
+              return (
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: spacing.md,
+                    borderWidth: 1,
+                    borderColor: colors.surface.border,
+                    borderRadius: radii.md,
+                    padding: spacing.sm,
+                    marginBottom: spacing.sm,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 38,
+                      height: 38,
+                      borderRadius: radii.md,
+                      backgroundColor: colors.semantic[`${meta.tone}Bg`],
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Icon size={18} color={colors.semantic[meta.tone]} strokeWidth={1.8} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[typography.bodyMedium, { color: colors.ink.primary }]} numberOfLines={1}>
+                      {item.productName}
+                    </Text>
+                    <Text style={[typography.caption, { color: colors.ink.secondary }]} numberOfLines={1}>
+                      {item.description || meta.label} · {formatRelativeTime(item.createdAt)}
+                    </Text>
+                  </View>
+                  <View style={{ alignItems: 'flex-end', gap: 4 }}>
+                    <Text style={[typography.numeric, { color: item.type === 'OUT' ? colors.semantic.danger : colors.semantic.success }]}>
+                      {signed}
+                    </Text>
+                    {item.price ? (
+                      <Text style={[typography.caption, { color: colors.ink.secondary }]}>{formatCurrency(item.price)}</Text>
+                    ) : (
+                      <Badge label={meta.label} tone={meta.tone} />
+                    )}
+                  </View>
+                </View>
+              );
+            }}
+          />
+        )}
+
+        <View style={{ position: 'absolute', bottom: spacing.xl, right: spacing.lg }}>
+          <PulseFab
+            onPress={() => setPickerOpen(true)}
+            icon={<Plus size={22} color={colors.ink.primary} strokeWidth={1.8} />}
+          />
+        </View>
+      </SafeAreaView>
+
+      <ProductPickerSheet
+        visible={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        onPick={(product) => {
+          setPickerOpen(false);
+          navigation.navigate('StockAdjustment', { productId: product.id });
+        }}
+      />
+    </AnimatedScreen>
+  );
+}
+
+function ProductPickerSheet({ visible, onClose, onPick }) {
+  const { colors, radii, typography, spacing } = useTheme();
+  const [search, setSearch] = useState('');
+  const { data: products = [] } = useProducts({ search });
+
+  return (
+    <Sheet visible={visible} onClose={onClose} title="Adjust which product?">
+      <View
+        style={{
+          height: 42,
+          borderRadius: radii.md,
+          borderWidth: 1,
+          borderColor: colors.surface.border,
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingHorizontal: spacing.md,
+          gap: spacing.sm,
+        }}
+      >
+        <Search size={15} color={colors.ink.secondary} strokeWidth={1.6} />
+        <TextInput
+          value={search}
+          onChangeText={setSearch}
+          placeholder="Search products"
+          placeholderTextColor={colors.ink.secondary}
+          style={[typography.body, { flex: 1, color: colors.ink.primary }]}
+        />
+      </View>
+
+      {products.map((product) => (
+        <Pressable
+          key={product.id}
+          onPress={() => onPick(product)}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: spacing.md,
+            paddingVertical: spacing.sm,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.surface.border,
+          }}
+        >
+          <View style={{ width: 34, height: 34, borderRadius: radii.sm, backgroundColor: colors.surface.border }} />
+          <Text style={[typography.body, { color: colors.ink.primary, flex: 1 }]} numberOfLines={1}>
+            {product.name}
+          </Text>
+        </Pressable>
+      ))}
+
+      {products.length === 0 ? (
+        <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: 'center', paddingVertical: spacing.lg }]}>
+          No products match your search.
+        </Text>
+      ) : null}
+    </Sheet>
+  );
+}

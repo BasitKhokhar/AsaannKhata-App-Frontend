@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text } from 'react-native';
 import { MotiView } from 'moti';
 import { Easing } from 'react-native-reanimated';
-import Svg, { Path } from 'react-native-svg';
+import { RefreshCw } from 'lucide-react-native';
 import { GlassMockCard } from '../../../components/motion/GlassMockCard';
 import { AmbientGlow } from '../../../components/motion/AmbientGlow';
 import { StaggerIn } from '../../../components/motion/StaggerIn';
@@ -101,22 +101,7 @@ function SyncGlyph() {
         justifyContent: 'center',
       }}
     >
-      <Svg width={16} height={16} viewBox="0 0 24 24">
-        <Path
-          d="M4 12a8 8 0 0 1 13.66-5.66M20 12a8 8 0 0 1-13.66 5.66"
-          stroke={colors.brand.primary}
-          strokeWidth={2}
-          strokeLinecap="round"
-          fill="none"
-        />
-        <Path
-          d="M17 3v4h-4M7 21v-4h4"
-          stroke={colors.brand.primary}
-          strokeWidth={2}
-          strokeLinecap="round"
-          fill="none"
-        />
-      </Svg>
+      <RefreshCw size={16} color={colors.brand.primary} strokeWidth={2} />
     </MotiView>
   );
 }

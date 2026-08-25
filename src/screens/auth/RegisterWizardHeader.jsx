@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, Pressable } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import { View, Text } from 'react-native';
+import { ArrowLeft } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
+import { IconButton } from '../../components/ui/IconButton';
 import { useTheme } from '../../theme';
 
 const STEP_LABELS = ['YOUR ACCOUNT', 'FIRST SHOP', 'CHOOSE A PLAN'];
@@ -12,12 +13,8 @@ export function RegisterWizardHeader({ step }) {
 
   return (
     <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.sm }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-        <Pressable onPress={() => navigation.goBack()} hitSlop={8}>
-          <Svg width={16} height={16} viewBox="0 0 16 16">
-            <Path d="M10.5 3l-5 5 5 5" stroke={colors.ink.primary} strokeWidth={1.6} fill="none" strokeLinecap="round" strokeLinejoin="round" />
-          </Svg>
-        </Pressable>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+        <IconButton icon={ArrowLeft} onPress={() => navigation.goBack()} style={{ marginLeft: -spacing.sm }} />
         <Text style={[typography.h3, { color: colors.ink.primary }]}>Create Account</Text>
       </View>
 

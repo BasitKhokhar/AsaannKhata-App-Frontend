@@ -22,6 +22,8 @@ import { RootNavigator } from './src/navigation/RootNavigator';
 import { useAuthStore } from './src/store/authStore';
 import * as secureSession from './src/services/secureSession';
 import { useSyncTriggers } from './src/sync/triggers';
+import { Toast } from './src/components/ui/Toast';
+import { ConfirmDialog } from './src/components/ui/ConfirmDialog';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -90,6 +92,8 @@ export default function App() {
           <ThemeProvider>
             <StatusBar style="auto" />
             <RootNavigator />
+            <Toast />
+            <ConfirmDialog />
           </ThemeProvider>
         </QueryClientProvider>
       </SafeAreaProvider>

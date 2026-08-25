@@ -1,14 +1,14 @@
 import React from 'react';
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import { View, Text, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
-import Svg, { Path } from 'react-native-svg';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { Logo } from '../../components/ui/Logo';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
+import { Header } from '../../components/ui/Header';
 import { useTheme } from '../../theme';
 import { useBill } from '../../hooks/useBills';
 import { useShops } from '../../hooks/useShops';
@@ -19,7 +19,7 @@ import { buildReceiptHtml } from '../../utils/receiptHtml';
 export default function BillDetail() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { colors, radii, typography, spacing } = useTheme();
+  const { colors, radii, typography, spacing, elevation, palette } = useTheme();
   const { data: bill } = useBill(route.params?.billId);
   const { data: shops = [] } = useShops();
   const activeShopId = useShopStore((s) => s.activeShopId);
@@ -41,19 +41,15 @@ export default function BillDetail() {
   return (
     <AnimatedScreen>
       <SafeAreaView style={{ flex: 1 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: spacing.lg }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-            <Pressable onPress={() => navigation.goBack()} hitSlop={8}>
-              <Svg width={16} height={16} viewBox="0 0 16 16">
-                <Path d="M10.5 3l-5 5 5 5" stroke={colors.ink.primary} strokeWidth={1.6} fill="none" strokeLinecap="round" strokeLinejoin="round" />
-              </Svg>
-            </Pressable>
-            <Text style={[typography.h3, { color: colors.ink.primary }]}>Bill #{bill.serverId || bill.id.slice(0, 6)}</Text>
-          </View>
-        </View>
+        <Header title={`Bill #${bill.serverId || bill.id.slice(0, 6)}`} onBack={() => navigation.goBack()} />
 
         <ScrollView contentContainerStyle={{ padding: spacing.lg }}>
-          <View style={{ backgroundColor: colors.surface.card, borderWidth: 1, borderColor: colors.surface.border, borderRadius: radii.lg, padding: spacing.lg }}>
+          <View
+            style={[
+              { backgroundColor: colors.surface.card, borderWidth: 1, borderColor: colors.surface.border, borderRadius: radii.lg, padding: spacing.lg },
+              elevation.sm,
+            ]}
+          >
             <View style={{ alignItems: 'center' }}>
               <Logo size={30} color={colors.brand.primary} accentColor={colors.brand.accentLight} />
               <Text style={[typography.h3, { color: colors.ink.primary, marginTop: spacing.xs }]}>{shopName || 'AsaanKhata'}</Text>
@@ -73,22 +69,38 @@ export default function BillDetail() {
               ))}
             </View>
 
-            <View style={{ marginTop: spacing.md, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.surface.border, borderStyle: 'dashed', gap: spacing.xs }}>
+            {/* Signature premium touch: this summary block is a fixed-dark
+               card (palette.navy900) in BOTH light and dark theme — deliberate
+               contrast against the theme-aware receipt above it, not a
+               theme-matching surface. Text uses ink.onBrand (fixed near-white)
+               since it's painted on a permanently-dark surface. */}
+            <View
+              style={[
+                {
+                  marginTop: spacing.md,
+                  backgroundColor: palette.navy900,
+                  borderRadius: radii.lg,
+                  padding: spacing.lg,
+                  gap: spacing.xs,
+                },
+                elevation.md,
+              ]}
+            >
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text style={[typography.caption, { color: colors.ink.secondary }]}>Subtotal</Text>
-                <Text style={[typography.caption, { color: colors.ink.secondary }]}>{formatCurrency(bill.subtotal)}</Text>
+                <Text style={[typography.caption, { color: colors.ink.onBrand, opacity: 0.7 }]}>Subtotal</Text>
+                <Text style={[typography.caption, { color: colors.ink.onBrand, opacity: 0.7 }]}>{formatCurrency(bill.subtotal)}</Text>
               </View>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text style={[typography.h3, { color: colors.ink.primary }]}>Total</Text>
-                <Text style={[typography.h3, { color: colors.ink.primary }]}>{formatCurrency(bill.totalAmount)}</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.xs }}>
+                <Text style={[typography.h3, { color: colors.ink.onBrand }]}>Total</Text>
+                <Text style={[typography.h3, { color: colors.ink.onBrand }]}>{formatCurrency(bill.totalAmount)}</Text>
               </View>
-            </View>
 
-            <View style={{ alignItems: 'center', marginTop: spacing.md }}>
-              <Badge
-                label={bill.status === 'PAID' ? 'PAID' : `PENDING · ${formatCurrency(bill.remainingDue)} DUE`}
-                tone={bill.status === 'PAID' ? 'success' : 'warning'}
-              />
+              <View style={{ alignItems: 'center', marginTop: spacing.md }}>
+                <Badge
+                  label={bill.status === 'PAID' ? 'PAID' : `PENDING · ${formatCurrency(bill.remainingDue)} DUE`}
+                  tone={bill.status === 'PAID' ? 'success' : 'warning'}
+                />
+              </View>
             </View>
           </View>
         </ScrollView>

@@ -51,7 +51,7 @@ export function OnboardingSlide({ index, illustration, title, description, isLas
   return (
     <AnimatedScreen>
       <SafeAreaView style={{ flex: 1 }}>
-        <View style={styles.topRow}>
+        <View style={[styles.topRow, { paddingHorizontal: spacing.xl, paddingTop: spacing.sm }]}>
           {!isLast ? (
             <Pressable onPress={finishOnboarding} hitSlop={8}>
               <Text style={[typography.bodyMedium, { color: colors.ink.secondary }]}>Skip</Text>
@@ -107,6 +107,6 @@ export function OnboardingSlide({ index, illustration, title, description, isLas
 }
 
 const styles = StyleSheet.create({
-  topRow: { flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 20, paddingTop: 8 },
+  topRow: { flexDirection: 'row', justifyContent: 'flex-end' },
   illustrationArea: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });

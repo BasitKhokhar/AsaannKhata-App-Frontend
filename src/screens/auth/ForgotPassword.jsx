@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { View, Text, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import Svg, { Rect, Path } from 'react-native-svg';
+import { Lock } from 'lucide-react-native';
 import { GradientShiftBackground } from '../../components/motion/GradientShiftBackground';
+import { Header } from '../../components/ui/Header';
 import { TextField } from '../../components/ui/TextField';
 import { Button } from '../../components/ui/Button';
 import { useTheme } from '../../theme';
@@ -13,28 +14,31 @@ import { useTheme } from '../../theme';
 // to flag this as a separate follow-up rather than fake the behavior.
 export default function ForgotPassword() {
   const navigation = useNavigation();
-  const { colors, radii, typography, spacing } = useTheme();
+  const { colors, radii, typography, spacing, elevation } = useTheme();
   const [email, setEmail] = useState('');
 
   return (
     <GradientShiftBackground colors={[colors.surface.bg, colors.brand.accentLight + '33']}>
-      <SafeAreaView style={{ flex: 1 }}>
+      {/* Header owns the top safe-area inset itself, so this SafeAreaView
+          only needs to cover the remaining edges. */}
+      <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1 }}>
+        <Header showBack transparent title="" />
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <View style={{ flex: 1, padding: spacing.xl, paddingTop: spacing.xxl }}>
+          <View style={{ flex: 1, padding: spacing.xl, paddingTop: spacing.md }}>
             <View
-              style={{
-                width: 64,
-                height: 64,
-                borderRadius: radii.xl,
-                backgroundColor: colors.brand.primary,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
+              style={[
+                {
+                  width: 64,
+                  height: 64,
+                  borderRadius: radii.xl,
+                  backgroundColor: colors.brand.primary,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                },
+                elevation.sm,
+              ]}
             >
-              <Svg width={26} height={26} viewBox="0 0 24 24">
-                <Rect x={4} y={10} width={16} height={10} rx={2} fill="none" stroke="#FAF9F6" strokeWidth={1.6} />
-                <Path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="#FAF9F6" strokeWidth={1.6} />
-              </Svg>
+              <Lock size={26} color={colors.ink.onBrand} strokeWidth={1.8} />
             </View>
 
             <Text style={[typography.h1, { color: colors.ink.primary, marginTop: spacing.lg }]}>Forgot password?</Text>

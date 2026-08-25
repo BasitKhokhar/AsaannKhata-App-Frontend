@@ -96,7 +96,7 @@ export default function StockAdjustment() {
                     borderColor: colors.surface.border,
                   }}
                 >
-                  <Text style={[typography.label, { color: selected ? '#FAF9F6' : colors.ink.secondary }]}>{opt.label}</Text>
+                  <Text style={[typography.label, { color: selected ? colors.ink.onBrand : colors.ink.secondary }]}>{opt.label}</Text>
                 </Pressable>
               );
             })}

@@ -2,6 +2,7 @@ import React from 'react';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { HomeStack } from './stacks/HomeStack';
 import { CatalogStack } from './stacks/CatalogStack';
+import { StockStack } from './stacks/StockStack';
 import { BillingStack } from './stacks/BillingStack';
 import { SettingsStack } from './stacks/SettingsStack';
 import { ShopsStack } from './stacks/ShopsStack';
@@ -12,7 +13,7 @@ import { SidebarContent } from '../components/drawer/SidebarContent';
 
 const Drawer = createDrawerNavigator();
 
-// Mirrors the design's sidebar order: Dashboard / Billing / Products & Stock
+// Mirrors the design's sidebar order: Dashboard / Billing / Products / Stock
 // / Credit Customers / Reports / My Shops / Notifications / Subscription /
 // Settings — rendered by the on-brand SidebarContent, not the default list.
 export function AppDrawer() {
@@ -24,6 +25,7 @@ export function AppDrawer() {
       <Drawer.Screen name="HomeStack" component={HomeStack} />
       <Drawer.Screen name="BillingStack" component={BillingStack} />
       <Drawer.Screen name="CatalogStack" component={CatalogStack} />
+      <Drawer.Screen name="StockStack" component={StockStack} />
       <Drawer.Screen name="ShopsStack" component={ShopsStack} />
       <Drawer.Screen name="SalesReport" component={SalesReport} />
       <Drawer.Screen name="Notifications" component={Notifications} />

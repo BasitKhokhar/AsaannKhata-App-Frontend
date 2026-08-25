@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, Modal, FlatList } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, FlatList, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import Svg, { Path, Circle, Line } from 'react-native-svg';
+import { Search, Plus, Minus, Trash2, PackagePlus } from 'lucide-react-native';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { Button } from '../../components/ui/Button';
 import { SubscriptionBanner } from '../../components/ui/SubscriptionBanner';
+import { Sheet } from '../../components/ui/Sheet';
+import { IconButton } from '../../components/ui/IconButton';
 import { useTheme } from '../../theme';
 import { useProducts } from '../../hooks/useProducts';
 import { useCustomers } from '../../hooks/useCustomers';
@@ -45,9 +47,16 @@ function round2(n) {
   return Math.round(n * 100) / 100;
 }
 
+// Sheet renders a plain (non-scrolling) body when scrollable={false}, which
+// is what we want here so the FlatList owns scrolling itself rather than
+// nesting inside Sheet's ScrollView. FlatList still needs a bounded height
+// to know when to start scrolling, so we cap it explicitly instead of
+// relying on flex propagation through the non-flex ancestors in Sheet.
+const PICKER_LIST_MAX_HEIGHT = Dimensions.get('window').height * 0.55;
+
 export default function NewBill() {
   const navigation = useNavigation();
-  const { colors, radii, typography, spacing } = useTheme();
+  const { colors, radii, typography, spacing, elevation } = useTheme();
   const [search, setSearch] = useState('');
   const [pickerOpen, setPickerOpen] = useState(false);
   const [amountReceived, setAmountReceived] = useState('');
@@ -114,61 +123,82 @@ export default function NewBill() {
   return (
     <AnimatedScreen>
       <SafeAreaView style={{ flex: 1 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.lg, paddingBottom: spacing.sm }}>
+        <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.xs }}>
           <Text style={[typography.h3, { color: colors.ink.primary }]}>New Bill</Text>
         </View>
         <SubscriptionBanner />
 
         <Pressable
           onPress={() => setPickerOpen(true)}
-          style={{
-            marginHorizontal: spacing.lg,
-            marginBottom: spacing.sm,
-            height: 40,
-            borderRadius: radii.md,
-            borderWidth: 1,
-            borderColor: colors.surface.border,
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingHorizontal: spacing.md,
-            gap: spacing.sm,
-          }}
+          style={[
+            {
+              marginHorizontal: spacing.lg,
+              marginTop: spacing.sm,
+              marginBottom: spacing.sm,
+              height: 44,
+              borderRadius: radii.md,
+              backgroundColor: colors.surface.card,
+              borderWidth: 1,
+              borderColor: colors.surface.border,
+              flexDirection: 'row',
+              alignItems: 'center',
+              paddingHorizontal: spacing.md,
+              gap: spacing.sm,
+            },
+            elevation.xs,
+          ]}
         >
-          <Svg width={14} height={14} viewBox="0 0 16 16">
-            <Circle cx={6.5} cy={6.5} r={4.5} fill="none" stroke={colors.ink.secondary} strokeWidth={1.4} />
-            <Line x1={10} y1={10} x2={14} y2={14} stroke={colors.ink.secondary} strokeWidth={1.4} />
-          </Svg>
-          <Text style={[typography.caption, { color: colors.ink.secondary }]}>Add product to cart</Text>
+          <Search size={16} color={colors.ink.secondary} strokeWidth={1.8} />
+          <Text style={[typography.body, { color: colors.ink.secondary }]}>Add product to cart</Text>
         </Pressable>
 
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: spacing.lg, gap: spacing.sm }}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.lg, gap: spacing.sm }}>
           {cart.lines.map((line, index) => (
-            <View key={`${line.productId}-${index}`} style={{ borderWidth: 1, borderColor: colors.surface.border, borderRadius: radii.md, padding: spacing.sm }}>
+            <View
+              key={`${line.productId}-${index}`}
+              style={[
+                { backgroundColor: colors.surface.card, borderWidth: 1, borderColor: colors.surface.border, borderRadius: radii.md, padding: spacing.md },
+                elevation.xs,
+              ]}
+            >
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text style={[typography.bodyMedium, { color: colors.ink.primary }]}>{line.productName}</Text>
+                <Text style={[typography.bodyMedium, { color: colors.ink.primary, flex: 1 }]} numberOfLines={1}>{line.productName}</Text>
                 <Text style={[typography.bodyMedium, { color: colors.ink.primary }]}>{formatCurrency(line.total)}</Text>
               </View>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.xs }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.sm }}>
                 {line.stockType === 'QUANTITY' || line.stockType === 'PACK' ? (
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-                    <Stepper onPress={() => updateQty(index, line, -1)} label="−" colors={colors} radii={radii} />
-                    <Text style={[typography.caption, { color: colors.ink.primary }]}>{line.stockType === 'PACK' ? line.packQuantity : line.quantity}</Text>
-                    <Stepper onPress={() => updateQty(index, line, 1)} label="+" colors={colors} radii={radii} />
+                    <Stepper onPress={() => updateQty(index, line, -1)} icon={Minus} colors={colors} radii={radii} />
+                    <Text style={[typography.bodyMedium, { color: colors.ink.primary, minWidth: 20, textAlign: 'center' }]}>
+                      {line.stockType === 'PACK' ? line.packQuantity : line.quantity}
+                    </Text>
+                    <Stepper onPress={() => updateQty(index, line, 1)} icon={Plus} colors={colors} radii={radii} />
                   </View>
                 ) : (
                   <Text style={[typography.caption, { color: colors.ink.secondary }]}>
                     {line.stockType === 'AREA' ? `${(line.totalArea / 929.03).toFixed(1)} ft²` : `${(line.lengthCm / 100).toFixed(1)} m`} @ {formatCurrency(line.pricePerUnit)}
                   </Text>
                 )}
-                <Pressable onPress={() => cart.removeLine(index)}>
-                  <Text style={[typography.caption, { color: colors.semantic.danger }]}>Remove</Text>
-                </Pressable>
+                <IconButton icon={Trash2} onPress={() => cart.removeLine(index)} size={16} tone="danger" style={{ width: 32, height: 32 }} />
               </View>
             </View>
           ))}
 
           {cart.lines.length > 0 && (
-            <View style={{ marginTop: spacing.sm, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.surface.border, borderStyle: 'dashed', gap: spacing.xs }}>
+            <View
+              style={[
+                {
+                  marginTop: spacing.sm,
+                  backgroundColor: colors.surface.card,
+                  borderWidth: 1,
+                  borderColor: colors.surface.border,
+                  borderRadius: radii.md,
+                  padding: spacing.md,
+                  gap: spacing.xs,
+                },
+                elevation.xs,
+              ]}
+            >
               <Row label="Subtotal" value={formatCurrency(subtotal)} colors={colors} typography={typography} />
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Text style={[typography.body, { color: colors.ink.secondary }]}>Overall discount</Text>
@@ -177,9 +207,11 @@ export default function NewBill() {
                   onChangeText={(v) => cart.setOverallDiscount(parseFloat(v) || 0)}
                   keyboardType="numeric"
                   placeholder="0"
+                  placeholderTextColor={colors.ink.secondary}
                   style={[typography.body, { color: colors.ink.primary, width: 80, textAlign: 'right' }]}
                 />
               </View>
+              <View style={{ height: 1, backgroundColor: colors.surface.border, marginVertical: spacing.xs }} />
               <Row label="Total" value={formatCurrency(total)} colors={colors} typography={typography} bold />
 
               <View style={{ marginTop: spacing.sm }}>
@@ -191,10 +223,11 @@ export default function NewBill() {
                   placeholder={String(total)}
                   placeholderTextColor={colors.ink.secondary}
                   style={{
-                    height: 42,
+                    height: 44,
                     borderRadius: radii.sm,
                     borderWidth: 1,
                     borderColor: colors.surface.border,
+                    backgroundColor: colors.surface.bg,
                     paddingHorizontal: spacing.md,
                     color: colors.ink.primary,
                   }}
@@ -220,7 +253,7 @@ export default function NewBill() {
             </View>
           )}
 
-          {error ? <Text style={[typography.caption, { color: colors.semantic.danger }]}>{error}</Text> : null}
+          {error ? <Text style={[typography.caption, { color: colors.semantic.danger, marginTop: spacing.sm }]}>{error}</Text> : null}
         </ScrollView>
 
         <View style={{ padding: spacing.lg }}>
@@ -228,55 +261,81 @@ export default function NewBill() {
         </View>
       </SafeAreaView>
 
-      <Modal visible={pickerOpen} animationType="slide" onRequestClose={() => setPickerOpen(false)}>
-        <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface.bg }}>
-          <View style={{ padding: spacing.lg }}>
+      <Sheet visible={pickerOpen} onClose={() => setPickerOpen(false)} title="Add Product" scrollable={false}>
+        <View style={{ padding: spacing.lg, paddingBottom: spacing.sm, gap: spacing.md }}>
+          <View
+            style={{
+              height: 44,
+              borderRadius: radii.md,
+              borderWidth: 1,
+              borderColor: colors.surface.border,
+              backgroundColor: colors.surface.bg,
+              flexDirection: 'row',
+              alignItems: 'center',
+              paddingHorizontal: spacing.md,
+              gap: spacing.sm,
+            }}
+          >
+            <Search size={16} color={colors.ink.secondary} strokeWidth={1.8} />
             <TextInput
               autoFocus
               value={search}
               onChangeText={setSearch}
               placeholder="Search products"
               placeholderTextColor={colors.ink.secondary}
-              style={{
-                height: 44,
-                borderRadius: radii.md,
-                borderWidth: 1,
-                borderColor: colors.surface.border,
-                paddingHorizontal: spacing.md,
-                color: colors.ink.primary,
-              }}
+              style={[typography.body, { flex: 1, color: colors.ink.primary }]}
             />
           </View>
           <FlatList
             data={searchResults}
             keyExtractor={(item) => item.id}
-            contentContainerStyle={{ paddingHorizontal: spacing.lg, gap: spacing.sm }}
+            style={{ maxHeight: PICKER_LIST_MAX_HEIGHT }}
+            contentContainerStyle={{ gap: spacing.xs, paddingBottom: spacing.lg }}
+            ListEmptyComponent={
+              <View style={{ alignItems: 'center', paddingVertical: spacing.xxl, gap: spacing.sm }}>
+                <PackagePlus size={28} color={colors.ink.secondary} strokeWidth={1.6} />
+                <Text style={[typography.caption, { color: colors.ink.secondary }]}>No products found</Text>
+              </View>
+            }
             renderItem={({ item }) => (
               <Pressable
                 onPress={() => addProduct(item)}
-                style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.surface.border }}
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  paddingVertical: spacing.sm,
+                  paddingHorizontal: spacing.md,
+                  borderRadius: radii.md,
+                  backgroundColor: colors.surface.card,
+                }}
               >
-                <Text style={[typography.body, { color: colors.ink.primary }]}>{item.name}</Text>
+                <Text style={[typography.body, { color: colors.ink.primary, flex: 1 }]} numberOfLines={1}>{item.name}</Text>
                 <Text style={[typography.caption, { color: colors.ink.secondary }]}>{formatCurrency(item.salePrice)}</Text>
               </Pressable>
             )}
           />
-          <View style={{ padding: spacing.lg }}>
-            <Button title="Close" variant="outline" onPress={() => setPickerOpen(false)} />
-          </View>
-        </SafeAreaView>
-      </Modal>
+        </View>
+      </Sheet>
     </AnimatedScreen>
   );
 }
 
-function Stepper({ onPress, label, colors, radii }) {
+function Stepper({ onPress, icon: Icon, colors, radii }) {
   return (
     <Pressable
       onPress={onPress}
-      style={{ width: 22, height: 22, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.surface.border, alignItems: 'center', justifyContent: 'center' }}
+      style={{
+        width: 26,
+        height: 26,
+        borderRadius: radii.sm,
+        borderWidth: 1,
+        borderColor: colors.surface.border,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
     >
-      <Text style={{ color: colors.ink.primary }}>{label}</Text>
+      <Icon size={13} color={colors.ink.primary} strokeWidth={2} />
     </Pressable>
   );
 }

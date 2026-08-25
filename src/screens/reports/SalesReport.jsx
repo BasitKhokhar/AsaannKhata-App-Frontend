@@ -1,16 +1,20 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import { View, Text, ScrollView, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
-import Svg, { Path } from 'react-native-svg';
+import { Download, Wallet, TrendingUp, Receipt } from 'lucide-react-native';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
+import { Chip } from '../../components/ui/Chip';
+import { StatCard } from '../../components/ui/StatCard';
+import { SectionHeader } from '../../components/ui/SectionHeader';
 import { useTheme } from '../../theme';
+import { onBrandAlpha } from '../../theme/colors';
 import { useSalesReport } from '../../hooks/useSalesReport';
 import { useProfitMarginTrend } from '../../hooks/useDashboard';
 import { dashboardApi } from '../../services/dashboardApi';
@@ -24,13 +28,23 @@ const PERIODS = [
 ];
 
 export default function SalesReport() {
-  const { colors, radii, typography, spacing } = useTheme();
+  const { colors, radii, typography, spacing, elevation } = useTheme();
   const [period, setPeriod] = useState('week');
   const isCloudPeriod = period === 'year';
   const activeShopId = useShopStore((s) => s.activeShopId);
 
-  const { data: report } = useSalesReport(isCloudPeriod ? 'month' : period, { enabled: !isCloudPeriod });
-  const { data: marginTrend, isError: marginTrendError } = useProfitMarginTrend({ period: 'year' });
+  const { data: report, isRefetching: isReportRefetching, refetch: refetchReport } = useSalesReport(isCloudPeriod ? 'month' : period, {
+    enabled: !isCloudPeriod,
+  });
+  const { data: marginTrend, isError: marginTrendError, isRefetching: isTrendRefetching, refetch: refetchTrend } = useProfitMarginTrend({
+    period: 'year',
+  });
+
+  const isRefreshing = isCloudPeriod ? isTrendRefetching : isReportRefetching;
+  function handleRefresh() {
+    if (isCloudPeriod) refetchTrend();
+    else refetchReport();
+  }
 
   async function handleExport() {
     if (isCloudPeriod) {
@@ -64,28 +78,15 @@ export default function SalesReport() {
         </View>
 
         <View style={{ flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.lg, paddingBottom: spacing.sm }}>
-          {PERIODS.map((p) => {
-            const active = period === p.key;
-            return (
-              <Pressable
-                key={p.key}
-                onPress={() => setPeriod(p.key)}
-                style={{
-                  paddingHorizontal: spacing.md,
-                  paddingVertical: spacing.xs,
-                  borderRadius: radii.pill,
-                  backgroundColor: active ? colors.brand.primary : 'transparent',
-                  borderWidth: active ? 0 : 1,
-                  borderColor: colors.surface.border,
-                }}
-              >
-                <Text style={[typography.label, { color: active ? '#FAF9F6' : colors.ink.secondary }]}>{p.label}</Text>
-              </Pressable>
-            );
-          })}
+          {PERIODS.map((p) => (
+            <Chip key={p.key} label={p.label} selected={period === p.key} onPress={() => setPeriod(p.key)} />
+          ))}
         </View>
 
-        <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
+        <ScrollView
+          contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}
+          refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.brand.primary} />}
+        >
           {isCloudPeriod ? (
             <>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
@@ -96,7 +97,7 @@ export default function SalesReport() {
               </View>
 
               <Card>
-                <Text style={[typography.h3, { color: colors.ink.primary, marginBottom: spacing.sm }]}>Monthly revenue &amp; margin</Text>
+                <SectionHeader title="Monthly revenue & margin" />
                 {marginTrendError ? (
                   <Text style={[typography.caption, { color: colors.ink.secondary }]}>Couldn't load — check your connection.</Text>
                 ) : (marginTrend?.data || []).every((m) => !m.revenue) ? (
@@ -115,24 +116,34 @@ export default function SalesReport() {
             </>
           ) : (
             <>
-              <LinearGradient colors={colors.gradient.header} style={{ borderRadius: radii.lg, padding: spacing.md }}>
-                <Text style={[typography.caption, { color: 'rgba(250,249,246,0.7)' }]}>Net Profit</Text>
-                <Text style={[typography.numericLarge, { color: '#FAF9F6', marginTop: 2 }]}>{formatCurrency(report?.netProfit)}</Text>
+              <LinearGradient
+                colors={colors.gradient.header}
+                style={[{ borderRadius: radii.lg, padding: spacing.lg }, elevation.md]}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Text style={[typography.caption, { color: onBrandAlpha(0.7) }]}>Net Profit</Text>
+                  <Wallet size={16} color={onBrandAlpha(0.5)} />
+                </View>
+                <Text style={[typography.numericLarge, { color: colors.ink.onBrand, marginTop: 2 }]}>{formatCurrency(report?.netProfit)}</Text>
               </LinearGradient>
 
               <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-                <Card style={{ flex: 1 }}>
-                  <Text style={[typography.caption, { color: colors.ink.secondary }]}>Revenue</Text>
-                  <Text style={[typography.h3, { color: colors.ink.primary, marginTop: 2 }]}>{formatCurrency(report?.revenue)}</Text>
-                </Card>
-                <Card style={{ flex: 1 }}>
-                  <Text style={[typography.caption, { color: colors.ink.secondary }]}>Bills</Text>
-                  <Text style={[typography.h3, { color: colors.ink.primary, marginTop: 2 }]}>{report?.billCount ?? 0}</Text>
-                </Card>
+                <StatCard
+                  icon={<TrendingUp size={18} color={colors.brand.primary} />}
+                  value={formatCurrency(report?.revenue)}
+                  label="Revenue"
+                  tone="primary"
+                />
+                <StatCard
+                  icon={<Receipt size={18} color={colors.brand.accent} />}
+                  value={report?.billCount ?? 0}
+                  label="Bills"
+                  tone="accent"
+                />
               </View>
 
               <Card>
-                <Text style={[typography.h3, { color: colors.ink.primary, marginBottom: spacing.sm }]}>Top Products</Text>
+                <SectionHeader title="Top Products" />
                 {(report?.topProducts || []).length === 0 ? (
                   <Text style={[typography.caption, { color: colors.ink.secondary }]}>No sales in this period yet.</Text>
                 ) : (
@@ -153,12 +164,7 @@ export default function SalesReport() {
             title="Export Report"
             variant="outline"
             onPress={handleExport}
-            icon={
-              <Svg width={15} height={15} viewBox="0 0 16 16">
-                <Path d="M8 2v9M4.5 8 8 11.5 11.5 8" stroke={colors.brand.primary} strokeWidth={1.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                <Path d="M2 13h12" stroke={colors.brand.primary} strokeWidth={1.5} />
-              </Svg>
-            }
+            icon={<Download size={16} color={colors.brand.primary} strokeWidth={1.8} />}
           />
         </View>
       </SafeAreaView>

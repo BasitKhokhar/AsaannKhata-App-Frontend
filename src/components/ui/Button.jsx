@@ -1,13 +1,25 @@
 import React from 'react';
 import { Pressable, Text, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useTheme } from '../../theme';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+const PRESS_SPRING = { damping: 14, stiffness: 260 };
 
 // variant: 'primary' (navy gradient), 'accent' (gold gradient), 'outline', 'ghost', 'danger'
 export function Button({ title, onPress, variant = 'primary', disabled, loading, style, icon }) {
   const { colors, radii, typography, spacing } = useTheme();
   const isGradient = variant === 'primary' || variant === 'accent';
   const gradientColors = variant === 'accent' ? colors.gradient.accent : colors.gradient.primary;
+  const scale = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const onPressIn = () => {
+    scale.value = withSpring(0.97, PRESS_SPRING);
+  };
+  const onPressOut = () => {
+    scale.value = withSpring(1, PRESS_SPRING);
+  };
 
   const content = (
     <>
@@ -43,11 +55,17 @@ export function Button({ title, onPress, variant = 'primary', disabled, loading,
 
   if (isGradient) {
     return (
-      <Pressable onPress={onPress} disabled={disabled || loading} style={style}>
+      <AnimatedPressable
+        onPress={onPress}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
+        disabled={disabled || loading}
+        style={[animatedStyle, style]}
+      >
         <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={baseStyle}>
           {content}
         </LinearGradient>
-      </Pressable>
+      </AnimatedPressable>
     );
   }
 
@@ -59,9 +77,15 @@ export function Button({ title, onPress, variant = 'primary', disabled, loading,
       : { backgroundColor: 'transparent' };
 
   return (
-    <Pressable onPress={onPress} disabled={disabled || loading} style={[baseStyle, outlineStyle, style]}>
+    <AnimatedPressable
+      onPress={onPress}
+      onPressIn={onPressIn}
+      onPressOut={onPressOut}
+      disabled={disabled || loading}
+      style={[animatedStyle, baseStyle, outlineStyle, style]}
+    >
       {content}
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 

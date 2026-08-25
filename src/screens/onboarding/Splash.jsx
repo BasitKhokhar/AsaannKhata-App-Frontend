@@ -8,6 +8,7 @@ import { Shimmer } from '../../components/motion/Shimmer';
 import { DotGlowLoader } from '../../components/motion/DotGlowLoader';
 import { Logo } from '../../components/ui/Logo';
 import { useTheme } from '../../theme';
+import { onBrandAlpha } from '../../theme/colors';
 
 const AUTO_ADVANCE_MS = 1800;
 
@@ -30,19 +31,19 @@ export default function Splash() {
           <FloatingIconCluster>
             <View style={[styles.badgeShadow, { shadowColor: colors.brand.accent }]}>
               <View style={[styles.badge, { borderRadius: radii.xl, backgroundColor: 'rgba(255,255,255,0.1)' }]}>
-                <Logo size={60} color="#FAF9F6" accentColor={colors.brand.accent} />
+                <Logo size={60} color={colors.ink.onBrand} accentColor={colors.brand.accent} />
                 <Shimmer parentWidth={96} />
               </View>
             </View>
           </FloatingIconCluster>
         </View>
 
-        <Text style={[typography.h1, { color: '#FAF9F6', marginTop: spacing.lg }]}>AsaanKhata</Text>
+        <Text style={[typography.h1, { color: colors.ink.onBrand, marginTop: spacing.lg }]}>AsaanKhata</Text>
         <Text
           style={[
             typography.label,
             {
-              color: 'rgba(250,249,246,0.6)',
+              color: onBrandAlpha(0.6),
               marginTop: spacing.xs,
               letterSpacing: 2,
               textTransform: 'uppercase',

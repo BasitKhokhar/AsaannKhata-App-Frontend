@@ -4,11 +4,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
-import Svg, { Path } from 'react-native-svg';
+import { Camera, Store } from 'lucide-react-native';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { RegisterWizardHeader } from './RegisterWizardHeader';
 import { TextField } from '../../components/ui/TextField';
 import { Button } from '../../components/ui/Button';
+import { Card } from '../../components/ui/Card';
 import { useTheme } from '../../theme';
 import { useRegisterStore } from '../../store/registerStore';
 import { shopTypesApi } from '../../services/shopTypesApi';
@@ -68,9 +69,7 @@ export default function RegisterStep2() {
                   justifyContent: 'center',
                 }}
               >
-                <Svg width={22} height={22} viewBox="0 0 24 24">
-                  <Path d="M3 7h18v13H3zM8 7l1.5-3h5L16 7" fill="none" stroke={colors.brand.primary} strokeWidth={1.5} strokeLinejoin="round" />
-                </Svg>
+                <Camera size={22} color={colors.brand.primary} strokeWidth={1.6} />
               </View>
             )}
             <View>
@@ -88,29 +87,30 @@ export default function RegisterStep2() {
               {shopTypes.map((type) => {
                 const selected = type.code === shopTypeCode;
                 return (
-                  <Pressable
+                  <Card
                     key={type.code}
                     onPress={() => setShopTypeCode(type.code)}
+                    level={selected ? 'sm' : 'none'}
+                    bordered={false}
                     style={{
                       width: '30%',
                       borderRadius: radii.md,
                       paddingVertical: spacing.sm,
+                      paddingHorizontal: 0,
                       alignItems: 'center',
                       borderWidth: selected ? 1.5 : 1,
                       borderColor: selected ? colors.brand.primary : colors.surface.border,
                       backgroundColor: selected ? colors.brand.primary + '1F' : 'transparent',
                     }}
                   >
-                    <Svg width={20} height={20} viewBox="0 0 24 24">
-                      <Path d="M4 21V9l8-5 8 5v12h-5v-7H9v7z" fill="none" stroke={selected ? colors.brand.primary : colors.ink.secondary} strokeWidth={1.5} strokeLinejoin="round" />
-                    </Svg>
+                    <Store size={20} color={selected ? colors.brand.primary : colors.ink.secondary} strokeWidth={1.6} />
                     <Text
                       numberOfLines={1}
                       style={[typography.caption, { color: selected ? colors.brand.primary : colors.ink.secondary, marginTop: 4, fontWeight: selected ? '700' : '400' }]}
                     >
                       {type.label}
                     </Text>
-                  </Pressable>
+                  </Card>
                 );
               })}
             </View>

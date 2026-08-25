@@ -5,6 +5,7 @@ import { fontFamily, typeScale } from './typography';
 import { spacing } from './spacing';
 import { radii } from './radii';
 import { motion } from './motion';
+import { elevation } from './elevation';
 import { useThemeStore } from '../store/themeStore';
 
 const ThemeContext = createContext(null);
@@ -25,6 +26,7 @@ export function ThemeProvider({ children }) {
       spacing,
       radii,
       motion,
+      elevation: elevation[resolvedMode],
       palette,
     };
   }, [resolvedMode]);

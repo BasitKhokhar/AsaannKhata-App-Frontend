@@ -1,25 +1,28 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, Modal } from 'react-native';
+import { View, Text, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Path } from 'react-native-svg';
+import { Receipt, Wallet } from 'lucide-react-native';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { TextField } from '../../components/ui/TextField';
 import { Button } from '../../components/ui/Button';
+import { Header } from '../../components/ui/Header';
+import { Sheet } from '../../components/ui/Sheet';
 import { useTheme } from '../../theme';
 import { useCustomer, useRecordCustomerPayment } from '../../hooks/useCustomers';
 import { billRepository } from '../../db/repositories/billRepository';
 import { customerPaymentRepository } from '../../db/repositories/customerPaymentRepository';
 import { formatCurrency } from '../../utils/money';
 import { formatRelativeTime } from '../../utils/dates';
+import { showToast } from '../../store/toastStore';
 
 export default function CustomerDetail() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { colors, radii, typography, spacing } = useTheme();
+  const { colors, radii, typography, spacing, elevation } = useTheme();
   const customerId = route.params?.customerId;
   const { data: customer } = useCustomer(customerId);
   const recordPayment = useRecordCustomerPayment();
@@ -38,25 +41,27 @@ export default function CustomerDetail() {
   function handleRecordPayment() {
     const amt = parseFloat(amount) || 0;
     if (amt <= 0) return;
-    recordPayment.mutate({ customerId, amount: amt }, { onSuccess: () => { setPayOpen(false); setAmount(''); } });
+    recordPayment.mutate(
+      { customerId, amount: amt },
+      {
+        onSuccess: () => {
+          setPayOpen(false);
+          setAmount('');
+          showToast(`Payment of ${formatCurrency(amt)} recorded`, 'success');
+        },
+      }
+    );
   }
 
   return (
     <AnimatedScreen>
       <SafeAreaView style={{ flex: 1 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.lg }}>
-          <Pressable onPress={() => navigation.goBack()} hitSlop={8}>
-            <Svg width={16} height={16} viewBox="0 0 16 16">
-              <Path d="M10.5 3l-5 5 5 5" stroke={colors.ink.primary} strokeWidth={1.6} fill="none" strokeLinecap="round" strokeLinejoin="round" />
-            </Svg>
-          </Pressable>
-          <Text style={[typography.h3, { color: colors.ink.primary }]}>{customer.name}</Text>
-        </View>
+        <Header title={customer.name} onBack={() => navigation.goBack()} />
 
         <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
           <Card style={{ alignItems: 'center' }}>
             <LinearGradient colors={colors.gradient.primary} style={{ width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: '#FAF9F6', fontSize: 20, fontWeight: '700' }}>{customer.name?.[0]?.toUpperCase()}</Text>
+              <Text style={{ color: colors.ink.onBrand, fontSize: 20, fontWeight: '700' }}>{customer.name?.[0]?.toUpperCase()}</Text>
             </LinearGradient>
             <Text style={[typography.h2, { color: colors.ink.primary, marginTop: spacing.sm }]}>{formatCurrency(customer.balance)}</Text>
             <Text style={[typography.caption, { color: colors.ink.secondary }]}>{customer.balance > 0 ? 'Outstanding balance' : 'All settled up'}</Text>
@@ -73,9 +78,35 @@ export default function CustomerDetail() {
               <Pressable
                 key={`${entry.kind}-${entry.id}`}
                 onPress={() => entry.kind === 'bill' && navigation.navigate('BillDetail', { billId: entry.id })}
-                style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing.xs }}
+                style={[
+                  {
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: spacing.sm,
+                    backgroundColor: colors.surface.card,
+                    borderRadius: radii.md,
+                    padding: spacing.md,
+                  },
+                  elevation.xs,
+                ]}
               >
-                <View>
+                <View
+                  style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: radii.md,
+                    backgroundColor: (entry.kind === 'bill' ? colors.brand.primary : colors.semantic.success) + '1F',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {entry.kind === 'bill' ? (
+                    <Receipt size={16} color={colors.brand.primary} strokeWidth={1.8} />
+                  ) : (
+                    <Wallet size={16} color={colors.semantic.success} strokeWidth={1.8} />
+                  )}
+                </View>
+                <View style={{ flex: 1 }}>
                   <Text style={[typography.body, { color: colors.ink.primary }]}>{entry.kind === 'bill' ? `Bill · ${formatCurrency(entry.totalAmount)}` : 'Payment received'}</Text>
                   <Text style={[typography.caption, { color: colors.ink.secondary }]}>{formatRelativeTime(entry.at)}</Text>
                 </View>
@@ -90,16 +121,19 @@ export default function CustomerDetail() {
         </ScrollView>
       </SafeAreaView>
 
-      <Modal visible={payOpen} transparent animationType="fade" onRequestClose={() => setPayOpen(false)}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }}>
-          <View style={{ backgroundColor: colors.surface.bg, borderTopLeftRadius: radii.xl, borderTopRightRadius: radii.xl, padding: spacing.lg, gap: spacing.md }}>
-            <Text style={[typography.h2, { color: colors.ink.primary }]}>Record Payment</Text>
-            <TextField label="Amount" value={amount} onChangeText={setAmount} placeholder="0" keyboardType="numeric" />
+      <Sheet
+        visible={payOpen}
+        onClose={() => setPayOpen(false)}
+        title="Record Payment"
+        footer={
+          <View style={{ gap: spacing.sm }}>
             <Button title="Save Payment" onPress={handleRecordPayment} loading={recordPayment.isPending} />
             <Button title="Cancel" variant="ghost" onPress={() => setPayOpen(false)} />
           </View>
-        </View>
-      </Modal>
+        }
+      >
+        <TextField label="Amount" value={amount} onChangeText={setAmount} placeholder="0" keyboardType="numeric" />
+      </Sheet>
     </AnimatedScreen>
   );
 }

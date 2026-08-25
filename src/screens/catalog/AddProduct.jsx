@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import { View, Text, ScrollView, Pressable, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import Svg, { Path } from 'react-native-svg';
+import * as ImagePicker from 'expo-image-picker';
+import { Camera, Pencil } from 'lucide-react-native';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
+import { Header } from '../../components/ui/Header';
+import { Chip } from '../../components/ui/Chip';
 import { TextField } from '../../components/ui/TextField';
 import { Button } from '../../components/ui/Button';
 import { useTheme } from '../../theme';
@@ -19,11 +22,12 @@ const MODES = [
 
 export default function AddProduct() {
   const navigation = useNavigation();
-  const { colors, radii, typography, spacing } = useTheme();
+  const { colors, radii, typography, spacing, elevation } = useTheme();
   const { data: categories = [] } = useCategories();
   const createProduct = useCreateProduct();
 
   const [name, setName] = useState('');
+  const [image, setImage] = useState(null);
   const [categoryId, setCategoryId] = useState(null);
   const [stockType, setStockType] = useState('QUANTITY');
   const [purchasePrice, setPurchasePrice] = useState('');
@@ -42,6 +46,16 @@ export default function AddProduct() {
   const [packPurchasePrice, setPackPurchasePrice] = useState('');
   const [packSalePrice, setPackSalePrice] = useState('');
 
+  async function handlePickImage() {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      setError('Permission to access photos is required to add a product image.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 0.7 });
+    if (!result.canceled) setImage(result.assets[0].uri);
+  }
+
   function handleSave() {
     if (!name || !purchasePrice || !salePrice) {
       setError('Please fill in the product name and prices.');
@@ -56,6 +70,8 @@ export default function AddProduct() {
     createProduct.mutate(
       {
         name,
+        // Local-only: this is a device file URI, not uploaded anywhere — it won't sync to other devices/cloud until the sync push protocol carries binary files.
+        image,
         categoryId,
         stockType,
         purchasePrice,
@@ -78,41 +94,73 @@ export default function AddProduct() {
   return (
     <AnimatedScreen>
       <SafeAreaView style={{ flex: 1 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.lg }}>
-          <Pressable onPress={() => navigation.goBack()} hitSlop={8}>
-            <Svg width={16} height={16} viewBox="0 0 16 16">
-              <Path d="M10.5 3l-5 5 5 5" stroke={colors.ink.primary} strokeWidth={1.6} fill="none" strokeLinecap="round" strokeLinejoin="round" />
-            </Svg>
-          </Pressable>
-          <Text style={[typography.h3, { color: colors.ink.primary }]}>Add Product</Text>
-        </View>
+        <Header title="Add Product" />
 
         <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
+          <Pressable
+            onPress={handlePickImage}
+            style={{ alignItems: 'center', marginBottom: spacing.sm }}
+          >
+            <View style={{ width: 88, height: 88 }}>
+              <View
+                style={[
+                  {
+                    width: 88,
+                    height: 88,
+                    borderRadius: radii.xl,
+                    backgroundColor: colors.surface.card,
+                    borderWidth: 1,
+                    borderColor: colors.surface.border,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden',
+                  },
+                  elevation.xs,
+                ]}
+              >
+                {image ? (
+                  <Image source={{ uri: image }} style={{ width: 88, height: 88 }} resizeMode="cover" />
+                ) : (
+                  <Camera size={26} color={colors.ink.secondary} strokeWidth={1.6} />
+                )}
+              </View>
+              <View
+                style={{
+                  position: 'absolute',
+                  bottom: -2,
+                  right: -2,
+                  width: 28,
+                  height: 28,
+                  borderRadius: radii.pill,
+                  backgroundColor: colors.brand.primary,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderWidth: 2,
+                  borderColor: colors.surface.bg,
+                }}
+              >
+                <Pencil size={13} color={colors.ink.onBrand} strokeWidth={2} />
+              </View>
+            </View>
+            <Text style={[typography.caption, { color: colors.ink.secondary, marginTop: spacing.xs }]}>
+              {image ? 'Change photo' : 'Add photo (optional)'}
+            </Text>
+          </Pressable>
+
           <TextField label="Product name" value={name} onChangeText={setName} placeholder="Ceramic Floor Tile 60x60" />
 
           {categories.length > 0 ? (
             <View>
               <Text style={[typography.label, { color: colors.ink.secondary, marginBottom: spacing.xs }]}>Category</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
-                {categories.map((c) => {
-                  const selected = c.id === categoryId;
-                  return (
-                    <Pressable
-                      key={c.id}
-                      onPress={() => setCategoryId(selected ? null : c.id)}
-                      style={{
-                        paddingHorizontal: spacing.md,
-                        paddingVertical: spacing.xs,
-                        borderRadius: radii.pill,
-                        borderWidth: 1,
-                        borderColor: selected ? colors.brand.primary : colors.surface.border,
-                        backgroundColor: selected ? colors.brand.primary + '1F' : 'transparent',
-                      }}
-                    >
-                      <Text style={[typography.caption, { color: selected ? colors.brand.primary : colors.ink.secondary }]}>{c.name}</Text>
-                    </Pressable>
-                  );
-                })}
+                {categories.map((c) => (
+                  <Chip
+                    key={c.id}
+                    label={c.name}
+                    selected={c.id === categoryId}
+                    onPress={() => setCategoryId(c.id === categoryId ? null : c.id)}
+                  />
+                ))}
               </ScrollView>
             </View>
           ) : null}
@@ -120,26 +168,15 @@ export default function AddProduct() {
           <View>
             <Text style={[typography.label, { color: colors.ink.secondary, marginBottom: spacing.sm }]}>Stock mode</Text>
             <View style={{ flexDirection: 'row', gap: spacing.xs }}>
-              {MODES.map((m) => {
-                const selected = m.key === stockType;
-                return (
-                  <Pressable
-                    key={m.key}
-                    onPress={() => setStockType(m.key)}
-                    style={{
-                      flex: 1,
-                      alignItems: 'center',
-                      paddingVertical: spacing.sm,
-                      borderRadius: radii.md,
-                      borderWidth: selected ? 0 : 1,
-                      borderColor: colors.surface.border,
-                      backgroundColor: selected ? colors.brand.primary : 'transparent',
-                    }}
-                  >
-                    <Text style={[typography.label, { color: selected ? '#FAF9F6' : colors.ink.secondary }]}>{m.label}</Text>
-                  </Pressable>
-                );
-              })}
+              {MODES.map((m) => (
+                <Chip
+                  key={m.key}
+                  label={m.label}
+                  selected={m.key === stockType}
+                  onPress={() => setStockType(m.key)}
+                  style={{ flex: 1, alignItems: 'center' }}
+                />
+              ))}
             </View>
           </View>
 
@@ -239,7 +276,7 @@ function UnitPicker({ unit, setUnit, options }) {
               borderColor: selected ? colors.brand.primary : colors.surface.border,
             }}
           >
-            <Text style={[typography.caption, { color: selected ? '#FAF9F6' : colors.ink.secondary }]}>{opt}</Text>
+            <Text style={[typography.caption, { color: selected ? colors.ink.onBrand : colors.ink.secondary }]}>{opt}</Text>
           </Pressable>
         );
       })}

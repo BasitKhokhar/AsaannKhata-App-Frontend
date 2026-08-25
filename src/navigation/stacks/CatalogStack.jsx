@@ -2,7 +2,10 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import ProductsList from '../../screens/catalog/ProductsList';
 import AddProduct from '../../screens/catalog/AddProduct';
-import StockAdjustment from '../../screens/catalog/StockAdjustment';
+// Lives in screens/stock now (conceptually Stock-domain) — also registered
+// in StockStack.jsx as its own entry point from the Stock overview screen.
+// ProductsList still navigates here directly by name within this stack.
+import StockAdjustment from '../../screens/stock/StockAdjustment';
 
 const Stack = createNativeStackNavigator();
 

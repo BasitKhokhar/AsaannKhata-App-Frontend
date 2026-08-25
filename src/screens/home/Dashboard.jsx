@@ -1,19 +1,26 @@
 import React from 'react';
-import { View, Text, Pressable, ScrollView } from 'react-native';
+import { View, Text, Pressable, ScrollView, RefreshControl } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, DrawerActions } from '@react-navigation/native';
 import { BarChart } from 'react-native-gifted-charts';
-import Svg, { Path, Line } from 'react-native-svg';
+import { ChevronDown, Menu, Boxes, Plus, Cloud } from 'lucide-react-native';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { PulseFab } from '../../components/motion/PulseFab';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
+import { StatCard } from '../../components/ui/StatCard';
+import { SectionHeader } from '../../components/ui/SectionHeader';
+import { ListRow } from '../../components/ui/ListRow';
 import { useTheme } from '../../theme';
 import { useDashboardStats, useSalesByProduct } from '../../hooks/useDashboard';
 import { useShops } from '../../hooks/useShops';
 import { useShopStore } from '../../store/shopStore';
+import { useSyncStore } from '../../store/syncStore';
+import { useNotificationPrefsStore } from '../../store/notificationPrefsStore';
+import { entitlementRepository } from '../../db/repositories/entitlementRepository';
 import { formatCurrency } from '../../utils/money';
+import { formatRelativeTime } from '../../utils/dates';
 
 export default function Dashboard() {
   const navigation = useNavigation();
@@ -21,8 +28,17 @@ export default function Dashboard() {
   const { data: shops = [] } = useShops();
   const activeShopId = useShopStore((s) => s.activeShopId);
   const activeShop = shops.find((s) => String(s.id) === String(activeShopId));
-  const { data: stats, isLoading } = useDashboardStats();
-  const { data: topProducts, isError: topProductsError } = useSalesByProduct({ limit: 5 });
+  const { data: stats, isLoading, isRefetching, refetch } = useDashboardStats();
+  const { data: topProducts, isError: topProductsError, refetch: refetchTopProducts } = useSalesByProduct({ limit: 5 });
+
+  function handleRefresh() {
+    refetch();
+    refetchTopProducts();
+  }
+  const lastSyncAt = useSyncStore((s) => s.lastSyncAt);
+  const entitlement = entitlementRepository.get();
+  const lowStockAlertsEnabled = useNotificationPrefsStore((s) => s.lowStockAlerts);
+  const syncStatusAlertsEnabled = useNotificationPrefsStore((s) => s.syncStatusAlerts);
 
   const summary = stats?.summary || {};
   const chartData = (stats?.revenueAnalytics || []).map((d) => ({
@@ -48,49 +64,46 @@ export default function Dashboard() {
                 paddingHorizontal: spacing.md,
               }}
             >
-              <Text numberOfLines={1} style={[typography.bodyMedium, { color: '#FAF9F6', maxWidth: 160 }]}>
+              <Text numberOfLines={1} style={[typography.bodyMedium, { color: colors.ink.onBrand, maxWidth: 160 }]}>
                 {activeShop?.name || 'Select a shop'}
               </Text>
-              <Svg width={12} height={12} viewBox="0 0 16 16">
-                <Path d="M4 6l4 4 4-4" stroke="#FAF9F6" strokeWidth={1.6} fill="none" strokeLinecap="round" strokeLinejoin="round" />
-              </Svg>
+              <ChevronDown size={12} color={colors.ink.onBrand} strokeWidth={1.8} />
             </Pressable>
             <Pressable onPress={() => navigation.dispatch(DrawerActions.openDrawer())} hitSlop={8}>
-              <Svg width={20} height={20} viewBox="0 0 20 20">
-                <Line x1={3} y1={6} x2={17} y2={6} stroke="#FAF9F6" strokeWidth={1.8} strokeLinecap="round" />
-                <Line x1={3} y1={10} x2={17} y2={10} stroke="#FAF9F6" strokeWidth={1.8} strokeLinecap="round" />
-                <Line x1={3} y1={14} x2={17} y2={14} stroke="#FAF9F6" strokeWidth={1.8} strokeLinecap="round" />
-              </Svg>
+              <Menu size={20} color={colors.ink.onBrand} strokeWidth={1.8} />
             </Pressable>
           </View>
+          {entitlement?.cloudEnabled && syncStatusAlertsEnabled ? (
+            <Pressable
+              onPress={() => navigation.navigate('SettingsStack', { screen: 'SyncStatus' })}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: spacing.md, paddingBottom: spacing.sm }}
+            >
+              <Cloud size={12} color={colors.ink.onBrand} strokeWidth={1.8} opacity={0.75} />
+              <Text style={[typography.caption, { color: colors.ink.onBrand, opacity: 0.75, fontSize: 11 }]}>
+                {lastSyncAt ? `Synced ${formatRelativeTime(lastSyncAt)}` : 'Not synced yet'}
+              </Text>
+            </Pressable>
+          ) : null}
         </SafeAreaView>
       </LinearGradient>
 
-      <ScrollView contentContainerStyle={{ padding: spacing.md, gap: spacing.md }}>
+      <ScrollView
+        contentContainerStyle={{ padding: spacing.md, gap: spacing.md }}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={handleRefresh} tintColor={colors.brand.primary} />}
+      >
         <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-          <Card style={{ flex: 1 }}>
-            <Text style={[typography.caption, { color: colors.ink.secondary }]}>Sales today</Text>
-            <Text style={[typography.numericLarge, { color: colors.ink.primary, marginTop: 2 }]}>{formatCurrency(summary.totalSales)}</Text>
-          </Card>
-          <Card style={{ flex: 1 }}>
-            <Text style={[typography.caption, { color: colors.ink.secondary }]}>Profit today</Text>
-            <Text style={[typography.numericLarge, { color: colors.brand.accentDark, marginTop: 2 }]}>{formatCurrency(summary.profitToday)}</Text>
-          </Card>
+          <StatCard value={formatCurrency(summary.totalSales)} label="Sales today" />
+          <StatCard value={formatCurrency(summary.profitToday)} label="Profit today" tone="accent" />
         </View>
 
-        <Card style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <View>
-            <Text style={[typography.caption, { color: colors.ink.secondary }]}>Total stock value</Text>
-            <Text style={[typography.numericLarge, { color: colors.ink.primary, marginTop: 2 }]}>{formatCurrency(summary.totalInventoryValue)}</Text>
-          </View>
-          <Svg width={26} height={26} viewBox="0 0 24 24">
-            <Path d="M4 8l8-5 8 5-8 5-8-5z" fill="none" stroke={colors.brand.primary} strokeWidth={1.4} strokeLinejoin="round" />
-            <Path d="M4 8v9l8 5 8-5V8" fill="none" stroke={colors.brand.primary} strokeWidth={1.4} strokeLinejoin="round" />
-          </Svg>
-        </Card>
+        <StatCard
+          icon={<Boxes size={18} color={colors.brand.primary} />}
+          value={formatCurrency(summary.totalInventoryValue)}
+          label="Total stock value"
+        />
 
         <Card>
-          <Text style={[typography.h3, { color: colors.ink.primary, marginBottom: spacing.sm }]}>Revenue this week</Text>
+          <SectionHeader title="Revenue this week" />
           {chartData.length ? (
             <BarChart
               data={chartData}
@@ -101,25 +114,30 @@ export default function Dashboard() {
               hideYAxisText
               yAxisThickness={0}
               xAxisThickness={0}
+              xAxisLabelTextStyle={{ color: colors.ink.secondary, fontSize: 11 }}
               height={80}
               noOfSections={3}
             />
           ) : null}
         </Card>
 
-        <Card>
-          <Text style={[typography.h3, { color: colors.ink.primary, marginBottom: spacing.sm }]}>Top 5 low stocked items</Text>
-          {(stats?.lowStockAlerts || []).length === 0 ? (
-            <Text style={[typography.caption, { color: colors.ink.secondary }]}>Nothing low on stock right now.</Text>
-          ) : (
-            stats.lowStockAlerts.map((item) => (
-              <View key={item.id} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing.xs }}>
-                <Text style={[typography.body, { color: colors.ink.primary }]}>{item.name}</Text>
-                <Badge label={item.stock <= 0 ? 'Out' : `${item.stock} left`} tone={item.stock <= 0 ? 'danger' : 'warning'} />
-              </View>
-            ))
-          )}
-        </Card>
+        {lowStockAlertsEnabled ? (
+          <Card>
+            <SectionHeader title="Top 5 low stocked items" />
+            {(stats?.lowStockAlerts || []).length === 0 ? (
+              <Text style={[typography.caption, { color: colors.ink.secondary }]}>Nothing low on stock right now.</Text>
+            ) : (
+              stats.lowStockAlerts.map((item) => (
+                <ListRow
+                  key={item.id}
+                  style={{ paddingHorizontal: 0 }}
+                  title={item.name}
+                  trailing={<Badge label={item.stock <= 0 ? 'Out' : `${item.stock} left`} tone={item.stock <= 0 ? 'danger' : 'warning'} />}
+                />
+              ))
+            )}
+          </Card>
+        ) : null}
 
         <Card>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm }}>
@@ -132,33 +150,32 @@ export default function Dashboard() {
             <Text style={[typography.caption, { color: colors.ink.secondary }]}>No sales yet for this shop.</Text>
           ) : (
             topProducts.data.map((product) => (
-              <View
+              <ListRow
                 key={product.productId}
-                style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing.xs }}
-              >
-                <Text style={[typography.body, { color: colors.ink.primary }]} numberOfLines={1}>
-                  {product.name}
-                </Text>
-                <Text style={[typography.bodyMedium, { color: colors.ink.primary }]}>{formatCurrency(product.revenue)}</Text>
-              </View>
+                style={{ paddingHorizontal: 0 }}
+                title={product.name}
+                trailing={<Text style={[typography.bodyMedium, { color: colors.ink.primary }]}>{formatCurrency(product.revenue)}</Text>}
+              />
             ))
           )}
         </Card>
 
         <Card>
-          <Text style={[typography.h3, { color: colors.ink.primary, marginBottom: spacing.sm }]}>Recent invoices</Text>
+          <SectionHeader title="Recent invoices" />
           {(stats?.recentInvoices || []).length === 0 ? (
             <Text style={[typography.caption, { color: colors.ink.secondary }]}>No invoices yet.</Text>
           ) : (
             stats.recentInvoices.map((invoice) => (
-              <View key={invoice.id} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing.xs }}>
-                <Text style={[typography.body, { color: colors.ink.primary }]}>
-                  #{invoice.id} · {invoice.customer}
-                </Text>
-                <Text style={[typography.bodyMedium, { color: invoice.status === 'PAID' ? colors.semantic.success : colors.semantic.warning }]}>
-                  {invoice.status === 'PAID' ? 'Paid' : 'Pending'}
-                </Text>
-              </View>
+              <ListRow
+                key={invoice.id}
+                style={{ paddingHorizontal: 0 }}
+                title={`#${invoice.id} · ${invoice.customer}`}
+                trailing={
+                  <Text style={[typography.bodyMedium, { color: invoice.status === 'PAID' ? colors.semantic.success : colors.semantic.warning }]}>
+                    {invoice.status === 'PAID' ? 'Paid' : 'Pending'}
+                  </Text>
+                }
+              />
             ))
           )}
         </Card>
@@ -167,11 +184,7 @@ export default function Dashboard() {
       <View style={{ position: 'absolute', bottom: spacing.xl, right: spacing.lg }}>
         <PulseFab
           onPress={() => navigation.navigate('BillingStack', { screen: 'NewBill' })}
-          icon={
-            <Svg width={22} height={22} viewBox="0 0 16 16">
-              <Path d="M8 2v12M2 8h12" stroke={colors.ink.primary} strokeWidth={1.8} strokeLinecap="round" />
-            </Svg>
-          }
+          icon={<Plus size={22} color={colors.ink.primary} strokeWidth={1.8} />}
         />
       </View>
     </AnimatedScreen>

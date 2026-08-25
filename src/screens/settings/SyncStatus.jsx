@@ -3,12 +3,16 @@ import { View, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import Svg, { Path } from 'react-native-svg';
+import { Smartphone } from 'lucide-react-native';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
+import { SectionHeader } from '../../components/ui/SectionHeader';
+import { ListRow } from '../../components/ui/ListRow';
 import { useTheme } from '../../theme';
 import { useSyncStore } from '../../store/syncStore';
 import { useShops } from '../../hooks/useShops';
+import { useSyncStatus } from '../../hooks/useSyncStatus';
 import { entitlementRepository } from '../../db/repositories/entitlementRepository';
 import { runSync } from '../../sync/syncEngine';
 import { formatRelativeTime } from '../../utils/dates';
@@ -19,6 +23,7 @@ export default function SyncStatus() {
   const { data: shops = [] } = useShops();
   const { isSyncing, lastSyncAt, perShopStatus } = useSyncStore();
   const entitlement = entitlementRepository.get();
+  const { data: syncStatusData } = useSyncStatus();
 
   if (!entitlement?.cloudEnabled) {
     return (
@@ -76,7 +81,35 @@ export default function SyncStatus() {
           })}
         </View>
 
-        <View style={{ marginTop: 'auto' }}>
+        <View style={{ marginTop: spacing.xl }}>
+          <SectionHeader title="Devices" />
+          <Card bordered={false} style={{ padding: spacing.xs }}>
+            <ListRow
+              leading={
+                <View
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: radii.md,
+                    backgroundColor: colors.brand.primary + '1A',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Smartphone size={18} color={colors.brand.primary} strokeWidth={1.8} />
+                </View>
+              }
+              title={
+                syncStatusData
+                  ? `${syncStatusData.activeDeviceCount} of ${syncStatusData.maxDevices} devices used`
+                  : 'Loading device usage…'
+              }
+              subtitle={syncStatusData?.tier ? `Plan: ${syncStatusData.tier}` : undefined}
+            />
+          </Card>
+        </View>
+
+        <View style={{ marginTop: 'auto', paddingTop: spacing.xl }}>
           <Button title="Sync Now" variant="outline" onPress={runSync} loading={isSyncing} />
         </View>
       </SafeAreaView>

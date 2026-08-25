@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GradientShiftBackground } from '../../components/motion/GradientShiftBackground';
+import { Header } from '../../components/ui/Header';
 import { Button } from '../../components/ui/Button';
 import { useTheme } from '../../theme';
 
@@ -12,8 +13,10 @@ export default function OtpVerification() {
 
   return (
     <GradientShiftBackground colors={[colors.surface.bg, colors.brand.accentLight + '33']}>
-      <SafeAreaView style={{ flex: 1 }}>
-        <View style={{ flex: 1, padding: spacing.xl, paddingTop: spacing.xxl, alignItems: 'center' }}>
+      {/* Header owns the top safe-area inset itself. */}
+      <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1 }}>
+        <Header showBack transparent title="" />
+        <View style={{ flex: 1, padding: spacing.xl, paddingTop: spacing.md, alignItems: 'center' }}>
           <Text style={[typography.h1, { color: colors.ink.primary, textAlign: 'center' }]}>Enter verification code</Text>
           <Text style={[typography.caption, { color: colors.ink.secondary, marginTop: spacing.xs, textAlign: 'center' }]}>
             We sent a 6-digit code to your email.

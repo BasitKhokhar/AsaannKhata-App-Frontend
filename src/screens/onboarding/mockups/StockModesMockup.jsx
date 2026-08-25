@@ -74,7 +74,10 @@ function Row({ name, unit, tone, featured }) {
 function StaticBadge({ unit, tone }) {
   const { colors, radii, typography, spacing } = useTheme();
   const bg = tone === 'gold' ? colors.brand.accent + '26' : colors.brand.primary + '1A';
-  const fg = tone === 'gold' ? colors.brand.accentDark : colors.brand.primary;
+  // `ink.primary` (rather than the raw brand.primary navy) keeps this text
+  // readable against the tinted-navy fill in dark mode too — brand.primary
+  // alone drops below comfortable contrast on the dark card surface.
+  const fg = tone === 'gold' ? colors.brand.accentDark : colors.ink.primary;
 
   return (
     <View style={{ backgroundColor: bg, borderRadius: radii.sm, paddingHorizontal: spacing.sm, paddingVertical: 4 }}>
