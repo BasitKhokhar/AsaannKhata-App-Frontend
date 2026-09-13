@@ -9,6 +9,7 @@ import { Badge } from '../../components/ui/Badge';
 import { useTheme } from '../../theme';
 import { useShops } from '../../hooks/useShops';
 import { useShopStore } from '../../store/shopStore';
+import { useT, useIsUrdu } from '../../store/languageStore';
 
 export default function ShopsList() {
   const navigation = useNavigation();
@@ -16,11 +17,16 @@ export default function ShopsList() {
   const { data: shops = [], isLoading } = useShops();
   const activeShopId = useShopStore((s) => s.activeShopId);
   const setActiveShopId = useShopStore((s) => s.setActiveShopId);
+  const t = useT();
+  const isUrdu = useIsUrdu();
+  const rowDirection = isUrdu ? 'row-reverse' : 'row';
 
   return (
     <AnimatedScreen>
       <SafeAreaView style={{ flex: 1 }}>
-        <Text style={[typography.h1, { color: colors.ink.primary, padding: spacing.lg, paddingBottom: spacing.md }]}>My Shops</Text>
+        <Text style={[typography.h1, { color: colors.ink.primary, padding: spacing.lg, paddingBottom: spacing.md, textAlign: isUrdu ? 'right' : 'left' }]}>
+          {t('nav.myShops')}
+        </Text>
 
         <FlatList
           data={shops}
@@ -29,7 +35,7 @@ export default function ShopsList() {
           ListEmptyComponent={
             !isLoading ? (
               <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: 'center', marginTop: spacing.xl }]}>
-                No shops yet.
+                {t('home.shopsList.emptyTitle')}
               </Text>
             ) : null
           }
@@ -39,7 +45,7 @@ export default function ShopsList() {
               <Pressable
                 onPress={() => setActiveShopId(String(item.id))}
                 style={{
-                  flexDirection: 'row',
+                  flexDirection: rowDirection,
                   alignItems: 'center',
                   gap: spacing.md,
                   borderRadius: radii.lg,
@@ -53,12 +59,12 @@ export default function ShopsList() {
                   <LinearGradient colors={colors.gradient.primary} style={{ flex: 1 }} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={[typography.bodyMedium, { color: colors.ink.primary }]}>{item.name}</Text>
-                  <Text style={[typography.caption, { color: colors.ink.secondary }]}>
-                    {item.shopTypeCode || 'Shop'} {item.address ? `· ${item.address}` : ''}
+                  <Text style={[typography.bodyMedium, { color: colors.ink.primary, textAlign: isUrdu ? 'right' : 'left' }]}>{item.name}</Text>
+                  <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: isUrdu ? 'right' : 'left' }]}>
+                    {item.shopTypeCode || t('home.shopsList.defaultShopType')} {item.address ? `· ${item.address}` : ''}
                   </Text>
                 </View>
-                {active ? <Badge label="ACTIVE" tone="brand" /> : null}
+                {active ? <Badge label={t('home.shopsList.active')} tone="brand" /> : null}
               </Pressable>
             );
           }}
@@ -73,7 +79,7 @@ export default function ShopsList() {
               borderWidth: 1.5,
               borderColor: colors.brand.primary,
               borderStyle: 'dashed',
-              flexDirection: 'row',
+              flexDirection: rowDirection,
               alignItems: 'center',
               justifyContent: 'center',
               gap: spacing.sm,
@@ -82,7 +88,7 @@ export default function ShopsList() {
             <Svg width={16} height={16} viewBox="0 0 16 16">
               <Path d="M8 2v12M2 8h12" stroke={colors.brand.primary} strokeWidth={1.8} strokeLinecap="round" />
             </Svg>
-            <Text style={[typography.h3, { color: colors.brand.primary }]}>Add Shop</Text>
+            <Text style={[typography.h3, { color: colors.brand.primary }]}>{t('home.shopsList.addShop')}</Text>
           </Pressable>
         </View>
       </SafeAreaView>

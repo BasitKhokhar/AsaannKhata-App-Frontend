@@ -1,0 +1,487 @@
+// Urdu (اردو) — RTL. Must define every key that exists in src/i18n/en.js.
+// See src/store/languageStore.js for fallback semantics and
+// src/store/languageStore.js's `isUrdu` for the manual per-screen RTL
+// flex/textAlign flip this language drives (Hindi stays LTR).
+export const ur = {
+  // ---------------------------------------------------------------------
+  // Common / shared UI
+  // ---------------------------------------------------------------------
+  'common.save': 'محفوظ کریں',
+  'common.cancel': 'منسوخ کریں',
+  'common.delete': 'حذف کریں',
+  'common.edit': 'ترمیم کریں',
+  'common.add': 'شامل کریں',
+  'common.confirm': 'تصدیق کریں',
+  'common.back': 'واپس',
+  'common.next': 'اگلا',
+  'common.retry': 'دوبارہ کوشش کریں',
+  'common.loading': 'لوڈ ہو رہا ہے…',
+  'common.done': 'مکمل',
+  'common.search': 'تلاش کریں',
+  'common.yes': 'جی ہاں',
+  'common.no': 'نہیں',
+  'common.ok': 'ٹھیک ہے',
+  'common.error': 'کچھ غلط ہو گیا',
+  'common.success': 'کامیابی',
+  'common.close': 'بند کریں',
+  'common.justNow': 'ابھی ابھی',
+  'common.minutesAgo': '{count} منٹ پہلے',
+  'common.hourAgo': '{count} گھنٹہ پہلے',
+  'common.hoursAgo': '{count} گھنٹے پہلے',
+  'common.dayAgo': '{count} دن پہلے',
+  'common.daysAgo': '{count} دن پہلے',
+  'common.weekAgo': '{count} ہفتہ پہلے',
+  'common.weeksAgo': '{count} ہفتے پہلے',
+
+  // ---------------------------------------------------------------------
+  // Navigation / drawer
+  // ---------------------------------------------------------------------
+  'nav.dashboard': 'ڈیش بورڈ',
+  'nav.billing': 'بلنگ',
+  'nav.products': 'پروڈکٹس',
+  'nav.stock': 'اسٹاک',
+  'nav.creditCustomers': 'ادھار گاہک',
+  'nav.reports': 'رپورٹس',
+  'nav.myShops': 'میری دکانیں',
+  'nav.notifications': 'اطلاعات',
+  'nav.subscription': 'سبسکرپشن',
+  'nav.settings': 'ترتیبات',
+  'nav.watchTutorial': 'ٹیوٹوریل دیکھیں',
+  'nav.selectShop': 'دکان منتخب کریں',
+  'nav.switchShop': 'دکان تبدیل کریں',
+  'nav.account': 'اکاؤنٹ',
+
+  // ---------------------------------------------------------------------
+  // Dashboard
+  // ---------------------------------------------------------------------
+  'dashboard.salesToday': 'آج کی فروخت',
+  'dashboard.profitToday': 'آج کا منافع',
+  'dashboard.totalStockValue': 'کل اسٹاک کی مالیت',
+  'dashboard.dailyUsage': 'روزانہ استعمال',
+  'dashboard.earnCoins': 'سکے کمائیں',
+  'dashboard.billsToday': 'آج کے بل',
+  'dashboard.adsWatchedToday': 'آج دیکھے گئے اشتہارات',
+  'dashboard.revenueThisWeek': 'اس ہفتے کی آمدنی',
+  'dashboard.topLowStocked': 'کم اسٹاک والی ٹاپ 5 اشیاء',
+  'dashboard.nothingLowStock': 'فی الحال کوئی چیز کم اسٹاک میں نہیں ہے۔',
+  'dashboard.topProducts': 'ٹاپ پروڈکٹس',
+  'dashboard.syncedData': 'سنک شدہ ڈیٹا',
+  'dashboard.couldntLoad': 'لوڈ نہیں ہو سکا — اپنا انٹرنیٹ کنکشن چیک کریں۔',
+  'dashboard.noSalesYet': 'اس دکان کے لیے ابھی تک کوئی فروخت نہیں ہوئی۔',
+  'dashboard.recentInvoices': 'حالیہ انوائسز',
+  'dashboard.noInvoicesYet': 'ابھی تک کوئی انوائس نہیں۔',
+  'dashboard.paid': 'ادا شدہ',
+  'dashboard.pending': 'زیر التواء',
+  'dashboard.notSyncedYet': 'ابھی تک سنک نہیں ہوا',
+  'dashboard.syncedRelative': '{time} سنک ہوا',
+  'dashboard.out': 'ختم',
+  'dashboard.left': '{count} باقی',
+
+  // ---------------------------------------------------------------------
+  // Settings
+  // ---------------------------------------------------------------------
+  'settings.title': 'ترتیبات',
+  'settings.profile': 'پروفائل',
+  'settings.profileDesc': 'آپ کے اکاؤنٹ اور دکان کی تفصیلات',
+  'settings.notifications': 'اطلاعات',
+  'settings.notificationsDesc': 'ان-ایپ الرٹ کی ترجیحات',
+  'settings.syncStatus': 'سنک اسٹیٹس',
+  'settings.syncStatusDesc': 'کلاؤڈ سنک اور منسلک آلات',
+  'settings.earnCoins': 'سکے کمائیں',
+  'settings.earnCoinsDesc': 'اشتہارات دیکھ کر سکے کمائیں اور سنک ان لاک کریں',
+  'settings.helpSupport': 'مدد اور سپورٹ',
+  'settings.helpSupportDesc': 'عمومی سوالات اور رابطہ',
+  'settings.about': 'بارے میں، شرائط اور رازداری',
+  'settings.aboutDesc': 'ورژن اور قانونی معلومات',
+  'settings.language': 'زبان',
+  'settings.languageDesc': 'ایپ کی زبان منتخب کریں',
+  'settings.chooseLanguage': 'زبان منتخب کریں',
+  'settings.theme': 'تھیم',
+  'settings.themeSystem': 'سسٹم',
+  'settings.themeLight': 'لائٹ',
+  'settings.themeDark': 'ڈارک',
+  'settings.deleteAccount': 'اکاؤنٹ اور ڈیٹا حذف کریں',
+  'settings.deleteAccountConfirmTitle': 'اکاؤنٹ اور ڈیٹا حذف کریں',
+  'settings.deleteAccountConfirmMessage':
+    'یہ اس آلے سے آپ کا سیشن ہٹا دیتا ہے اور آپ کو لاگ آؤٹ کر دیتا ہے۔ سرور پر اکاؤنٹ کی مکمل حذف کاری ابھی دستیاب نہیں ہے — اگر آپ اپنا اکاؤنٹ مستقل طور پر حذف کروانا چاہتے ہیں تو سپورٹ سے رابطہ کریں۔',
+  'settings.confirmSignOut': 'سائن آؤٹ کریں اور سیشن ختم کریں',
+  'settings.logout': 'لاگ آؤٹ',
+
+  // ---------------------------------------------------------------------
+  // Notifications
+  // ---------------------------------------------------------------------
+  'notifications.inboxTitle': 'اطلاعات',
+  'notifications.inboxSubtitle': 'آپ کے اکاؤنٹ کی تازہ کاریاں',
+  'notifications.markAllRead': 'سب کو پڑھا ہوا نشان زد کریں',
+  'notifications.empty': 'آپ نے سب دیکھ لیا ہے — ابھی کوئی اطلاع نہیں۔',
+  'notifications.loadMore': 'مزید لوڈ کریں',
+  'notifications.couldntLoad': 'اطلاعات لوڈ نہیں ہو سکیں — اپنا انٹرنیٹ کنکشن چیک کریں۔',
+  'notifications.alertsSectionTitle': 'الرٹس',
+  'notifications.subtitle': 'ان-ایپ الرٹ کی ترجیحات',
+  'notifications.lowStockAlerts': 'کم اسٹاک الرٹس',
+  'notifications.lowStockAlertsDesc': 'جب پروڈکٹ کی مقدار مقررہ حد سے کم ہو جائے تو مطلع کریں',
+  'notifications.syncStatusAlerts': 'سنک اسٹیٹس الرٹس',
+  'notifications.syncStatusAlertsDesc': 'جب کوئی دکان سنک ہونے میں ناکام ہو یا پیچھے رہ جائے تو مطلع کریں',
+  'notifications.khataDueReminders': 'کھاتہ واجب الادا یاد دہانیاں',
+  'notifications.khataDueRemindersDesc': 'جب کسی گاہک کا ادھار واجب الادا ہو تو مطلع کریں',
+
+  // ---------------------------------------------------------------------
+  // Auth — Login
+  // ---------------------------------------------------------------------
+  'auth.login.welcomeBack': 'خوش آمدید',
+  'auth.login.subtitle': 'اپنی دکانیں منظم کرنے کے لیے لاگ ان کریں۔',
+  'auth.login.emailOrPhone': 'ای میل یا فون نمبر',
+  'auth.login.password': 'پاس ورڈ',
+  'auth.login.forgotPassword': 'پاس ورڈ بھول گئے؟',
+  'auth.login.logIn': 'لاگ ان',
+  'auth.login.newToApp': 'آسان کھاتہ میں نئے ہیں؟',
+  'auth.login.register': 'رجسٹر کریں',
+  'auth.login.genericError': 'لاگ ان نہیں ہو سکا۔ اپنی تفصیلات چیک کریں اور دوبارہ کوشش کریں۔',
+
+  // ---------------------------------------------------------------------
+  // Auth — Register wizard
+  // ---------------------------------------------------------------------
+  'auth.register.createAccount': 'اکاؤنٹ بنائیں',
+  'auth.register.stepOf': 'مرحلہ {step} از 3',
+  'auth.register.stepYourAccount': 'آپ کا اکاؤنٹ',
+  'auth.register.stepFirstShop': 'پہلی دکان',
+  'auth.register.stepChoosePlan': 'پلان منتخب کریں',
+
+  'auth.register1.fullName': 'پورا نام',
+  'auth.register1.email': 'ای میل',
+  'auth.register1.phone': 'فون نمبر',
+  'auth.register1.password': 'پاس ورڈ',
+  'auth.register1.confirmPassword': 'پاس ورڈ کی تصدیق کریں',
+  'auth.register1.continue': 'جاری رکھیں',
+  'auth.register1.errorRequired': 'براہ کرم اپنا نام، ای میل، اور پاس ورڈ درج کریں۔',
+  'auth.register1.errorPasswordMismatch': 'پاس ورڈز مماثل نہیں ہیں۔',
+
+  'auth.register2.shopName': 'دکان کا نام',
+  'auth.register2.addLogo': 'دکان کا لوگو شامل کریں',
+  'auth.register2.addLogoOptional': 'اختیاری — آپ یہ بعد میں شامل کر سکتے ہیں',
+  'auth.register2.shopType': 'دکان کی قسم',
+  'auth.register2.continue': 'جاری رکھیں',
+  'auth.register2.errorRequired': 'براہ کرم اپنی دکان کا نام رکھیں اور دکان کی قسم منتخب کریں۔',
+
+  'auth.register3.freeTrialTitle': 'مفت ٹرائل',
+  'auth.register3.freeTrialBlurb': 'مکمل خصوصیات، کارڈ کی ضرورت نہیں',
+  'auth.register3.lifetimeTitle': 'لائف ٹائم',
+  'auth.register3.lifetimeBlurb': 'یک وقتی ادائیگی، ایک آلہ',
+  'auth.register3.cloudSyncTitle': 'کلاؤڈ سنک',
+  'auth.register3.cloudSyncBlurb': 'ماہانہ / ششماہی / سالانہ · متعدد آلات',
+  'auth.register3.recommended': 'تجویز کردہ',
+  'auth.register3.trialDaysFree': '{days} دن مفت',
+  'auth.register3.agreePrefix': 'میں اتفاق کرتا/کرتی ہوں',
+  'auth.register3.termsOfService': 'شرائط خدمت',
+  'auth.register3.and': 'اور',
+  'auth.register3.privacyPolicy': 'رازداری کی پالیسی',
+  'auth.register3.createAccount': 'اکاؤنٹ بنائیں',
+  'auth.register3.errorAgree': 'براہ کرم شرائط خدمت اور رازداری کی پالیسی سے اتفاق کریں۔',
+  'auth.register3.genericError': 'آپ کا اکاؤنٹ نہیں بنایا جا سکا۔',
+
+  // ---------------------------------------------------------------------
+  // Auth — Forgot password / OTP
+  // ---------------------------------------------------------------------
+  'auth.forgotPassword.title': 'پاس ورڈ بھول گئے؟',
+  'auth.forgotPassword.subtitle': 'اپنے اکاؤنٹ سے منسلک ای میل درج کریں، ہم آپ کو 6 ہندسوں کا ری سیٹ کوڈ بھیجیں گے۔',
+  'auth.forgotPassword.email': 'ای میل',
+  'auth.forgotPassword.sendResetCode': 'ری سیٹ کوڈ بھیجیں',
+  'auth.forgotPassword.comingSoon': 'پاس ورڈ ری سیٹ جلد آ رہا ہے۔',
+  'auth.forgotPassword.rememberedIt': 'یاد آ گیا؟',
+  'auth.forgotPassword.logIn': 'لاگ ان',
+
+  'auth.otp.title': 'تصدیقی کوڈ درج کریں',
+  'auth.otp.subtitle': 'ہم نے آپ کے ای میل پر 6 ہندسوں کا کوڈ بھیجا ہے۔',
+  'auth.otp.resendIn': 'کوڈ دوبارہ بھیجیں',
+  'auth.otp.verify': 'تصدیق کریں',
+  'auth.otp.comingSoon': 'او ٹی پی تصدیق جلد آ رہی ہے۔',
+
+  // ---------------------------------------------------------------------
+  // Onboarding
+  // ---------------------------------------------------------------------
+  'onboarding.skip': 'نظرانداز کریں',
+  'onboarding.back': 'واپس',
+  'onboarding.next': 'اگلا',
+  'onboarding.getStarted': 'شروع کریں',
+
+  'onboarding.slide1.title': 'ہر قسم کی دکان چلائیں،\nایک ہی ایپ',
+  'onboarding.slide1.description': 'جنرل اسٹورز، فارمیسیز، ہارڈ ویئر، بوتیک — آسان کھاتہ آپ کے کاروبار کے مطابق ڈھل جاتا ہے۔',
+  'onboarding.slide2.title': 'مقدار، رقبہ، لمبائی،\nیا پیک ٹریک کریں — اپنے انداز میں',
+  'onboarding.slide2.description': 'ہر دکان کے لیے اسٹاک موڈ ایک بار سیٹ کریں۔ بلنگ اور انوینٹری خودکار طور پر ڈھل جاتے ہیں۔',
+  'onboarding.slide3.title': 'گاہکوں کو بل دیں، کھاتہ رکھیں،\nادائیگی حاصل کریں',
+  'onboarding.slide3.description': 'جزوی ادائیگیاں وصول کریں اور ہر گاہک کے لیے جاری ادھار کھاتہ رکھیں۔',
+  'onboarding.slide4.title': 'آف لائن کام کریں، اپنے\nآلات میں سنک کریں',
+  'onboarding.slide4.description': 'ہر دکان بغیر انٹرنیٹ کے کام کرتی ہے، اور آن لائن آتے ہی سنک ہو جاتی ہے۔',
+
+  // ---------------------------------------------------------------------
+  // Billing / New Bill (dictionary coverage only)
+  // ---------------------------------------------------------------------
+  'billing.newBill': 'نیا بل',
+  'billing.addProductToCart': 'کارٹ میں پروڈکٹ شامل کریں',
+  'billing.subtotal': 'ذیلی مجموعہ',
+  'billing.overallDiscount': 'مجموعی رعایت',
+  'billing.total': 'کل رقم',
+  'billing.amountReceived': 'وصول شدہ رقم',
+  'billing.remainingDue': 'باقی واجب الادا (کھاتہ)',
+  'billing.completeBill': 'بل مکمل کریں',
+  'billing.addProduct': 'پروڈکٹ شامل کریں',
+  'billing.searchProducts': 'پروڈکٹس تلاش کریں',
+  'billing.noProductsFound': 'کوئی پروڈکٹ نہیں ملا',
+  'billing.addAtLeastOneProduct': 'کارٹ میں کم از کم ایک پروڈکٹ شامل کریں۔',
+
+  // ---------------------------------------------------------------------
+  // Billing / Bill Detail
+  // ---------------------------------------------------------------------
+  'billing.billDetail.title': 'بل #{id}',
+  'billing.billDetail.print': 'پرنٹ کریں',
+  'billing.billDetail.share': 'شیئر کریں',
+  'billing.billDetail.paid': 'ادا شدہ',
+  'billing.billDetail.pendingDue': 'زیر التواء · {amount} واجب الادا',
+  'billing.billDetail.discount': 'رعایت',
+
+  // ---------------------------------------------------------------------
+  // Billing / Credit Customers
+  // ---------------------------------------------------------------------
+  'billing.creditCustomers.totalOutstanding': 'کل زیر التواء ادھار',
+  'billing.creditCustomers.emptyTitle': 'ابھی تک کوئی ادھار گاہک نہیں',
+  'billing.creditCustomers.emptyDescription': 'گاہک کا کھاتہ بیلنس ٹریک کرنے کے لیے ایک گاہک شامل کریں۔',
+  'billing.creditCustomers.addCustomer': 'گاہک شامل کریں',
+  'billing.creditCustomers.lastActivity': 'آخری: {time}',
+  'billing.creditCustomers.name': 'نام',
+  'billing.creditCustomers.phoneOptional': 'فون نمبر (اختیاری)',
+  'billing.creditCustomers.saveCustomer': 'گاہک محفوظ کریں',
+  'billing.creditCustomers.customerAdded': 'گاہک شامل ہو گیا',
+
+  // ---------------------------------------------------------------------
+  // Billing / Customer Detail
+  // ---------------------------------------------------------------------
+  'billing.customerDetail.outstandingBalance': 'زیر التواء بیلنس',
+  'billing.customerDetail.allSettledUp': 'سب کچھ نمٹ گیا',
+  'billing.customerDetail.recordPayment': 'ادائیگی درج کریں',
+  'billing.customerDetail.history': 'تاریخچہ',
+  'billing.customerDetail.noActivity': 'ابھی تک کوئی سرگرمی نہیں۔',
+  'billing.customerDetail.billAmount': 'بل · {amount}',
+  'billing.customerDetail.paymentReceived': 'ادائیگی موصول ہوئی',
+  'billing.customerDetail.savePayment': 'ادائیگی محفوظ کریں',
+  'billing.customerDetail.amount': 'رقم',
+  'billing.customerDetail.paymentRecorded': '{amount} کی ادائیگی درج کر لی گئی',
+
+  // ---------------------------------------------------------------------
+  // Catalog / Add Product
+  // ---------------------------------------------------------------------
+  'catalog.addProduct.title': 'پروڈکٹ شامل کریں',
+  'catalog.addProduct.changePhoto': 'تصویر تبدیل کریں',
+  'catalog.addProduct.addPhotoOptional': 'تصویر شامل کریں (اختیاری)',
+  'catalog.addProduct.productName': 'پروڈکٹ کا نام',
+  'catalog.addProduct.category': 'کیٹیگری',
+  'catalog.addProduct.stockMode': 'اسٹاک موڈ',
+  'catalog.addProduct.modeQty': 'مقدار',
+  'catalog.addProduct.modeArea': 'رقبہ',
+  'catalog.addProduct.modeLength': 'لمبائی',
+  'catalog.addProduct.modePack': 'پیک',
+  'catalog.addProduct.areaFields': 'رقبہ کی تفصیلات',
+  'catalog.addProduct.width': 'چوڑائی',
+  'catalog.addProduct.height': 'اونچائی',
+  'catalog.addProduct.sheetsInStock': 'اسٹاک میں شیٹس کی تعداد',
+  'catalog.addProduct.lengthFields': 'لمبائی کی تفصیلات',
+  'catalog.addProduct.currentStock': 'موجودہ اسٹاک',
+  'catalog.addProduct.packFields': 'پیک کی تفصیلات',
+  'catalog.addProduct.unitsPerPack': 'فی پیک یونٹس',
+  'catalog.addProduct.fullPacks': 'مکمل پیک',
+  'catalog.addProduct.looseUnits': 'کھلے یونٹس',
+  'catalog.addProduct.packPurchasePriceOptional': 'پیک خریداری قیمت (اختیاری)',
+  'catalog.addProduct.packSalePriceOptional': 'پیک فروخت قیمت (اختیاری)',
+  'catalog.addProduct.purchasePrice': 'خریداری قیمت',
+  'catalog.addProduct.salePrice': 'فروخت قیمت',
+  'catalog.addProduct.perUnit': 'فی {unit}',
+  'catalog.addProduct.lowStockThresholdOptional': 'کم اسٹاک کی حد (اختیاری)',
+  'catalog.addProduct.saveProduct': 'پروڈکٹ محفوظ کریں',
+  'catalog.addProduct.errorNameAndPrices': 'براہ کرم پروڈکٹ کا نام اور قیمتیں درج کریں۔',
+  'catalog.addProduct.errorSheetDims': 'براہ کرم شیٹ کی چوڑائی اور اونچائی درج کریں۔',
+  'catalog.addProduct.errorPhotoPermission': 'پروڈکٹ کی تصویر شامل کرنے کے لیے تصاویر تک رسائی کی اجازت درکار ہے۔',
+
+  // ---------------------------------------------------------------------
+  // Catalog / Products List
+  // ---------------------------------------------------------------------
+  'catalog.productsList.filterAll': 'تمام',
+  'catalog.productsList.filterLowStock': 'کم اسٹاک',
+  'catalog.productsList.emptyTitle': 'ابھی تک کوئی پروڈکٹ نہیں',
+  'catalog.productsList.emptyDescription': 'گاہکوں کو بل دینے اور اسٹاک ٹریک کرنے کے لیے اپنی پہلی پروڈکٹ شامل کریں۔',
+  'catalog.productsList.outOfStock': 'اسٹاک ختم',
+
+  // ---------------------------------------------------------------------
+  // Stock / Overview
+  // ---------------------------------------------------------------------
+  'stock.overview.totalSkus': 'کل SKUs',
+  'stock.overview.lowStock': 'کم اسٹاک',
+  'stock.overview.transactionHistory': 'ٹرانزیکشن تاریخچہ',
+  'stock.overview.filterAll': 'تمام',
+  'stock.overview.filterStockIn': 'اسٹاک ان',
+  'stock.overview.filterStockOut': 'اسٹاک آؤٹ',
+  'stock.overview.filterPackBreak': 'پیک بریک',
+  'stock.overview.emptyTitle': 'ابھی تک کوئی اسٹاک حرکت نہیں',
+  'stock.overview.emptyDescription': 'اسٹاک ان، اسٹاک آؤٹ، اور پیک بریک ایڈجسٹمنٹس یہاں ایک آڈٹ ٹریل کے طور پر ظاہر ہوں گی۔',
+  'stock.overview.adjustStock': 'اسٹاک ایڈجسٹ کریں',
+  'stock.overview.pickerTitle': 'کون سی پروڈکٹ ایڈجسٹ کرنی ہے؟',
+  'stock.overview.noProductsMatch': 'آپ کی تلاش سے کوئی پروڈکٹ میل نہیں کھاتی۔',
+
+  // ---------------------------------------------------------------------
+  // Stock / Adjustment
+  // ---------------------------------------------------------------------
+  'stock.adjustment.title': 'اسٹاک ایڈجسٹ کریں',
+  'stock.adjustment.currentStockLabel': 'موجودہ اسٹاک: {stock}',
+  'stock.adjustment.quantity': 'مقدار',
+  'stock.adjustment.newValue': 'نیا: {value}',
+  'stock.adjustment.reason': 'وجہ',
+  'stock.adjustment.noteOptional': 'نوٹ (اختیاری)',
+  'stock.adjustment.saveAdjustment': 'ایڈجسٹمنٹ محفوظ کریں',
+  'stock.adjustment.errorQuantity': 'صفر سے زیادہ مقدار درج کریں۔',
+  'stock.unitsLeft': '{count} یونٹس باقی',
+  'stock.areaInStock': '{count} فٹ² اسٹاک میں',
+  'stock.lengthInStock': '{count} میٹر اسٹاک میں',
+  'stock.packInStock': '{count} پیک + {loose} کھلے',
+
+  // ---------------------------------------------------------------------
+  // Reports / Sales Report
+  // ---------------------------------------------------------------------
+  'reports.sales.periodWeek': 'اس ہفتے',
+  'reports.sales.periodMonth': 'اس مہینے',
+  'reports.sales.periodYear': 'اس سال',
+  'reports.sales.yearlyNote': 'سال بھر کے رجحانات سنک شدہ ڈیٹا سے سرور پر شمار کیے جاتے ہیں — اگر یہ خالی نظر آئے تو پہلے سنک کریں۔',
+  'reports.sales.monthlyRevenueMargin': 'ماہانہ آمدنی اور منافع کا مارجن',
+  'reports.sales.noSyncedDataYear': 'اس سال کے لیے ابھی تک کوئی سنک شدہ فروخت کا ڈیٹا نہیں۔',
+  'reports.sales.marginLabel': '{revenue} · {margin}% مارجن',
+  'reports.sales.netProfit': 'خالص منافع',
+  'reports.sales.revenue': 'آمدنی',
+  'reports.sales.bills': 'بل',
+  'reports.sales.noSalesPeriod': 'اس مدت میں ابھی تک کوئی فروخت نہیں۔',
+  'reports.sales.exportReport': 'رپورٹ ایکسپورٹ کریں',
+  'reports.sales.reportTitle': 'سیلز رپورٹ — {period}',
+
+  // ---------------------------------------------------------------------
+  // Home / Shops List & Add Shop
+  // ---------------------------------------------------------------------
+  'home.shopsList.emptyTitle': 'ابھی تک کوئی دکان نہیں۔',
+  'home.shopsList.addShop': 'دکان شامل کریں',
+  'home.shopsList.active': 'فعال',
+  'home.shopsList.defaultShopType': 'دکان',
+
+  'home.addShop.title': 'دکان شامل کریں',
+  'home.addShop.shopName': 'دکان کا نام',
+  'home.addShop.addressOptional': 'پتہ (اختیاری)',
+  'home.addShop.phoneOptional': 'فون نمبر (اختیاری)',
+  'home.addShop.saveShop': 'دکان محفوظ کریں',
+  'home.addShop.genericError': 'دکان نہیں بنائی جا سکی۔ کیا آپ آن لائن ہیں؟',
+
+  // ---------------------------------------------------------------------
+  // Settings / Profile
+  // ---------------------------------------------------------------------
+  'settings.profile.accountId': 'اکاؤنٹ آئی ڈی: {id}',
+  'settings.profile.defaultName': 'دکاندار',
+  'settings.profile.noEmail': 'کوئی ای میل درج نہیں',
+  'settings.profile.shopManagement': 'دکان کا انتظام',
+  'settings.profile.myShopsDesc': 'دکانیں دیکھیں، ترمیم کریں، یا شامل کریں',
+  'settings.profile.changePassword': 'پاس ورڈ تبدیل کریں',
+  'settings.profile.changePasswordDesc': 'آسان کھاتہ میں سائن ان کرنے کے لیے استعمال ہونے والا پاس ورڈ تبدیل کریں۔',
+  'settings.profile.currentPassword': 'موجودہ پاس ورڈ',
+  'settings.profile.newPassword': 'نیا پاس ورڈ',
+  'settings.profile.newPasswordHint': 'کم از کم 6 حروف',
+  'settings.profile.updatePassword': 'پاس ورڈ اپ ڈیٹ کریں',
+  'settings.profile.passwordUpdated': 'پاس ورڈ اپ ڈیٹ ہو گیا',
+  'settings.profile.errorFillBoth': 'اپنا موجودہ اور نیا پاس ورڈ درج کریں۔',
+  'settings.profile.errorMinLength': 'نیا پاس ورڈ کم از کم 6 حروف کا ہونا چاہیے۔',
+  'settings.profile.errorGeneric': 'پاس ورڈ اپ ڈیٹ نہیں ہو سکا۔ اپنا موجودہ پاس ورڈ چیک کریں اور دوبارہ کوشش کریں۔',
+
+  // ---------------------------------------------------------------------
+  // Settings / About
+  // ---------------------------------------------------------------------
+  'settings.about.tagline': 'ہر دکان۔ ایک ایپ۔',
+  'settings.about.version': 'ورژن {version}',
+  'settings.about.legal': 'قانونی معلومات',
+  'settings.about.comingSoon': 'جلد آ رہا ہے',
+  'settings.about.copyright': '© {year} آسان کھاتہ۔ جملہ حقوق محفوظ ہیں۔',
+
+  // ---------------------------------------------------------------------
+  // Settings / Help & Support
+  // ---------------------------------------------------------------------
+  'settings.helpSupport.faqTitle': 'اکثر پوچھے جانے والے سوالات',
+  'settings.helpSupport.faqAddProductQ': 'میں پروڈکٹ کیسے شامل کروں؟',
+  'settings.helpSupport.faqAddProductA':
+    'مینو سے اسٹاک پر جائیں، + بٹن دبائیں، اور پروڈکٹ کا نام، قیمت، مقدار، اور کیٹیگری درج کریں۔ آپ تصویر بھی شامل کر سکتے ہیں۔',
+  'settings.helpSupport.faqKhataQ': 'کھاتہ/ادھار ٹریکنگ کیسے کام کرتی ہے؟',
+  'settings.helpSupport.faqKhataA':
+    'گاہکوں میں سے کوئی گاہک کھولیں، دیا گیا ادھار درج کرنے کے لیے "کھاتے میں شامل کریں" دبائیں، یا واپسی پر "ادائیگی درج کریں" دبائیں۔ چلتا بیلنس خودکار طور پر اپ ڈیٹ ہو جاتا ہے۔',
+  'settings.helpSupport.faqSyncQ': 'میں آلات کے درمیان کیسے سنک کروں؟',
+  'settings.helpSupport.faqSyncA':
+    'کلاؤڈ سنک اہل پلانز پر آپ کا ڈیٹا محفوظ رکھتا ہے اور متعدد آلات پر دستیاب رکھتا ہے۔ اسے ترتیبات میں سنک اسٹیٹس سے آن کریں، پھر اپنے دوسرے آلے پر سائن ان کریں۔',
+  'settings.helpSupport.faqOfflineQ': 'اگر انٹرنیٹ نہ ہو تو کیا ہوتا ہے؟',
+  'settings.helpSupport.faqOfflineA':
+    'آسان کھاتہ مکمل طور پر آف لائن کام کرتا ہے — بل، اسٹاک، اور کھاتے کی اندراجات فوری طور پر اسی آلے پر محفوظ ہو جاتی ہیں اور آن لائن آتے ہی خودکار طور پر کلاؤڈ سے سنک ہو جاتی ہیں۔',
+  'settings.helpSupport.faqMultiShopQ': 'کیا میں ایک سے زیادہ دکانوں کے لیے آسان کھاتہ استعمال کر سکتا ہوں؟',
+  'settings.helpSupport.faqMultiShopA':
+    'جی ہاں۔ پروفائل → میری دکانیں سے مزید دکانیں شامل کریں، اور ایپ مینو میں دکان منتخب کرنے والے آپشن سے ان کے درمیان تبدیل کریں۔',
+  'settings.helpSupport.contactUs': 'ہم سے رابطہ کریں',
+  'settings.helpSupport.emailSupport': 'ای میل سپورٹ',
+  'settings.helpSupport.noPhoneSupport': 'ابھی تک کوئی فون سپورٹ لائن سیٹ نہیں کی گئی — فی الحال ہم تک پہنچنے کا تیز ترین طریقہ ای میل ہے۔',
+
+  // ---------------------------------------------------------------------
+  // Settings / Sync Status
+  // ---------------------------------------------------------------------
+  'settings.syncStatus.notActiveTitle': 'کلاؤڈ سنک فعال نہیں ہے',
+  'settings.syncStatus.notActiveDescription':
+    'آپ کا پلان اس آلے پر مکمل طور پر آف لائن کام کرتا ہے۔ بیک اپ لینے اور متعدد آلات پر سنک کرنے کے لیے کلاؤڈ سنک میں اپ گریڈ کریں۔',
+  'settings.syncStatus.upgradeButton': 'کلاؤڈ سنک میں اپ گریڈ کریں',
+  'settings.syncStatus.syncing': 'سنک ہو رہا ہے…',
+  'settings.syncStatus.allSynced': 'تمام دکانیں سنک ہو گئیں',
+  'settings.syncStatus.lastSynced': 'آخری سنک: {time}',
+  'settings.syncStatus.never': 'کبھی نہیں',
+  'settings.syncStatus.statusSynced': 'سنک ہو گیا',
+  'settings.syncStatus.statusError': 'خرابی',
+  'settings.syncStatus.statusQueued': 'قطار میں (آف لائن)',
+  'settings.syncStatus.devices': 'آلات',
+  'settings.syncStatus.devicesUsed': '{max} میں سے {active} آلات استعمال ہو رہے ہیں',
+  'settings.syncStatus.loadingDeviceUsage': 'آلات کا استعمال لوڈ ہو رہا ہے…',
+  'settings.syncStatus.plan': 'پلان: {tier}',
+  'settings.syncStatus.syncNow': 'ابھی سنک کریں',
+
+  // ---------------------------------------------------------------------
+  // Subscription / Earn Coins
+  // ---------------------------------------------------------------------
+  'subscription.earnCoins.coinBalance': 'آپ کا سکوں کا بیلنس',
+  'subscription.earnCoins.watchAdSectionTitle': 'سکے کمانے کے لیے اشتہار دیکھیں',
+  'subscription.earnCoins.exhausted': 'آپ نے آج کے لیے دستیاب تمام اشتہارات دیکھ لیے ہیں — کل دوبارہ آئیں۔',
+  'subscription.earnCoins.watchDescription': '{coins} سکے کمانے کے لیے ایک مختصر اشتہار دیکھیں۔ آج {max} میں سے {remaining} باقی ہیں۔',
+  'subscription.earnCoins.watchAdButton': 'سکے کمانے کے لیے اشتہار دیکھیں',
+  'subscription.earnCoins.cooldownWarning': 'لگاتار بہت زیادہ اشتہارات دیکھ لیے — تھوڑی دیر بعد دوبارہ کوشش کریں۔',
+  'subscription.earnCoins.unlockSyncTitle': 'ابھی سنک ان لاک کریں',
+  'subscription.earnCoins.coinsBadge': '{count} سکے',
+  'subscription.earnCoins.unlockDescription':
+    'آپ کے {count} ریکارڈز سنک ہونے کے منتظر ہیں۔ اپنے پلان کو اپ گریڈ کیے بغیر کلاؤڈ سنک ان لاک کرنے کے لیے سکے خرچ کریں۔',
+  'subscription.earnCoins.toastEarned': '+{coins} سکے کمائے!',
+  'subscription.earnCoins.toastClosedEarly': 'اشتہار مکمل ہونے سے پہلے بند کر دیا گیا — کوئی سکے نہیں ملے۔',
+  'subscription.earnCoins.toastCooldown': 'مزید اشتہارات دیکھنے سے پہلے تھوڑا وقفہ لیں۔',
+  'subscription.earnCoins.toastDailyCap': 'آپ آج کی اشتہار کی حد تک پہنچ گئے ہیں۔',
+  'subscription.earnCoins.toastNotReady': 'اشتہار ابھی تیار نہیں ہے — تھوڑی دیر بعد دوبارہ کوشش کریں۔',
+  'subscription.earnCoins.toastGenericFail': 'ابھی اشتہار نہیں دکھایا جا سکا۔',
+  'subscription.earnCoins.toastSyncUnlocked': 'سنک ان لاک ہو گیا!',
+  'subscription.earnCoins.toastNotEnoughCoins': 'ابھی کافی سکے نہیں ہیں — کچھ کمانے کے لیے مزید اشتہارات دیکھیں۔',
+  'subscription.earnCoins.toastUnlockFail': 'ابھی سنک ان لاک نہیں ہو سکا۔',
+
+  // ---------------------------------------------------------------------
+  // Subscription / Plans
+  // ---------------------------------------------------------------------
+  'subscription.plans.title': 'پلانز',
+  'subscription.plans.cloudSyncFeature': 'متعدد آلات پر کلاؤڈ سنک',
+  'subscription.plans.offlineFeature': 'اس آلے پر آف لائن',
+  'subscription.plans.maxDevices': '{count} آلات تک',
+  'subscription.plans.currentPlan': 'موجودہ پلان',
+  'subscription.plans.billedCycle': '{cycle} بل کیا جاتا ہے',
+  'subscription.plans.manageSubscription': 'سبسکرپشن منظم کریں',
+  'subscription.plans.restorePurchases': 'خریداری بحال کریں',
+  'subscription.plans.continueButton': 'جاری رکھیں',
+  'subscription.plans.planUnavailable': 'یہ پلان ابھی خریداری کے لیے دستیاب نہیں ہے — جلد دوبارہ چیک کریں۔',
+  'subscription.plans.purchaseFailed': 'خریداری مکمل نہیں ہو سکی۔',
+  'subscription.plans.subscriptionUpdated': 'سبسکرپشن اپ ڈیٹ ہو گئی!',
+  'subscription.plans.purchasesRestored': 'خریداریاں بحال ہو گئیں۔',
+  'subscription.plans.restoreFailed': 'خریداریاں بحال نہیں ہو سکیں۔',
+};

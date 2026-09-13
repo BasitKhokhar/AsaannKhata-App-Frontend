@@ -15,6 +15,7 @@ import { useTheme } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
 import { authApi } from '../../services/authApi';
 import { showToast } from '../../store/toastStore';
+import { useT, useIsUrdu } from '../../store/languageStore';
 
 // The client only has session data ({ name, email, adminId }) in memory —
 // there's no GET /admin/profile endpoint to fetch a fuller profile from.
@@ -23,6 +24,10 @@ export default function Profile() {
   const navigation = useNavigation();
   const { colors, radii, typography, spacing } = useTheme();
   const { name, email, adminId } = useAuthStore();
+  const t = useT();
+  const isUrdu = useIsUrdu();
+  const rowDirection = isUrdu ? 'row-reverse' : 'row';
+  const textAlign = isUrdu ? 'right' : 'left';
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -34,20 +39,20 @@ export default function Profile() {
       setCurrentPassword('');
       setNewPassword('');
       setFormError(null);
-      showToast('Password updated', 'success');
+      showToast(t('settings.profile.passwordUpdated'), 'success');
     },
     onError: (err) => {
-      setFormError(err?.response?.data?.message || 'Could not update password. Check your current password and try again.');
+      setFormError(err?.response?.data?.message || t('settings.profile.errorGeneric'));
     },
   });
 
   function handleUpdatePassword() {
     if (!currentPassword || !newPassword) {
-      setFormError('Enter your current and new password.');
+      setFormError(t('settings.profile.errorFillBoth'));
       return;
     }
     if (newPassword.length < 6) {
-      setFormError('New password must be at least 6 characters.');
+      setFormError(t('settings.profile.errorMinLength'));
       return;
     }
     setFormError(null);
@@ -65,7 +70,7 @@ export default function Profile() {
   return (
     <AnimatedScreen>
       <SafeAreaView style={{ flex: 1 }}>
-        <Header title="Profile" subtitle="Your account & shop details" />
+        <Header title={t('settings.profile')} subtitle={t('settings.profileDesc')} />
         <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingTop: spacing.xs, gap: spacing.lg }}>
           <Card style={{ alignItems: 'center', gap: spacing.sm }}>
             <View
@@ -80,18 +85,19 @@ export default function Profile() {
             >
               <Text style={[typography.h2, { color: colors.ink.onBrand }]}>{initials}</Text>
             </View>
-            <Text style={[typography.h2, { color: colors.ink.primary, textAlign: 'center' }]}>{name || 'Shop Owner'}</Text>
-            <Text style={[typography.body, { color: colors.ink.secondary, textAlign: 'center' }]}>{email || 'No email on file'}</Text>
+            <Text style={[typography.h2, { color: colors.ink.primary, textAlign: 'center' }]}>{name || t('settings.profile.defaultName')}</Text>
+            <Text style={[typography.body, { color: colors.ink.secondary, textAlign: 'center' }]}>{email || t('settings.profile.noEmail')}</Text>
             {adminId ? (
-              <Text style={[typography.caption, { color: colors.ink.secondary }]}>Account ID: {adminId}</Text>
+              <Text style={[typography.caption, { color: colors.ink.secondary }]}>{t('settings.profile.accountId').replace('{id}', adminId)}</Text>
             ) : null}
           </Card>
 
           <View>
-            <SectionHeader title="Shop Management" />
+            <SectionHeader title={t('settings.profile.shopManagement')} style={{ flexDirection: rowDirection }} />
             <Card bordered={false} style={{ padding: spacing.xs }}>
               <ListRow
                 onPress={() => navigation.navigate('ShopsStack', { screen: 'ShopsList' })}
+                style={{ flexDirection: rowDirection }}
                 leading={
                   <View
                     style={{
@@ -106,19 +112,20 @@ export default function Profile() {
                     <Store size={18} color={colors.brand.primary} strokeWidth={1.8} />
                   </View>
                 }
-                title="My Shops"
-                subtitle="View, edit, or add shops"
+                title={t('nav.myShops')}
+                subtitle={t('settings.profile.myShopsDesc')}
+                titleStyle={{ textAlign }}
                 showChevron
               />
             </Card>
           </View>
 
           <View>
-            <SectionHeader title="Change Password" />
+            <SectionHeader title={t('settings.profile.changePassword')} style={{ flexDirection: rowDirection }} />
             <Card style={{ gap: spacing.md }}>
               <View
                 style={{
-                  flexDirection: 'row',
+                  flexDirection: rowDirection,
                   alignItems: 'center',
                   gap: spacing.sm,
                 }}
@@ -135,27 +142,29 @@ export default function Profile() {
                 >
                   <KeyRound size={16} color={colors.brand.primary} strokeWidth={1.8} />
                 </View>
-                <Text style={[typography.caption, { color: colors.ink.secondary, flex: 1 }]}>
-                  Update the password used to sign in to AsaanKhata.
+                <Text style={[typography.caption, { color: colors.ink.secondary, flex: 1, textAlign }]}>
+                  {t('settings.profile.changePasswordDesc')}
                 </Text>
               </View>
 
               <TextField
-                label="Current password"
+                label={t('settings.profile.currentPassword')}
                 value={currentPassword}
                 onChangeText={setCurrentPassword}
                 placeholder="••••••••"
                 secureTextEntry
+                style={{ textAlign }}
               />
               <TextField
-                label="New password"
+                label={t('settings.profile.newPassword')}
                 value={newPassword}
                 onChangeText={setNewPassword}
-                placeholder="At least 6 characters"
+                placeholder={t('settings.profile.newPasswordHint')}
                 secureTextEntry
+                style={{ textAlign }}
               />
-              {formError ? <Text style={[typography.caption, { color: colors.semantic.danger }]}>{formError}</Text> : null}
-              <Button title="Update Password" onPress={handleUpdatePassword} loading={updatePassword.isPending} variant="outline" />
+              {formError ? <Text style={[typography.caption, { color: colors.semantic.danger, textAlign }]}>{formError}</Text> : null}
+              <Button title={t('settings.profile.updatePassword')} onPress={handleUpdatePassword} loading={updatePassword.isPending} variant="outline" />
             </Card>
           </View>
         </ScrollView>

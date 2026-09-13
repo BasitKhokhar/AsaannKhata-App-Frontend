@@ -7,7 +7,10 @@ import { stockRepository } from '../db/repositories/stockRepository';
 import { customerRepository } from '../db/repositories/customerRepository';
 import { customerPaymentRepository } from '../db/repositories/customerPaymentRepository';
 import { billRepository } from '../db/repositories/billRepository';
+import { coinUsageLogRepository } from '../db/repositories/coinUsageLogRepository';
 import { syncApi } from '../services/syncApi';
+import { adsApi } from '../services/adsApi';
+import { useCoinsStore } from '../store/coinsStore';
 
 // The inverse of idMap.resolveLocalIdByServerId — a local UUID FK needs to
 // become the referenced row's serverId before the backend (which only knows
@@ -150,6 +153,41 @@ async function pushPendingCustomerPayments(shopId, deviceId) {
   if (!operations.length) return;
   const { results } = await syncApi.pushCustomerPayments(deviceId, operations);
   applyResults(customerPaymentRepository, results);
+}
+
+// Reconciles this device's local coin-usage ledger (see
+// src/db/repositories/coinUsageLogRepository.js — e.g. a bill created
+// offline on the free tier) with the backend's authoritative coin balance.
+// Deliberately NOT called from pushAllPending: syncEngine.runSync() calls
+// this one unconditionally, before its cloudEnabled gate, because a
+// free-tier user must always be able to true up their coin balance even
+// when full record sync is locked. Errors (offline, backend down) are
+// swallowed — rows stay 'pending' and are retried on the next runSync.
+export async function pushPendingCoinUsage() {
+  const pending = coinUsageLogRepository.listPending();
+  if (!pending.length) return;
+
+  const operations = pending.map((row) => ({
+    clientId: row.id,
+    actionType: row.actionType,
+    amount: row.amount,
+    createdAt: row.createdAt,
+  }));
+
+  try {
+    const { results } = await adsApi.syncCoinUsage(operations);
+    let latestAdCoins;
+    for (const result of results) {
+      if (result.success) {
+        coinUsageLogRepository.markSynced(result.clientId);
+        if (result.adCoins != null) latestAdCoins = result.adCoins;
+      }
+      // Unsuccessful rows are left 'pending' for the next sync attempt.
+    }
+    if (latestAdCoins != null) useCoinsStore.setState({ adCoins: latestAdCoins });
+  } catch (err) {
+    // Offline or backend error — every row stays 'pending'.
+  }
 }
 
 // Order matters for FK resolution: a row can only be pushed once whatever

@@ -8,11 +8,15 @@ import { TextField } from '../../components/ui/TextField';
 import { Button } from '../../components/ui/Button';
 import { useTheme } from '../../theme';
 import { useRegisterStore } from '../../store/registerStore';
+import { useT, useIsUrdu } from '../../store/languageStore';
 
 export default function RegisterStep1() {
   const navigation = useNavigation();
   const { colors, typography, spacing } = useTheme();
   const store = useRegisterStore();
+  const t = useT();
+  const isUrdu = useIsUrdu();
+  const textAlign = isUrdu ? 'right' : 'left';
   const [local, setLocal] = useState({
     name: store.name,
     email: store.email,
@@ -28,11 +32,11 @@ export default function RegisterStep1() {
 
   function handleContinue() {
     if (!local.name || !local.email || !local.password) {
-      setError('Please fill in your name, email, and password.');
+      setError(t('auth.register1.errorRequired'));
       return;
     }
     if (local.password !== local.confirmPassword) {
-      setError('Passwords do not match.');
+      setError(t('auth.register1.errorPasswordMismatch'));
       return;
     }
     setError(null);
@@ -46,9 +50,9 @@ export default function RegisterStep1() {
         <RegisterWizardHeader step={0} />
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }} keyboardShouldPersistTaps="handled">
-            <TextField label="Full name" value={local.name} onChangeText={(v) => update('name', v)} placeholder="Fatima Noor" />
+            <TextField label={t('auth.register1.fullName')} value={local.name} onChangeText={(v) => update('name', v)} placeholder="Fatima Noor" />
             <TextField
-              label="Email"
+              label={t('auth.register1.email')}
               value={local.email}
               onChangeText={(v) => update('email', v)}
               placeholder="fatima@shop.com"
@@ -56,25 +60,31 @@ export default function RegisterStep1() {
               keyboardType="email-address"
             />
             <TextField
-              label="Phone"
+              label={t('auth.register1.phone')}
               value={local.phone}
               onChangeText={(v) => update('phone', v)}
               placeholder="+92 300 1234567"
               keyboardType="phone-pad"
             />
-            <TextField label="Password" value={local.password} onChangeText={(v) => update('password', v)} placeholder="••••••••" secureTextEntry />
             <TextField
-              label="Confirm password"
+              label={t('auth.register1.password')}
+              value={local.password}
+              onChangeText={(v) => update('password', v)}
+              placeholder="••••••••"
+              secureTextEntry
+            />
+            <TextField
+              label={t('auth.register1.confirmPassword')}
               value={local.confirmPassword}
               onChangeText={(v) => update('confirmPassword', v)}
               placeholder="••••••••"
               secureTextEntry
             />
-            {error ? <Text style={[typography.caption, { color: colors.semantic.danger }]}>{error}</Text> : null}
+            {error ? <Text style={[typography.caption, { color: colors.semantic.danger, textAlign }]}>{error}</Text> : null}
           </ScrollView>
         </KeyboardAvoidingView>
         <View style={{ padding: spacing.lg }}>
-          <Button title="Continue" onPress={handleContinue} />
+          <Button title={t('auth.register1.continue')} onPress={handleContinue} />
         </View>
       </SafeAreaView>
     </AnimatedScreen>

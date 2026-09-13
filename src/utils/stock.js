@@ -1,17 +1,22 @@
+import { t } from '../store/languageStore';
+
 // Human-readable stock line + mode badge for product rows, matching the
 // design's "6 units left" / "142.5 ft² in stock" / "3 packs + 8 loose" style.
+// Uses the imperative `t()` helper (see languageStore.js) so this plain
+// utility's output respects the app's active language, same reasoning as
+// utils/dates.js's formatRelativeTime.
 export function formatStockLabel(product) {
   switch (product.stockType) {
     case 'AREA': {
       const ft2 = (product.stockAreaCm2 || 0) / 929.03; // cm² -> ft²
-      return `${round(ft2)} ft² in stock`;
+      return t('stock.areaInStock').replace('{count}', round(ft2));
     }
     case 'LENGTH':
-      return `${round((product.stockLengthCm || 0) / 100)} m in stock`;
+      return t('stock.lengthInStock').replace('{count}', round((product.stockLengthCm || 0) / 100));
     case 'PACK':
-      return `${round(product.stockPacks || 0)} packs + ${round(product.stockLooseUnits || 0)} loose`;
+      return t('stock.packInStock').replace('{count}', round(product.stockPacks || 0)).replace('{loose}', round(product.stockLooseUnits || 0));
     default:
-      return `${round(product.stockQuantity || 0)} units left`;
+      return t('stock.unitsLeft').replace('{count}', round(product.stockQuantity || 0));
   }
 }
 

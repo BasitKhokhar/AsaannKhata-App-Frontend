@@ -16,6 +16,7 @@ import { useSyncStatus } from '../../hooks/useSyncStatus';
 import { entitlementRepository } from '../../db/repositories/entitlementRepository';
 import { runSync } from '../../sync/syncEngine';
 import { formatRelativeTime } from '../../utils/dates';
+import { useT, useIsUrdu } from '../../store/languageStore';
 
 export default function SyncStatus() {
   const navigation = useNavigation();
@@ -24,6 +25,10 @@ export default function SyncStatus() {
   const { isSyncing, lastSyncAt, perShopStatus } = useSyncStore();
   const entitlement = entitlementRepository.get();
   const { data: syncStatusData } = useSyncStatus();
+  const t = useT();
+  const isUrdu = useIsUrdu();
+  const rowDirection = isUrdu ? 'row-reverse' : 'row';
+  const textAlign = isUrdu ? 'right' : 'left';
 
   if (!entitlement?.cloudEnabled) {
     return (
@@ -31,11 +36,11 @@ export default function SyncStatus() {
         <Svg width={64} height={64} viewBox="0 0 24 24">
           <Path d="M4 12a8 8 0 0 1 13.6-5.6M20 12a8 8 0 0 1-13.6 5.6" stroke={colors.brand.primary} strokeWidth={1.6} fill="none" strokeLinecap="round" />
         </Svg>
-        <Text style={[typography.h2, { color: colors.ink.primary, marginTop: spacing.lg, textAlign: 'center' }]}>Cloud Sync isn't active</Text>
+        <Text style={[typography.h2, { color: colors.ink.primary, marginTop: spacing.lg, textAlign: 'center' }]}>{t('settings.syncStatus.notActiveTitle')}</Text>
         <Text style={[typography.body, { color: colors.ink.secondary, marginTop: spacing.sm, textAlign: 'center' }]}>
-          Your plan works fully offline on this device. Upgrade to Cloud Sync to back up and sync across multiple devices.
+          {t('settings.syncStatus.notActiveDescription')}
         </Text>
-        <Button title="Upgrade to Cloud Sync" variant="accent" onPress={() => navigation.navigate('SubscriptionPlans')} style={{ marginTop: spacing.xl, alignSelf: 'stretch' }} />
+        <Button title={t('settings.syncStatus.upgradeButton')} variant="accent" onPress={() => navigation.navigate('SubscriptionPlans')} style={{ marginTop: spacing.xl, alignSelf: 'stretch' }} />
       </AnimatedScreen>
     );
   }
@@ -43,7 +48,7 @@ export default function SyncStatus() {
   return (
     <AnimatedScreen>
       <SafeAreaView style={{ flex: 1, padding: spacing.lg }}>
-        <Text style={[typography.h1, { color: colors.ink.primary, marginBottom: spacing.xl }]}>Sync Status</Text>
+        <Text style={[typography.h1, { color: colors.ink.primary, marginBottom: spacing.xl, textAlign }]}>{t('settings.syncStatus')}</Text>
 
         <View style={{ alignItems: 'center', gap: spacing.xs }}>
           <View
@@ -61,19 +66,26 @@ export default function SyncStatus() {
               <Path d="M17.6 3v3.4H14.2M6.4 21v-3.4h3.4" stroke={colors.semantic.success} strokeWidth={1.8} fill="none" strokeLinecap="round" strokeLinejoin="round" />
             </Svg>
           </View>
-          <Text style={[typography.h3, { color: colors.ink.primary, marginTop: spacing.sm }]}>{isSyncing ? 'Syncing…' : 'All shops synced'}</Text>
+          <Text style={[typography.h3, { color: colors.ink.primary, marginTop: spacing.sm }]}>{isSyncing ? t('settings.syncStatus.syncing') : t('settings.syncStatus.allSynced')}</Text>
           <Text style={[typography.caption, { color: colors.ink.secondary }]}>
-            Last synced: {lastSyncAt ? formatRelativeTime(lastSyncAt) : 'never'}
+            {t('settings.syncStatus.lastSynced').replace('{time}', lastSyncAt ? formatRelativeTime(lastSyncAt) : t('settings.syncStatus.never'))}
           </Text>
         </View>
 
         <View style={{ marginTop: spacing.xl, gap: spacing.sm }}>
           {shops.map((shop) => {
             const status = perShopStatus[shop.id] || 'queued';
-            const label = status === 'synced' ? 'Synced' : status === 'syncing' ? 'Syncing…' : status === 'error' ? 'Error' : 'Queued (offline)';
+            const label =
+              status === 'synced'
+                ? t('settings.syncStatus.statusSynced')
+                : status === 'syncing'
+                ? t('settings.syncStatus.syncing')
+                : status === 'error'
+                ? t('settings.syncStatus.statusError')
+                : t('settings.syncStatus.statusQueued');
             const color = status === 'synced' ? colors.semantic.success : status === 'error' ? colors.semantic.danger : colors.semantic.warning;
             return (
-              <Card key={shop.id} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing.sm }}>
+              <Card key={shop.id} style={{ flexDirection: rowDirection, justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing.sm }}>
                 <Text style={[typography.body, { color: colors.ink.primary }]}>{shop.name}</Text>
                 <Text style={[typography.label, { color }]}>{label}</Text>
               </Card>
@@ -82,9 +94,10 @@ export default function SyncStatus() {
         </View>
 
         <View style={{ marginTop: spacing.xl }}>
-          <SectionHeader title="Devices" />
+          <SectionHeader title={t('settings.syncStatus.devices')} style={{ flexDirection: rowDirection }} />
           <Card bordered={false} style={{ padding: spacing.xs }}>
             <ListRow
+              style={{ flexDirection: rowDirection }}
               leading={
                 <View
                   style={{
@@ -101,16 +114,17 @@ export default function SyncStatus() {
               }
               title={
                 syncStatusData
-                  ? `${syncStatusData.activeDeviceCount} of ${syncStatusData.maxDevices} devices used`
-                  : 'Loading device usage…'
+                  ? t('settings.syncStatus.devicesUsed').replace('{active}', syncStatusData.activeDeviceCount).replace('{max}', syncStatusData.maxDevices)
+                  : t('settings.syncStatus.loadingDeviceUsage')
               }
-              subtitle={syncStatusData?.tier ? `Plan: ${syncStatusData.tier}` : undefined}
+              titleStyle={{ textAlign }}
+              subtitle={syncStatusData?.tier ? t('settings.syncStatus.plan').replace('{tier}', syncStatusData.tier) : undefined}
             />
           </Card>
         </View>
 
         <View style={{ marginTop: 'auto', paddingTop: spacing.xl }}>
-          <Button title="Sync Now" variant="outline" onPress={runSync} loading={isSyncing} />
+          <Button title={t('settings.syncStatus.syncNow')} variant="outline" onPress={runSync} loading={isSyncing} />
         </View>
       </SafeAreaView>
     </AnimatedScreen>

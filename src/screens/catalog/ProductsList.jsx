@@ -14,11 +14,7 @@ import { SubscriptionBanner } from '../../components/ui/SubscriptionBanner';
 import { useTheme } from '../../theme';
 import { useProducts } from '../../hooks/useProducts';
 import { formatStockLabel, isLowStock, isOutOfStock } from '../../utils/stock';
-
-const FILTERS = [
-  { key: 'all', label: 'All' },
-  { key: 'low', label: 'Low stock' },
-];
+import { useT, useIsUrdu } from '../../store/languageStore';
 
 const MODE_BADGE = { QUANTITY: 'QTY', AREA: 'AREA', LENGTH: 'LENGTH', PACK: 'PACK' };
 
@@ -28,13 +24,22 @@ export default function ProductsList() {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
   const { data: products = [], isLoading, isRefetching, refetch } = useProducts({ search });
+  const t = useT();
+  const isUrdu = useIsUrdu();
+  const rowDirection = isUrdu ? 'row-reverse' : 'row';
+  const textAlign = isUrdu ? 'right' : 'left';
+
+  const FILTERS = [
+    { key: 'all', label: t('catalog.productsList.filterAll') },
+    { key: 'low', label: t('catalog.productsList.filterLowStock') },
+  ];
 
   const visible = filter === 'low' ? products.filter((p) => isLowStock(p) || isOutOfStock(p)) : products;
 
   return (
     <AnimatedScreen>
       <SafeAreaView style={{ flex: 1 }}>
-        <Text style={[typography.h1, { color: colors.ink.primary, padding: spacing.lg, paddingBottom: spacing.sm }]}>Products</Text>
+        <Text style={[typography.h1, { color: colors.ink.primary, padding: spacing.lg, paddingBottom: spacing.sm, textAlign }]}>{t('nav.products')}</Text>
         <SubscriptionBanner />
 
         <View style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.sm }}>
@@ -45,7 +50,7 @@ export default function ProductsList() {
               borderWidth: 1,
               borderColor: colors.surface.border,
               backgroundColor: colors.surface.card,
-              flexDirection: 'row',
+              flexDirection: rowDirection,
               alignItems: 'center',
               paddingHorizontal: spacing.md,
               gap: spacing.sm,
@@ -55,14 +60,14 @@ export default function ProductsList() {
             <TextInput
               value={search}
               onChangeText={setSearch}
-              placeholder="Search products"
+              placeholder={t('billing.searchProducts')}
               placeholderTextColor={colors.ink.secondary}
-              style={[typography.body, { flex: 1, color: colors.ink.primary }]}
+              style={[typography.body, { flex: 1, color: colors.ink.primary, textAlign }]}
             />
           </View>
         </View>
 
-        <View style={{ flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.lg, paddingBottom: spacing.sm }}>
+        <View style={{ flexDirection: rowDirection, gap: spacing.sm, paddingHorizontal: spacing.lg, paddingBottom: spacing.sm }}>
           {FILTERS.map((f) => (
             <Chip key={f.key} label={f.label} selected={filter === f.key} onPress={() => setFilter(f.key)} />
           ))}
@@ -71,9 +76,9 @@ export default function ProductsList() {
         {!isLoading && visible.length === 0 ? (
           <EmptyState
             icon={<Package size={40} color={colors.brand.primary} strokeWidth={1.6} />}
-            title="No products yet"
-            description="Add your first product to start billing customers and tracking stock."
-            actionLabel="Add Product"
+            title={t('catalog.productsList.emptyTitle')}
+            description={t('catalog.productsList.emptyDescription')}
+            actionLabel={t('billing.addProduct')}
             onAction={() => navigation.navigate('AddProduct')}
           />
         ) : (
@@ -126,7 +131,7 @@ export default function ProductsList() {
                         fontWeight: low || outOfStock ? '700' : '400',
                       }}
                     >
-                      {outOfStock ? 'Out of stock' : formatStockLabel(item)}
+                      {outOfStock ? t('catalog.productsList.outOfStock') : formatStockLabel(item)}
                     </Text>
                   }
                   trailing={<Badge label={MODE_BADGE[item.stockType] || 'QTY'} tone={item.stockType === 'AREA' || item.stockType === 'PACK' ? 'warning' : 'brand'} />}

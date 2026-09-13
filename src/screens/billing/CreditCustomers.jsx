@@ -20,6 +20,7 @@ import { useShopStore } from '../../store/shopStore';
 import { formatCurrency } from '../../utils/money';
 import { formatRelativeTime } from '../../utils/dates';
 import { showToast } from '../../store/toastStore';
+import { useT, useIsUrdu } from '../../store/languageStore';
 
 export default function CreditCustomers() {
   const navigation = useNavigation();
@@ -30,6 +31,9 @@ export default function CreditCustomers() {
   const [addOpen, setAddOpen] = useState(false);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const t = useT();
+  const isUrdu = useIsUrdu();
+  const textAlign = isUrdu ? 'right' : 'left';
 
   const totalOutstanding = activeShopId ? customerRepository.totalOutstanding(activeShopId) : 0;
   const owing = customers.filter((c) => c.balance > 0);
@@ -43,7 +47,7 @@ export default function CreditCustomers() {
           setAddOpen(false);
           setName('');
           setPhone('');
-          showToast('Customer added', 'success');
+          showToast(t('billing.creditCustomers.customerAdded'), 'success');
         },
       }
     );
@@ -52,13 +56,13 @@ export default function CreditCustomers() {
   return (
     <AnimatedScreen>
       <SafeAreaView style={{ flex: 1 }}>
-        <Text style={[typography.h1, { color: colors.ink.primary, padding: spacing.lg, paddingBottom: spacing.sm }]}>Credit Customers</Text>
+        <Text style={[typography.h1, { color: colors.ink.primary, padding: spacing.lg, paddingBottom: spacing.sm, textAlign }]}>{t('nav.creditCustomers')}</Text>
 
         <View style={{ marginHorizontal: spacing.lg, marginBottom: spacing.sm }}>
           <StatCard
             icon={<Users size={18} color={colors.semantic.danger} strokeWidth={1.8} />}
             value={formatCurrency(totalOutstanding)}
-            label="Total credit outstanding"
+            label={t('billing.creditCustomers.totalOutstanding')}
             tone="danger"
           />
         </View>
@@ -66,9 +70,9 @@ export default function CreditCustomers() {
         {!isLoading && customers.length === 0 ? (
           <EmptyState
             icon={<Users size={32} color={colors.brand.primary} strokeWidth={1.6} />}
-            title="No credit customers yet"
-            description="Add a customer to start tracking their khata balance."
-            actionLabel="Add Customer"
+            title={t('billing.creditCustomers.emptyTitle')}
+            description={t('billing.creditCustomers.emptyDescription')}
+            actionLabel={t('billing.creditCustomers.addCustomer')}
             onAction={() => setAddOpen(true)}
           />
         ) : (
@@ -91,7 +95,7 @@ export default function CreditCustomers() {
                   </LinearGradient>
                 }
                 title={item.name}
-                subtitle={`Last: ${formatRelativeTime(item.updatedAt)}`}
+                subtitle={t('billing.creditCustomers.lastActivity').replace('{time}', formatRelativeTime(item.updatedAt))}
                 trailing={
                   <Text style={[typography.bodyMedium, { color: item.balance > 0 ? colors.semantic.danger : colors.semantic.success }]}>
                     {formatCurrency(item.balance)}
@@ -107,11 +111,11 @@ export default function CreditCustomers() {
         </View>
       </SafeAreaView>
 
-      <Sheet visible={addOpen} onClose={() => setAddOpen(false)} title="Add Customer">
-        <TextField label="Name" value={name} onChangeText={setName} placeholder="Sana K." />
-        <TextField label="Phone (optional)" value={phone} onChangeText={setPhone} placeholder="+92 300 1234567" keyboardType="phone-pad" />
-        <Button title="Save Customer" onPress={handleAdd} loading={createCustomer.isPending} />
-        <Button title="Cancel" variant="ghost" onPress={() => setAddOpen(false)} />
+      <Sheet visible={addOpen} onClose={() => setAddOpen(false)} title={t('billing.creditCustomers.addCustomer')}>
+        <TextField label={t('billing.creditCustomers.name')} value={name} onChangeText={setName} placeholder="Sana K." style={{ textAlign }} />
+        <TextField label={t('billing.creditCustomers.phoneOptional')} value={phone} onChangeText={setPhone} placeholder="+92 300 1234567" keyboardType="phone-pad" style={{ textAlign }} />
+        <Button title={t('billing.creditCustomers.saveCustomer')} onPress={handleAdd} loading={createCustomer.isPending} />
+        <Button title={t('common.cancel')} variant="ghost" onPress={() => setAddOpen(false)} />
       </Sheet>
     </AnimatedScreen>
   );

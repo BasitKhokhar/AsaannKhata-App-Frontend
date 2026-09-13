@@ -13,11 +13,16 @@ import { Card } from '../../components/ui/Card';
 import { useTheme } from '../../theme';
 import { useRegisterStore } from '../../store/registerStore';
 import { shopTypesApi } from '../../services/shopTypesApi';
+import { useT, useIsUrdu } from '../../store/languageStore';
 
 export default function RegisterStep2() {
   const navigation = useNavigation();
   const { colors, radii, typography, spacing } = useTheme();
   const store = useRegisterStore();
+  const t = useT();
+  const isUrdu = useIsUrdu();
+  const rowDirection = isUrdu ? 'row-reverse' : 'row';
+  const textAlign = isUrdu ? 'right' : 'left';
   const [shopName, setShopName] = useState(store.shopName);
   const [shopTypeCode, setShopTypeCode] = useState(store.shopTypeCode);
   const [logoAsset, setLogoAsset] = useState(store.logoAsset);
@@ -40,7 +45,7 @@ export default function RegisterStep2() {
 
   function handleContinue() {
     if (!shopName || !shopTypeCode) {
-      setError('Please name your shop and choose a shop type.');
+      setError(t('auth.register2.errorRequired'));
       return;
     }
     setError(null);
@@ -53,9 +58,9 @@ export default function RegisterStep2() {
       <SafeAreaView style={{ flex: 1 }}>
         <RegisterWizardHeader step={1} />
         <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
-          <TextField label="Shop name" value={shopName} onChangeText={setShopName} placeholder="Noor Medical Store" />
+          <TextField label={t('auth.register2.shopName')} value={shopName} onChangeText={setShopName} placeholder="Noor Medical Store" />
 
-          <Pressable onPress={pickLogo} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+          <Pressable onPress={pickLogo} style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.md }}>
             {logoAsset ? (
               <Image source={{ uri: logoAsset.uri }} style={{ width: 56, height: 56, borderRadius: radii.md }} />
             ) : (
@@ -73,17 +78,17 @@ export default function RegisterStep2() {
               </View>
             )}
             <View>
-              <Text style={[typography.bodyMedium, { color: colors.ink.primary }]}>Add shop logo</Text>
-              <Text style={[typography.caption, { color: colors.ink.secondary }]}>Optional — you can add this later</Text>
+              <Text style={[typography.bodyMedium, { color: colors.ink.primary, textAlign }]}>{t('auth.register2.addLogo')}</Text>
+              <Text style={[typography.caption, { color: colors.ink.secondary, textAlign }]}>{t('auth.register2.addLogoOptional')}</Text>
             </View>
           </Pressable>
 
-          <Text style={[typography.label, { color: colors.ink.secondary, marginTop: spacing.xs }]}>Shop type</Text>
+          <Text style={[typography.label, { color: colors.ink.secondary, marginTop: spacing.xs, textAlign }]}>{t('auth.register2.shopType')}</Text>
 
           {isLoading ? (
             <ActivityIndicator color={colors.brand.primary} />
           ) : (
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+            <View style={{ flexDirection: rowDirection, flexWrap: 'wrap', gap: spacing.sm }}>
               {shopTypes.map((type) => {
                 const selected = type.code === shopTypeCode;
                 return (
@@ -116,10 +121,10 @@ export default function RegisterStep2() {
             </View>
           )}
 
-          {error ? <Text style={[typography.caption, { color: colors.semantic.danger }]}>{error}</Text> : null}
+          {error ? <Text style={[typography.caption, { color: colors.semantic.danger, textAlign }]}>{error}</Text> : null}
         </ScrollView>
         <View style={{ padding: spacing.lg }}>
-          <Button title="Continue" onPress={handleContinue} />
+          <Button title={t('auth.register2.continue')} onPress={handleContinue} />
         </View>
       </SafeAreaView>
     </AnimatedScreen>

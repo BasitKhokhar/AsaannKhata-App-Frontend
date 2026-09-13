@@ -14,6 +14,7 @@ import { useCustomers } from '../../hooks/useCustomers';
 import { useCreateBill } from '../../hooks/useBills';
 import { useCartStore } from '../../store/cartStore';
 import { formatCurrency } from '../../utils/money';
+import { useT, useIsUrdu } from '../../store/languageStore';
 
 function defaultLineFor(product) {
   switch (product.stockType) {
@@ -66,6 +67,10 @@ export default function NewBill() {
   const { data: customers = [] } = useCustomers();
   const createBill = useCreateBill();
   const cart = useCartStore();
+  const t = useT();
+  const isUrdu = useIsUrdu();
+  const rowDirection = isUrdu ? 'row-reverse' : 'row';
+  const textAlign = isUrdu ? 'right' : 'left';
 
   const subtotal = cart.subtotal();
   const total = Math.max(0, subtotal - (parseFloat(cart.overallDiscount) || 0));
@@ -91,7 +96,7 @@ export default function NewBill() {
 
   function handleComplete() {
     if (cart.lines.length === 0) {
-      setError('Add at least one product to the cart.');
+      setError(t('billing.addAtLeastOneProduct'));
       return;
     }
     setError(null);
@@ -124,7 +129,7 @@ export default function NewBill() {
     <AnimatedScreen>
       <SafeAreaView style={{ flex: 1 }}>
         <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.xs }}>
-          <Text style={[typography.h3, { color: colors.ink.primary }]}>New Bill</Text>
+          <Text style={[typography.h3, { color: colors.ink.primary, textAlign }]}>{t('billing.newBill')}</Text>
         </View>
         <SubscriptionBanner />
 
@@ -140,7 +145,7 @@ export default function NewBill() {
               backgroundColor: colors.surface.card,
               borderWidth: 1,
               borderColor: colors.surface.border,
-              flexDirection: 'row',
+              flexDirection: rowDirection,
               alignItems: 'center',
               paddingHorizontal: spacing.md,
               gap: spacing.sm,
@@ -149,7 +154,7 @@ export default function NewBill() {
           ]}
         >
           <Search size={16} color={colors.ink.secondary} strokeWidth={1.8} />
-          <Text style={[typography.body, { color: colors.ink.secondary }]}>Add product to cart</Text>
+          <Text style={[typography.body, { color: colors.ink.secondary }]}>{t('billing.addProductToCart')}</Text>
         </Pressable>
 
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.lg, gap: spacing.sm }}>
@@ -161,13 +166,13 @@ export default function NewBill() {
                 elevation.xs,
               ]}
             >
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <View style={{ flexDirection: rowDirection, justifyContent: 'space-between' }}>
                 <Text style={[typography.bodyMedium, { color: colors.ink.primary, flex: 1 }]} numberOfLines={1}>{line.productName}</Text>
                 <Text style={[typography.bodyMedium, { color: colors.ink.primary }]}>{formatCurrency(line.total)}</Text>
               </View>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.sm }}>
+              <View style={{ flexDirection: rowDirection, justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.sm }}>
                 {line.stockType === 'QUANTITY' || line.stockType === 'PACK' ? (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                  <View style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.sm }}>
                     <Stepper onPress={() => updateQty(index, line, -1)} icon={Minus} colors={colors} radii={radii} />
                     <Text style={[typography.bodyMedium, { color: colors.ink.primary, minWidth: 20, textAlign: 'center' }]}>
                       {line.stockType === 'PACK' ? line.packQuantity : line.quantity}
@@ -199,9 +204,9 @@ export default function NewBill() {
                 elevation.xs,
               ]}
             >
-              <Row label="Subtotal" value={formatCurrency(subtotal)} colors={colors} typography={typography} />
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Text style={[typography.body, { color: colors.ink.secondary }]}>Overall discount</Text>
+              <Row label={t('billing.subtotal')} value={formatCurrency(subtotal)} colors={colors} typography={typography} rowDirection={rowDirection} />
+              <View style={{ flexDirection: rowDirection, alignItems: 'center', justifyContent: 'space-between' }}>
+                <Text style={[typography.body, { color: colors.ink.secondary }]}>{t('billing.overallDiscount')}</Text>
                 <TextInput
                   value={String(cart.overallDiscount || '')}
                   onChangeText={(v) => cart.setOverallDiscount(parseFloat(v) || 0)}
@@ -212,10 +217,10 @@ export default function NewBill() {
                 />
               </View>
               <View style={{ height: 1, backgroundColor: colors.surface.border, marginVertical: spacing.xs }} />
-              <Row label="Total" value={formatCurrency(total)} colors={colors} typography={typography} bold />
+              <Row label={t('billing.total')} value={formatCurrency(total)} colors={colors} typography={typography} bold rowDirection={rowDirection} />
 
               <View style={{ marginTop: spacing.sm }}>
-                <Text style={[typography.label, { color: colors.ink.secondary, marginBottom: spacing.xs }]}>Amount received</Text>
+                <Text style={[typography.label, { color: colors.ink.secondary, marginBottom: spacing.xs, textAlign }]}>{t('billing.amountReceived')}</Text>
                 <TextInput
                   value={amountReceived}
                   onChangeText={setAmountReceived}
@@ -230,6 +235,7 @@ export default function NewBill() {
                     backgroundColor: colors.surface.bg,
                     paddingHorizontal: spacing.md,
                     color: colors.ink.primary,
+                    textAlign,
                   }}
                 />
               </View>
@@ -237,7 +243,7 @@ export default function NewBill() {
               {remainingDue > 0 && (
                 <View
                   style={{
-                    flexDirection: 'row',
+                    flexDirection: rowDirection,
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     backgroundColor: colors.semantic.warningBg,
@@ -246,22 +252,22 @@ export default function NewBill() {
                     marginTop: spacing.xs,
                   }}
                 >
-                  <Text style={[typography.label, { color: colors.semantic.warning }]}>Remaining due (khata)</Text>
+                  <Text style={[typography.label, { color: colors.semantic.warning }]}>{t('billing.remainingDue')}</Text>
                   <Text style={[typography.bodyMedium, { color: colors.semantic.warning }]}>{formatCurrency(remainingDue)}</Text>
                 </View>
               )}
             </View>
           )}
 
-          {error ? <Text style={[typography.caption, { color: colors.semantic.danger, marginTop: spacing.sm }]}>{error}</Text> : null}
+          {error ? <Text style={[typography.caption, { color: colors.semantic.danger, marginTop: spacing.sm, textAlign }]}>{error}</Text> : null}
         </ScrollView>
 
         <View style={{ padding: spacing.lg }}>
-          <Button title="Complete Bill" variant="accent" onPress={handleComplete} loading={createBill.isPending} />
+          <Button title={t('billing.completeBill')} variant="accent" onPress={handleComplete} loading={createBill.isPending} />
         </View>
       </SafeAreaView>
 
-      <Sheet visible={pickerOpen} onClose={() => setPickerOpen(false)} title="Add Product" scrollable={false}>
+      <Sheet visible={pickerOpen} onClose={() => setPickerOpen(false)} title={t('billing.addProduct')} scrollable={false}>
         <View style={{ padding: spacing.lg, paddingBottom: spacing.sm, gap: spacing.md }}>
           <View
             style={{
@@ -270,7 +276,7 @@ export default function NewBill() {
               borderWidth: 1,
               borderColor: colors.surface.border,
               backgroundColor: colors.surface.bg,
-              flexDirection: 'row',
+              flexDirection: rowDirection,
               alignItems: 'center',
               paddingHorizontal: spacing.md,
               gap: spacing.sm,
@@ -281,9 +287,9 @@ export default function NewBill() {
               autoFocus
               value={search}
               onChangeText={setSearch}
-              placeholder="Search products"
+              placeholder={t('billing.searchProducts')}
               placeholderTextColor={colors.ink.secondary}
-              style={[typography.body, { flex: 1, color: colors.ink.primary }]}
+              style={[typography.body, { flex: 1, color: colors.ink.primary, textAlign }]}
             />
           </View>
           <FlatList
@@ -294,14 +300,14 @@ export default function NewBill() {
             ListEmptyComponent={
               <View style={{ alignItems: 'center', paddingVertical: spacing.xxl, gap: spacing.sm }}>
                 <PackagePlus size={28} color={colors.ink.secondary} strokeWidth={1.6} />
-                <Text style={[typography.caption, { color: colors.ink.secondary }]}>No products found</Text>
+                <Text style={[typography.caption, { color: colors.ink.secondary }]}>{t('billing.noProductsFound')}</Text>
               </View>
             }
             renderItem={({ item }) => (
               <Pressable
                 onPress={() => addProduct(item)}
                 style={{
-                  flexDirection: 'row',
+                  flexDirection: rowDirection,
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   paddingVertical: spacing.sm,
@@ -340,9 +346,9 @@ function Stepper({ onPress, icon: Icon, colors, radii }) {
   );
 }
 
-function Row({ label, value, colors, typography, bold }) {
+function Row({ label, value, colors, typography, bold, rowDirection }) {
   return (
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+    <View style={{ flexDirection: rowDirection || 'row', justifyContent: 'space-between' }}>
       <Text style={[bold ? typography.h3 : typography.body, { color: bold ? colors.ink.primary : colors.ink.secondary }]}>{label}</Text>
       <Text style={[bold ? typography.h3 : typography.body, { color: colors.ink.primary }]}>{value}</Text>
     </View>

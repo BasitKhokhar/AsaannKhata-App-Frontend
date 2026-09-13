@@ -18,6 +18,7 @@ import { customerPaymentRepository } from '../../db/repositories/customerPayment
 import { formatCurrency } from '../../utils/money';
 import { formatRelativeTime } from '../../utils/dates';
 import { showToast } from '../../store/toastStore';
+import { useT, useIsUrdu } from '../../store/languageStore';
 
 export default function CustomerDetail() {
   const navigation = useNavigation();
@@ -28,6 +29,10 @@ export default function CustomerDetail() {
   const recordPayment = useRecordCustomerPayment();
   const [payOpen, setPayOpen] = useState(false);
   const [amount, setAmount] = useState('');
+  const t = useT();
+  const isUrdu = useIsUrdu();
+  const rowDirection = isUrdu ? 'row-reverse' : 'row';
+  const textAlign = isUrdu ? 'right' : 'left';
 
   if (!customer) return null;
 
@@ -47,7 +52,7 @@ export default function CustomerDetail() {
         onSuccess: () => {
           setPayOpen(false);
           setAmount('');
-          showToast(`Payment of ${formatCurrency(amt)} recorded`, 'success');
+          showToast(t('billing.customerDetail.paymentRecorded').replace('{amount}', formatCurrency(amt)), 'success');
         },
       }
     );
@@ -64,15 +69,17 @@ export default function CustomerDetail() {
               <Text style={{ color: colors.ink.onBrand, fontSize: 20, fontWeight: '700' }}>{customer.name?.[0]?.toUpperCase()}</Text>
             </LinearGradient>
             <Text style={[typography.h2, { color: colors.ink.primary, marginTop: spacing.sm }]}>{formatCurrency(customer.balance)}</Text>
-            <Text style={[typography.caption, { color: colors.ink.secondary }]}>{customer.balance > 0 ? 'Outstanding balance' : 'All settled up'}</Text>
+            <Text style={[typography.caption, { color: colors.ink.secondary }]}>
+              {customer.balance > 0 ? t('billing.customerDetail.outstandingBalance') : t('billing.customerDetail.allSettledUp')}
+            </Text>
             {customer.phone ? <Text style={[typography.caption, { color: colors.ink.secondary, marginTop: 4 }]}>{customer.phone}</Text> : null}
           </Card>
 
-          <Button title="Record Payment" variant="accent" onPress={() => setPayOpen(true)} />
+          <Button title={t('billing.customerDetail.recordPayment')} variant="accent" onPress={() => setPayOpen(true)} />
 
-          <Text style={[typography.h3, { color: colors.ink.primary }]}>History</Text>
+          <Text style={[typography.h3, { color: colors.ink.primary, textAlign }]}>{t('billing.customerDetail.history')}</Text>
           {history.length === 0 ? (
-            <Text style={[typography.caption, { color: colors.ink.secondary }]}>No activity yet.</Text>
+            <Text style={[typography.caption, { color: colors.ink.secondary, textAlign }]}>{t('billing.customerDetail.noActivity')}</Text>
           ) : (
             history.map((entry) => (
               <Pressable
@@ -80,7 +87,7 @@ export default function CustomerDetail() {
                 onPress={() => entry.kind === 'bill' && navigation.navigate('BillDetail', { billId: entry.id })}
                 style={[
                   {
-                    flexDirection: 'row',
+                    flexDirection: rowDirection,
                     alignItems: 'center',
                     gap: spacing.sm,
                     backgroundColor: colors.surface.card,
@@ -107,11 +114,13 @@ export default function CustomerDetail() {
                   )}
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={[typography.body, { color: colors.ink.primary }]}>{entry.kind === 'bill' ? `Bill · ${formatCurrency(entry.totalAmount)}` : 'Payment received'}</Text>
+                  <Text style={[typography.body, { color: colors.ink.primary }]}>
+                    {entry.kind === 'bill' ? t('billing.customerDetail.billAmount').replace('{amount}', formatCurrency(entry.totalAmount)) : t('billing.customerDetail.paymentReceived')}
+                  </Text>
                   <Text style={[typography.caption, { color: colors.ink.secondary }]}>{formatRelativeTime(entry.at)}</Text>
                 </View>
                 {entry.kind === 'bill' ? (
-                  <Badge label={entry.status === 'PAID' ? 'Paid' : 'Pending'} tone={entry.status === 'PAID' ? 'success' : 'warning'} />
+                  <Badge label={entry.status === 'PAID' ? t('dashboard.paid') : t('dashboard.pending')} tone={entry.status === 'PAID' ? 'success' : 'warning'} />
                 ) : (
                   <Text style={[typography.bodyMedium, { color: colors.semantic.success }]}>-{formatCurrency(entry.amount)}</Text>
                 )}
@@ -124,15 +133,15 @@ export default function CustomerDetail() {
       <Sheet
         visible={payOpen}
         onClose={() => setPayOpen(false)}
-        title="Record Payment"
+        title={t('billing.customerDetail.recordPayment')}
         footer={
           <View style={{ gap: spacing.sm }}>
-            <Button title="Save Payment" onPress={handleRecordPayment} loading={recordPayment.isPending} />
-            <Button title="Cancel" variant="ghost" onPress={() => setPayOpen(false)} />
+            <Button title={t('billing.customerDetail.savePayment')} onPress={handleRecordPayment} loading={recordPayment.isPending} />
+            <Button title={t('common.cancel')} variant="ghost" onPress={() => setPayOpen(false)} />
           </View>
         }
       >
-        <TextField label="Amount" value={amount} onChangeText={setAmount} placeholder="0" keyboardType="numeric" />
+        <TextField label={t('billing.customerDetail.amount')} value={amount} onChangeText={setAmount} placeholder="0" keyboardType="numeric" style={{ textAlign }} />
       </Sheet>
     </AnimatedScreen>
   );

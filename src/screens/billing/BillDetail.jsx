@@ -15,6 +15,7 @@ import { useShops } from '../../hooks/useShops';
 import { useShopStore } from '../../store/shopStore';
 import { formatCurrency } from '../../utils/money';
 import { buildReceiptHtml } from '../../utils/receiptHtml';
+import { useT, useIsUrdu } from '../../store/languageStore';
 
 export default function BillDetail() {
   const navigation = useNavigation();
@@ -24,6 +25,9 @@ export default function BillDetail() {
   const { data: shops = [] } = useShops();
   const activeShopId = useShopStore((s) => s.activeShopId);
   const shopName = shops.find((s) => String(s.id) === String(activeShopId))?.name;
+  const t = useT();
+  const isUrdu = useIsUrdu();
+  const rowDirection = isUrdu ? 'row-reverse' : 'row';
 
   if (!bill) return null;
 
@@ -41,7 +45,7 @@ export default function BillDetail() {
   return (
     <AnimatedScreen>
       <SafeAreaView style={{ flex: 1 }}>
-        <Header title={`Bill #${bill.serverId || bill.id.slice(0, 6)}`} onBack={() => navigation.goBack()} />
+        <Header title={t('billing.billDetail.title').replace('{id}', bill.serverId || bill.id.slice(0, 6))} onBack={() => navigation.goBack()} />
 
         <ScrollView contentContainerStyle={{ padding: spacing.lg }}>
           <View
@@ -60,7 +64,7 @@ export default function BillDetail() {
 
             <View style={{ marginTop: spacing.md, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.surface.border, borderStyle: 'dashed', gap: spacing.sm }}>
               {(bill.items || []).map((item) => (
-                <View key={item.id} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <View key={item.id} style={{ flexDirection: rowDirection, justifyContent: 'space-between' }}>
                   <Text style={[typography.caption, { color: colors.ink.primary }]}>
                     {item.productName} × {item.quantity ?? item.totalArea ?? item.lengthCm ?? item.packQuantity ?? ''}
                   </Text>
@@ -86,18 +90,18 @@ export default function BillDetail() {
                 elevation.md,
               ]}
             >
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text style={[typography.caption, { color: colors.ink.onBrand, opacity: 0.7 }]}>Subtotal</Text>
+              <View style={{ flexDirection: rowDirection, justifyContent: 'space-between' }}>
+                <Text style={[typography.caption, { color: colors.ink.onBrand, opacity: 0.7 }]}>{t('billing.subtotal')}</Text>
                 <Text style={[typography.caption, { color: colors.ink.onBrand, opacity: 0.7 }]}>{formatCurrency(bill.subtotal)}</Text>
               </View>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.xs }}>
-                <Text style={[typography.h3, { color: colors.ink.onBrand }]}>Total</Text>
+              <View style={{ flexDirection: rowDirection, justifyContent: 'space-between', marginTop: spacing.xs }}>
+                <Text style={[typography.h3, { color: colors.ink.onBrand }]}>{t('billing.total')}</Text>
                 <Text style={[typography.h3, { color: colors.ink.onBrand }]}>{formatCurrency(bill.totalAmount)}</Text>
               </View>
 
               <View style={{ alignItems: 'center', marginTop: spacing.md }}>
                 <Badge
-                  label={bill.status === 'PAID' ? 'PAID' : `PENDING · ${formatCurrency(bill.remainingDue)} DUE`}
+                  label={bill.status === 'PAID' ? t('billing.billDetail.paid') : t('billing.billDetail.pendingDue').replace('{amount}', formatCurrency(bill.remainingDue))}
                   tone={bill.status === 'PAID' ? 'success' : 'warning'}
                 />
               </View>
@@ -105,9 +109,9 @@ export default function BillDetail() {
           </View>
         </ScrollView>
 
-        <View style={{ flexDirection: 'row', gap: spacing.sm, padding: spacing.lg }}>
-          <Button title="Print" variant="outline" onPress={handlePrint} style={{ flex: 1 }} />
-          <Button title="Share" onPress={handleShare} style={{ flex: 1 }} />
+        <View style={{ flexDirection: rowDirection, gap: spacing.sm, padding: spacing.lg }}>
+          <Button title={t('billing.billDetail.print')} variant="outline" onPress={handlePrint} style={{ flex: 1 }} />
+          <Button title={t('billing.billDetail.share')} onPress={handleShare} style={{ flex: 1 }} />
         </View>
       </SafeAreaView>
     </AnimatedScreen>

@@ -8,6 +8,7 @@ import { Header } from '../../components/ui/Header';
 import { TextField } from '../../components/ui/TextField';
 import { Button } from '../../components/ui/Button';
 import { useTheme } from '../../theme';
+import { useT, useIsUrdu } from '../../store/languageStore';
 
 // The backend has no password-reset/OTP endpoints yet — this is built as
 // complete, on-brand UI with submission disabled, per the plan's decision
@@ -16,6 +17,9 @@ export default function ForgotPassword() {
   const navigation = useNavigation();
   const { colors, radii, typography, spacing, elevation } = useTheme();
   const [email, setEmail] = useState('');
+  const t = useT();
+  const isUrdu = useIsUrdu();
+  const textAlign = isUrdu ? 'right' : 'left';
 
   return (
     <GradientShiftBackground colors={[colors.surface.bg, colors.brand.accentLight + '33']}>
@@ -41,26 +45,33 @@ export default function ForgotPassword() {
               <Lock size={26} color={colors.ink.onBrand} strokeWidth={1.8} />
             </View>
 
-            <Text style={[typography.h1, { color: colors.ink.primary, marginTop: spacing.lg }]}>Forgot password?</Text>
-            <Text style={[typography.caption, { color: colors.ink.secondary, marginTop: spacing.xs }]}>
-              Enter the email linked to your account and we'll send a 6-digit reset code.
+            <Text style={[typography.h1, { color: colors.ink.primary, marginTop: spacing.lg, textAlign }]}>{t('auth.forgotPassword.title')}</Text>
+            <Text style={[typography.caption, { color: colors.ink.secondary, marginTop: spacing.xs, textAlign }]}>
+              {t('auth.forgotPassword.subtitle')}
             </Text>
 
             <View style={{ marginTop: spacing.xl }}>
-              <TextField label="Email" value={email} onChangeText={setEmail} placeholder="owner@shop.com" autoCapitalize="none" keyboardType="email-address" />
+              <TextField
+                label={t('auth.forgotPassword.email')}
+                value={email}
+                onChangeText={setEmail}
+                placeholder="owner@shop.com"
+                autoCapitalize="none"
+                keyboardType="email-address"
+              />
             </View>
 
-            <Button title="Send Reset Code" onPress={() => {}} disabled style={{ marginTop: spacing.xl }} />
+            <Button title={t('auth.forgotPassword.sendResetCode')} onPress={() => {}} disabled style={{ marginTop: spacing.xl }} />
             <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: 'center', marginTop: spacing.sm }]}>
-              Password reset is coming soon.
+              {t('auth.forgotPassword.comingSoon')}
             </Text>
 
             <View style={{ flex: 1 }} />
 
             <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: 'center' }]}>
-              Remembered it?{' '}
+              {t('auth.forgotPassword.rememberedIt')}{' '}
               <Text style={{ color: colors.brand.accentDark, fontWeight: '600' }} onPress={() => navigation.goBack()}>
-                Log In
+                {t('auth.forgotPassword.logIn')}
               </Text>
             </Text>
           </View>

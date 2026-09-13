@@ -9,6 +9,7 @@ import { Card } from '../../components/ui/Card';
 import { ListRow } from '../../components/ui/ListRow';
 import { SectionHeader } from '../../components/ui/SectionHeader';
 import { useTheme } from '../../theme';
+import { useT, useIsUrdu } from '../../store/languageStore';
 
 // Version is read from app.config.js via Constants.expoConfig.version so it
 // never drifts out of sync with the actual build.
@@ -16,11 +17,14 @@ const APP_VERSION = Constants.expoConfig?.version || '1.0.0';
 
 export default function About() {
   const { colors, radii, typography, spacing } = useTheme();
+  const t = useT();
+  const isUrdu = useIsUrdu();
+  const rowDirection = isUrdu ? 'row-reverse' : 'row';
 
   return (
     <AnimatedScreen>
       <SafeAreaView style={{ flex: 1 }}>
-        <Header title="About, Terms & Privacy" subtitle="Version & legal" />
+        <Header title={t('settings.about')} subtitle={t('settings.aboutDesc')} />
         <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingTop: spacing.xs, gap: spacing.lg }}>
           <Card style={{ alignItems: 'center', gap: spacing.xs }}>
             <View
@@ -41,14 +45,15 @@ export default function About() {
               />
             </View>
             <Text style={[typography.h2, { color: colors.ink.primary, marginTop: spacing.sm }]}>AsaanKhata</Text>
-            <Text style={[typography.body, { color: colors.ink.secondary, textAlign: 'center' }]}>Every Shop. One App.</Text>
-            <Text style={[typography.caption, { color: colors.ink.secondary, marginTop: spacing.xs }]}>Version {APP_VERSION}</Text>
+            <Text style={[typography.body, { color: colors.ink.secondary, textAlign: 'center' }]}>{t('settings.about.tagline')}</Text>
+            <Text style={[typography.caption, { color: colors.ink.secondary, marginTop: spacing.xs }]}>{t('settings.about.version').replace('{version}', APP_VERSION)}</Text>
           </Card>
 
           <View>
-            <SectionHeader title="Legal" />
+            <SectionHeader title={t('settings.about.legal')} style={{ flexDirection: rowDirection }} />
             <Card bordered={false} style={{ padding: spacing.xs }}>
               <ListRow
+                style={{ flexDirection: rowDirection }}
                 leading={
                   <View
                     style={{
@@ -63,11 +68,12 @@ export default function About() {
                     <FileText size={18} color={colors.ink.secondary} strokeWidth={1.8} />
                   </View>
                 }
-                title="Terms of Service"
-                titleStyle={{ color: colors.ink.secondary }}
-                subtitle="Coming soon"
+                title={t('auth.register3.termsOfService')}
+                titleStyle={{ color: colors.ink.secondary, textAlign: isUrdu ? 'right' : 'left' }}
+                subtitle={t('settings.about.comingSoon')}
               />
               <ListRow
+                style={{ flexDirection: rowDirection }}
                 leading={
                   <View
                     style={{
@@ -82,15 +88,15 @@ export default function About() {
                     <ShieldCheck size={18} color={colors.ink.secondary} strokeWidth={1.8} />
                   </View>
                 }
-                title="Privacy Policy"
-                titleStyle={{ color: colors.ink.secondary }}
-                subtitle="Coming soon"
+                title={t('auth.register3.privacyPolicy')}
+                titleStyle={{ color: colors.ink.secondary, textAlign: isUrdu ? 'right' : 'left' }}
+                subtitle={t('settings.about.comingSoon')}
               />
             </Card>
           </View>
 
           <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: 'center' }]}>
-            © {new Date().getFullYear()} AsaanKhata. All rights reserved.
+            {t('settings.about.copyright').replace('{year}', new Date().getFullYear())}
           </Text>
         </ScrollView>
       </SafeAreaView>

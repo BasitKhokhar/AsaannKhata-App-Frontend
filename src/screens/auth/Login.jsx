@@ -8,6 +8,7 @@ import { TextField } from '../../components/ui/TextField';
 import { Button } from '../../components/ui/Button';
 import { useTheme } from '../../theme';
 import { useLoginMutation } from '../../hooks/useAuth';
+import { useT, useIsUrdu } from '../../store/languageStore';
 
 export default function Login() {
   const navigation = useNavigation();
@@ -15,10 +16,11 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const loginMutation = useLoginMutation();
+  const t = useT();
+  const isUrdu = useIsUrdu();
+  const textAlign = isUrdu ? 'right' : 'left';
 
-  const error = loginMutation.isError
-    ? loginMutation.error?.response?.data?.message || 'Could not log in. Check your details and try again.'
-    : null;
+  const error = loginMutation.isError ? loginMutation.error?.response?.data?.message || t('auth.login.genericError') : null;
 
   function handleSubmit() {
     if (!email || !password) return;
@@ -31,14 +33,14 @@ export default function Login() {
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <ScrollView contentContainerStyle={{ flexGrow: 1, padding: spacing.xl }} keyboardShouldPersistTaps="handled">
             <Logo size={40} color={colors.brand.primary} accentColor={colors.brand.accentLight} />
-            <Text style={[typography.h1, { color: colors.ink.primary, marginTop: spacing.lg }]}>Welcome back</Text>
-            <Text style={[typography.caption, { color: colors.ink.secondary, marginTop: spacing.xs }]}>
-              Log in to manage your shops.
+            <Text style={[typography.h1, { color: colors.ink.primary, marginTop: spacing.lg, textAlign }]}>{t('auth.login.welcomeBack')}</Text>
+            <Text style={[typography.caption, { color: colors.ink.secondary, marginTop: spacing.xs, textAlign }]}>
+              {t('auth.login.subtitle')}
             </Text>
 
             <View style={{ marginTop: spacing.xxl, gap: spacing.md }}>
               <TextField
-                label="Email or phone"
+                label={t('auth.login.emailOrPhone')}
                 value={email}
                 onChangeText={setEmail}
                 placeholder="owner@shop.com"
@@ -46,7 +48,7 @@ export default function Login() {
                 keyboardType="email-address"
               />
               <TextField
-                label="Password"
+                label={t('auth.login.password')}
                 value={password}
                 onChangeText={setPassword}
                 placeholder="••••••••"
@@ -55,15 +57,15 @@ export default function Login() {
             </View>
 
             {error ? (
-              <Text style={[typography.caption, { color: colors.semantic.danger, marginTop: spacing.md }]}>{error}</Text>
+              <Text style={[typography.caption, { color: colors.semantic.danger, marginTop: spacing.md, textAlign }]}>{error}</Text>
             ) : null}
 
-            <Pressable onPress={() => navigation.navigate('ForgotPassword')} style={{ alignSelf: 'flex-end', marginTop: spacing.md }}>
-              <Text style={[typography.bodyMedium, { color: colors.brand.accentDark }]}>Forgot password?</Text>
+            <Pressable onPress={() => navigation.navigate('ForgotPassword')} style={{ alignSelf: isUrdu ? 'flex-start' : 'flex-end', marginTop: spacing.md }}>
+              <Text style={[typography.bodyMedium, { color: colors.brand.accentDark }]}>{t('auth.login.forgotPassword')}</Text>
             </Pressable>
 
             <Button
-              title="Log In"
+              title={t('auth.login.logIn')}
               onPress={handleSubmit}
               loading={loginMutation.isPending}
               disabled={!email || !password}
@@ -74,7 +76,8 @@ export default function Login() {
 
             <Pressable onPress={() => navigation.navigate('RegisterStep1')} style={{ alignSelf: 'center' }}>
               <Text style={[typography.caption, { color: colors.ink.secondary }]}>
-                New to AsaanKhata? <Text style={{ color: colors.brand.accentDark, fontFamily: typography.bodyMedium.fontFamily }}>Register</Text>
+                {t('auth.login.newToApp')}{' '}
+                <Text style={{ color: colors.brand.accentDark, fontFamily: typography.bodyMedium.fontFamily }}>{t('auth.login.register')}</Text>
               </Text>
             </Pressable>
           </ScrollView>

@@ -19,54 +19,58 @@ import { useStockOverview, useStockTransactions } from '../../hooks/useStock';
 import { useProducts } from '../../hooks/useProducts';
 import { formatCurrency } from '../../utils/money';
 import { formatRelativeTime } from '../../utils/dates';
-
-const FILTERS = [
-  { key: 'all', label: 'All' },
-  { key: 'IN', label: 'Stock In' },
-  { key: 'OUT', label: 'Stock Out' },
-  { key: 'PACK_BREAK', label: 'Pack Break' },
-];
-
-const TYPE_META = {
-  IN: { icon: ArrowUpCircle, tone: 'success', label: 'Stock In' },
-  OUT: { icon: ArrowDownCircle, tone: 'danger', label: 'Stock Out' },
-  PACK_BREAK: { icon: PackageOpen, tone: 'warning', label: 'Pack Break' },
-};
+import { useT, useIsUrdu } from '../../store/languageStore';
 
 export default function StockOverview() {
   const navigation = useNavigation();
   const { colors, radii, typography, spacing } = useTheme();
   const [filter, setFilter] = useState('all');
   const [pickerOpen, setPickerOpen] = useState(false);
+  const t = useT();
+  const isUrdu = useIsUrdu();
+  const rowDirection = isUrdu ? 'row-reverse' : 'row';
 
   const { totalSkus, lowStockCount } = useStockOverview();
   const { data: transactions = [], isLoading, isRefetching, refetch } = useStockTransactions();
 
-  const visible = filter === 'all' ? transactions : transactions.filter((t) => t.type === filter);
+  const FILTERS = [
+    { key: 'all', label: t('stock.overview.filterAll') },
+    { key: 'IN', label: t('stock.overview.filterStockIn') },
+    { key: 'OUT', label: t('stock.overview.filterStockOut') },
+    { key: 'PACK_BREAK', label: t('stock.overview.filterPackBreak') },
+  ];
+
+  const TYPE_META = {
+    IN: { icon: ArrowUpCircle, tone: 'success', label: t('stock.overview.filterStockIn') },
+    OUT: { icon: ArrowDownCircle, tone: 'danger', label: t('stock.overview.filterStockOut') },
+    PACK_BREAK: { icon: PackageOpen, tone: 'warning', label: t('stock.overview.filterPackBreak') },
+  };
+
+  const visible = filter === 'all' ? transactions : transactions.filter((tx) => tx.type === filter);
 
   return (
     <AnimatedScreen>
       <SafeAreaView style={{ flex: 1 }}>
-        <Header title="Stock" showBack={false} />
+        <Header title={t('nav.stock')} showBack={false} />
 
         <View style={{ paddingHorizontal: spacing.lg, gap: spacing.lg }}>
-          <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+          <View style={{ flexDirection: rowDirection, gap: spacing.sm }}>
             <StatCard
               icon={<Boxes size={18} color={colors.brand.primary} />}
               value={String(totalSkus)}
-              label="Total SKUs"
+              label={t('stock.overview.totalSkus')}
             />
             <StatCard
               icon={<AlertTriangle size={18} color={colors.semantic.warning} />}
               value={String(lowStockCount)}
-              label="Low stock"
+              label={t('stock.overview.lowStock')}
               tone={lowStockCount > 0 ? 'danger' : 'primary'}
             />
           </View>
 
           <View>
-            <SectionHeader title="Transaction history" />
-            <View style={{ flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' }}>
+            <SectionHeader title={t('stock.overview.transactionHistory')} />
+            <View style={{ flexDirection: rowDirection, gap: spacing.sm, flexWrap: 'wrap' }}>
               {FILTERS.map((f) => (
                 <Chip key={f.key} label={f.label} selected={filter === f.key} onPress={() => setFilter(f.key)} />
               ))}
@@ -83,9 +87,9 @@ export default function StockOverview() {
         ) : visible.length === 0 ? (
           <EmptyState
             icon={<Package size={40} color={colors.brand.primary} strokeWidth={1.6} />}
-            title="No stock movements yet"
-            description="Stock In, Stock Out, and pack-break adjustments will show up here as an audit trail."
-            actionLabel="Adjust Stock"
+            title={t('stock.overview.emptyTitle')}
+            description={t('stock.overview.emptyDescription')}
+            actionLabel={t('stock.overview.adjustStock')}
             onAction={() => setPickerOpen(true)}
           />
         ) : (
@@ -102,7 +106,7 @@ export default function StockOverview() {
               return (
                 <View
                   style={{
-                    flexDirection: 'row',
+                    flexDirection: rowDirection,
                     alignItems: 'center',
                     gap: spacing.md,
                     borderWidth: 1,
@@ -172,16 +176,20 @@ function ProductPickerSheet({ visible, onClose, onPick }) {
   const { colors, radii, typography, spacing } = useTheme();
   const [search, setSearch] = useState('');
   const { data: products = [] } = useProducts({ search });
+  const t = useT();
+  const isUrdu = useIsUrdu();
+  const rowDirection = isUrdu ? 'row-reverse' : 'row';
+  const textAlign = isUrdu ? 'right' : 'left';
 
   return (
-    <Sheet visible={visible} onClose={onClose} title="Adjust which product?">
+    <Sheet visible={visible} onClose={onClose} title={t('stock.overview.pickerTitle')}>
       <View
         style={{
           height: 42,
           borderRadius: radii.md,
           borderWidth: 1,
           borderColor: colors.surface.border,
-          flexDirection: 'row',
+          flexDirection: rowDirection,
           alignItems: 'center',
           paddingHorizontal: spacing.md,
           gap: spacing.sm,
@@ -191,9 +199,9 @@ function ProductPickerSheet({ visible, onClose, onPick }) {
         <TextInput
           value={search}
           onChangeText={setSearch}
-          placeholder="Search products"
+          placeholder={t('billing.searchProducts')}
           placeholderTextColor={colors.ink.secondary}
-          style={[typography.body, { flex: 1, color: colors.ink.primary }]}
+          style={[typography.body, { flex: 1, color: colors.ink.primary, textAlign }]}
         />
       </View>
 
@@ -202,7 +210,7 @@ function ProductPickerSheet({ visible, onClose, onPick }) {
           key={product.id}
           onPress={() => onPick(product)}
           style={{
-            flexDirection: 'row',
+            flexDirection: rowDirection,
             alignItems: 'center',
             gap: spacing.md,
             paddingVertical: spacing.sm,
@@ -219,7 +227,7 @@ function ProductPickerSheet({ visible, onClose, onPick }) {
 
       {products.length === 0 ? (
         <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: 'center', paddingVertical: spacing.lg }]}>
-          No products match your search.
+          {t('stock.overview.noProductsMatch')}
         </Text>
       ) : null}
     </Sheet>

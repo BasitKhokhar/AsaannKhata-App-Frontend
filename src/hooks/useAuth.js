@@ -7,6 +7,7 @@ import * as secureSession from '../services/secureSession';
 import { shopRepository } from '../db/repositories/shopRepository';
 import { entitlementRepository } from '../db/repositories/entitlementRepository';
 import { loginRevenueCat } from '../services/revenueCat';
+import { setAnalyticsUserId } from '../services/analyticsService';
 
 // Shared by both login and register success paths: persist the session,
 // cache shops/entitlement locally so the app has them offline, and hand off
@@ -14,6 +15,7 @@ import { loginRevenueCat } from '../services/revenueCat';
 async function establishSession(data) {
   useAuthStore.getState().setSession(data);
   await secureSession.saveSession(data);
+  setAnalyticsUserId(data.adminId);
 
   if (data.shops?.length) {
     shopRepository.upsertMany(data.shops);
@@ -33,7 +35,8 @@ async function establishSession(data) {
   } catch (err) {
     // Non-fatal — RevenueCat may not be configured yet (placeholder keys).
     // The app must keep working fully offline-first regardless.
-    console.warn('RevenueCat logIn failed:', err.message);
+    // Dev-only log: avoid printing auth/purchase-related error details in production builds.
+    if (__DEV__) console.warn('RevenueCat logIn failed:', err.message);
   }
 }
 
@@ -61,7 +64,8 @@ export function useRegisterMutation() {
         const entitlement = await subscriptionsApi.me();
         entitlementRepository.save(entitlement);
       } catch (err) {
-        console.warn('Failed to fetch entitlement after register:', err.message);
+        // Dev-only log: avoid printing account/entitlement error details in production builds.
+        if (__DEV__) console.warn('Failed to fetch entitlement after register:', err.message);
       }
     },
   });

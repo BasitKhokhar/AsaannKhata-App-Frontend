@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { User, Bell, Cloud, HelpCircle, Info, Trash2, LogOut } from 'lucide-react-native';
+import { User, Bell, Cloud, Coins, HelpCircle, Info, Trash2, LogOut } from 'lucide-react-native';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { Card } from '../../components/ui/Card';
 import { ListRow } from '../../components/ui/ListRow';
@@ -11,21 +11,33 @@ import { Chip } from '../../components/ui/Chip';
 import { useTheme } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
 import { useThemeStore } from '../../store/themeStore';
+import { useLanguageStore, useT, useIsUrdu } from '../../store/languageStore';
 import { showConfirm } from '../../store/confirmStore';
 import * as secureSession from '../../services/secureSession';
+import { setAnalyticsUserId } from '../../services/analyticsService';
+import { unregisterCurrentDevice } from '../../services/fcmService';
 
-const ROWS = [
-  { key: 'Profile', label: 'Profile', description: 'Your account & shop details', icon: User },
-  { key: 'Notifications', label: 'Notifications', description: 'In-app alert preferences', icon: Bell },
-  { key: 'SyncStatus', label: 'Sync Status', description: 'Cloud sync & linked devices', icon: Cloud },
-  { key: 'HelpSupport', label: 'Help & Support', description: 'FAQs and contact', icon: HelpCircle },
-  { key: 'About', label: 'About, Terms & Privacy', description: 'Version & legal', icon: Info },
+function rows(t) {
+  return [
+    { key: 'Profile', label: t('settings.profile'), description: t('settings.profileDesc'), icon: User },
+    { key: 'Notifications', label: t('settings.notifications'), description: t('settings.notificationsDesc'), icon: Bell },
+    { key: 'SyncStatus', label: t('settings.syncStatus'), description: t('settings.syncStatusDesc'), icon: Cloud },
+    { key: 'EarnCoins', label: t('settings.earnCoins'), description: t('settings.earnCoinsDesc'), icon: Coins },
+    { key: 'HelpSupport', label: t('settings.helpSupport'), description: t('settings.helpSupportDesc'), icon: HelpCircle },
+    { key: 'About', label: t('settings.about'), description: t('settings.aboutDesc'), icon: Info },
+  ];
+}
+
+const THEME_MODE_KEYS = [
+  { key: 'system', labelKey: 'settings.themeSystem' },
+  { key: 'light', labelKey: 'settings.themeLight' },
+  { key: 'dark', labelKey: 'settings.themeDark' },
 ];
 
-const THEME_MODES = [
-  { key: 'system', label: 'System' },
-  { key: 'light', label: 'Light' },
-  { key: 'dark', label: 'Dark' },
+const LANGUAGES = [
+  { code: 'en', label: 'English' },
+  { code: 'ur', label: 'اردو' },
+  { code: 'hi', label: 'हिन्दी' },
 ];
 
 export default function Settings() {
@@ -34,21 +46,27 @@ export default function Settings() {
   const clearSession = useAuthStore((s) => s.clearSession);
   const mode = useThemeStore((s) => s.mode);
   const setMode = useThemeStore((s) => s.setMode);
+  const t = useT();
+  const isUrdu = useIsUrdu();
+  const lang = useLanguageStore((s) => s.lang);
+  const setLang = useLanguageStore((s) => s.setLang);
+  const rowDirection = isUrdu ? 'row-reverse' : 'row';
 
   async function handleLogout() {
     clearSession();
     await secureSession.clearSession();
+    setAnalyticsUserId(null);
+    unregisterCurrentDevice().catch(() => {});
     // Local SQLite business data is deliberately left intact — the same
     // shop owner logging back in should see it instantly (offline-first).
   }
 
   async function handleDeleteLocalData() {
     const confirmed = await showConfirm({
-      title: 'Delete Account & Data',
-      message:
-        "This removes your session from this device and signs you out. Full server-side account deletion isn't available yet — contact support if you need your account permanently erased.",
-      confirmLabel: 'Sign Out & Clear Session',
-      cancelLabel: 'Cancel',
+      title: t('settings.deleteAccountConfirmTitle'),
+      message: t('settings.deleteAccountConfirmMessage'),
+      confirmLabel: t('settings.confirmSignOut'),
+      cancelLabel: t('common.cancel'),
       isUrgent: true,
     });
     if (confirmed) {
@@ -61,14 +79,22 @@ export default function Settings() {
   return (
     <AnimatedScreen>
       <SafeAreaView style={{ flex: 1 }}>
-        <Text style={[typography.h1, { color: colors.ink.primary, padding: spacing.lg, paddingBottom: spacing.sm }]}>Settings</Text>
+        <Text
+          style={[
+            typography.h1,
+            { color: colors.ink.primary, padding: spacing.lg, paddingBottom: spacing.sm, textAlign: isUrdu ? 'right' : 'left' },
+          ]}
+        >
+          {t('settings.title')}
+        </Text>
 
         <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingTop: spacing.xs, gap: spacing.lg }}>
           <Card bordered={false} style={{ padding: spacing.xs }}>
-            {ROWS.map((row) => (
+            {rows(t).map((row) => (
               <ListRow
                 key={row.key}
                 onPress={() => navigation.navigate(row.key)}
+                style={{ flexDirection: rowDirection }}
                 leading={
                   <View
                     style={{
@@ -85,20 +111,36 @@ export default function Settings() {
                 }
                 title={row.label}
                 subtitle={row.description}
+                titleStyle={{ textAlign: isUrdu ? 'right' : 'left' }}
                 showChevron
               />
             ))}
           </Card>
 
           <View>
-            <SectionHeader title="Theme" />
-            <Card bordered={false} style={{ flexDirection: 'row', gap: spacing.xs, padding: spacing.xs }}>
-              {THEME_MODES.map((m) => (
+            <SectionHeader title={t('settings.theme')} style={{ flexDirection: rowDirection }} />
+            <Card bordered={false} style={{ flexDirection: rowDirection, gap: spacing.xs, padding: spacing.xs }}>
+              {THEME_MODE_KEYS.map((m) => (
                 <Chip
                   key={m.key}
-                  label={m.label}
+                  label={t(m.labelKey)}
                   selected={mode === m.key}
                   onPress={() => setMode(m.key)}
+                  style={{ flex: 1, alignItems: 'center' }}
+                />
+              ))}
+            </Card>
+          </View>
+
+          <View>
+            <SectionHeader title={t('settings.language')} style={{ flexDirection: rowDirection }} />
+            <Card bordered={false} style={{ flexDirection: rowDirection, gap: spacing.xs, padding: spacing.xs }}>
+              {LANGUAGES.map((l) => (
+                <Chip
+                  key={l.code}
+                  label={l.label}
+                  selected={lang === l.code}
+                  onPress={() => setLang(l.code)}
                   style={{ flex: 1, alignItems: 'center' }}
                 />
               ))}
@@ -108,6 +150,7 @@ export default function Settings() {
           <Card bordered={false} style={{ padding: spacing.xs }}>
             <ListRow
               onPress={handleDeleteLocalData}
+              style={{ flexDirection: rowDirection }}
               leading={
                 <View
                   style={{
@@ -122,17 +165,17 @@ export default function Settings() {
                   <Trash2 size={18} color={colors.semantic.danger} strokeWidth={1.8} />
                 </View>
               }
-              title="Delete Account & Data"
-              titleStyle={{ color: colors.semantic.danger }}
+              title={t('settings.deleteAccount')}
+              titleStyle={{ color: colors.semantic.danger, textAlign: isUrdu ? 'right' : 'left' }}
             />
           </Card>
 
           <Pressable
             onPress={handleLogout}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, justifyContent: 'center', paddingVertical: spacing.md }}
+            style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.sm, justifyContent: 'center', paddingVertical: spacing.md }}
           >
             <LogOut size={16} color={colors.ink.secondary} strokeWidth={1.8} />
-            <Text style={[typography.body, { color: colors.ink.secondary }]}>Log Out</Text>
+            <Text style={[typography.body, { color: colors.ink.secondary }]}>{t('settings.logout')}</Text>
           </Pressable>
         </ScrollView>
       </SafeAreaView>

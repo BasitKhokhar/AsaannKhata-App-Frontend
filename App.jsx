@@ -22,6 +22,9 @@ import { RootNavigator } from './src/navigation/RootNavigator';
 import { useAuthStore } from './src/store/authStore';
 import * as secureSession from './src/services/secureSession';
 import { useSyncTriggers } from './src/sync/triggers';
+import { initAds } from './src/services/adsService';
+import { initAnalytics } from './src/services/analyticsService';
+import { initFcm } from './src/services/fcmService';
 import { Toast } from './src/components/ui/Toast';
 import { ConfirmDialog } from './src/components/ui/ConfirmDialog';
 
@@ -67,6 +70,16 @@ export default function App() {
   const ready = fontsLoaded && migrationsReady && sessionChecked && isHydrated;
 
   useSyncTriggers(migrationsReady);
+
+  useEffect(() => {
+    // Fire-and-forget: never gates `ready`/splash-hide on ad SDK init, since
+    // ads are a free-tier extra, not something the app depends on to run.
+    initAds().catch(() => {});
+    // Same treatment for analytics + push — neither should block first
+    // paint, and both are best-effort by design (see their own files).
+    initAnalytics().catch(() => {});
+    initFcm().catch(() => {});
+  }, []);
 
   const onLayoutRootView = useCallback(async () => {
     if (ready) {

@@ -8,34 +8,7 @@ import { Card } from '../../components/ui/Card';
 import { ListRow } from '../../components/ui/ListRow';
 import { SectionHeader } from '../../components/ui/SectionHeader';
 import { useTheme } from '../../theme';
-
-const FAQS = [
-  {
-    question: 'How do I add a product?',
-    answer:
-      'Go to Stock from the menu, tap the + button, and fill in the product name, price, quantity, and category. You can add a photo too.',
-  },
-  {
-    question: 'How does khata/credit tracking work?',
-    answer:
-      'Open a customer from Customers, tap "Add to Khata" to record credit given, or "Record Payment" when they pay it back. The running balance updates automatically.',
-  },
-  {
-    question: 'How do I sync across devices?',
-    answer:
-      'Cloud Sync keeps your data backed up and available on multiple devices on eligible plans. Turn it on from Sync Status in Settings, then sign in on your other device.',
-  },
-  {
-    question: 'What happens if I lose internet?',
-    answer:
-      'AsaanKhata works fully offline — bills, stock, and khata entries save to this device instantly and sync to the cloud automatically once you\'re back online.',
-  },
-  {
-    question: 'Can I use AsaanKhata for more than one shop?',
-    answer:
-      'Yes. Add additional shops from Profile → My Shops, and switch between them from the shop selector in the app menu.',
-  },
-];
+import { useT, useIsUrdu } from '../../store/languageStore';
 
 // support@asaankhata.app is a placeholder — no real support contact info
 // exists anywhere in the codebase yet. Swap this out once one is available.
@@ -44,6 +17,7 @@ const SUPPORT_EMAIL = 'support@asaankhata.app';
 function FaqRow({ question, answer }) {
   const { colors, radii, typography, spacing } = useTheme();
   const [open, setOpen] = useState(false);
+  const isUrdu = useIsUrdu();
 
   return (
     <Pressable
@@ -54,14 +28,14 @@ function FaqRow({ question, answer }) {
         borderRadius: radii.md,
       }}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-        <Text style={[typography.bodyMedium, { color: colors.ink.primary, flex: 1 }]}>{question}</Text>
+      <View style={{ flexDirection: isUrdu ? 'row-reverse' : 'row', alignItems: 'center', gap: spacing.sm }}>
+        <Text style={[typography.bodyMedium, { color: colors.ink.primary, flex: 1, textAlign: isUrdu ? 'right' : 'left' }]}>{question}</Text>
         <View style={{ transform: [{ rotate: open ? '180deg' : '0deg' }] }}>
           <ChevronDown size={18} color={colors.ink.secondary} />
         </View>
       </View>
       {open ? (
-        <Text style={[typography.body, { color: colors.ink.secondary, marginTop: spacing.xs }]}>{answer}</Text>
+        <Text style={[typography.body, { color: colors.ink.secondary, marginTop: spacing.xs, textAlign: isUrdu ? 'right' : 'left' }]}>{answer}</Text>
       ) : null}
     </Pressable>
   );
@@ -69,14 +43,25 @@ function FaqRow({ question, answer }) {
 
 export default function HelpSupport() {
   const { colors, radii, typography, spacing } = useTheme();
+  const t = useT();
+  const isUrdu = useIsUrdu();
+  const rowDirection = isUrdu ? 'row-reverse' : 'row';
+
+  const FAQS = [
+    { question: t('settings.helpSupport.faqAddProductQ'), answer: t('settings.helpSupport.faqAddProductA') },
+    { question: t('settings.helpSupport.faqKhataQ'), answer: t('settings.helpSupport.faqKhataA') },
+    { question: t('settings.helpSupport.faqSyncQ'), answer: t('settings.helpSupport.faqSyncA') },
+    { question: t('settings.helpSupport.faqOfflineQ'), answer: t('settings.helpSupport.faqOfflineA') },
+    { question: t('settings.helpSupport.faqMultiShopQ'), answer: t('settings.helpSupport.faqMultiShopA') },
+  ];
 
   return (
     <AnimatedScreen>
       <SafeAreaView style={{ flex: 1 }}>
-        <Header title="Help & Support" subtitle="FAQs and contact" />
+        <Header title={t('settings.helpSupport')} subtitle={t('settings.helpSupportDesc')} />
         <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingTop: spacing.xs, gap: spacing.lg }}>
           <View>
-            <SectionHeader title="Frequently Asked Questions" />
+            <SectionHeader title={t('settings.helpSupport.faqTitle')} style={{ flexDirection: rowDirection }} />
             <Card bordered={false} style={{ padding: spacing.xs, gap: spacing.xs }}>
               {FAQS.map((faq) => (
                 <FaqRow key={faq.question} question={faq.question} answer={faq.answer} />
@@ -85,10 +70,11 @@ export default function HelpSupport() {
           </View>
 
           <View>
-            <SectionHeader title="Contact Us" />
+            <SectionHeader title={t('settings.helpSupport.contactUs')} style={{ flexDirection: rowDirection }} />
             <Card bordered={false} style={{ padding: spacing.xs }}>
               <ListRow
                 onPress={() => Linking.openURL(`mailto:${SUPPORT_EMAIL}`)}
+                style={{ flexDirection: rowDirection }}
                 leading={
                   <View
                     style={{
@@ -103,13 +89,14 @@ export default function HelpSupport() {
                     <Mail size={18} color={colors.brand.primary} strokeWidth={1.8} />
                   </View>
                 }
-                title="Email Support"
+                title={t('settings.helpSupport.emailSupport')}
                 subtitle={SUPPORT_EMAIL}
+                titleStyle={{ textAlign: isUrdu ? 'right' : 'left' }}
                 showChevron
               />
             </Card>
-            <Text style={[typography.caption, { color: colors.ink.secondary, marginTop: spacing.sm, paddingHorizontal: spacing.md }]}>
-              No phone support line is set up yet — email is the fastest way to reach us for now.
+            <Text style={[typography.caption, { color: colors.ink.secondary, marginTop: spacing.sm, paddingHorizontal: spacing.md, textAlign: isUrdu ? 'right' : 'left' }]}>
+              {t('settings.helpSupport.noPhoneSupport')}
             </Text>
           </View>
         </ScrollView>

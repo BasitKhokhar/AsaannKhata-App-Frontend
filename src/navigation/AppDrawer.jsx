@@ -8,6 +8,7 @@ import { SettingsStack } from './stacks/SettingsStack';
 import { ShopsStack } from './stacks/ShopsStack';
 import SalesReport from '../screens/reports/SalesReport';
 import SubscriptionPlans from '../screens/subscription/SubscriptionPlans';
+import EarnCoins from '../screens/subscription/EarnCoins';
 import Notifications from '../screens/shared/Notifications';
 import { SidebarContent } from '../components/drawer/SidebarContent';
 
@@ -30,6 +31,7 @@ export function AppDrawer() {
       <Drawer.Screen name="SalesReport" component={SalesReport} />
       <Drawer.Screen name="Notifications" component={Notifications} />
       <Drawer.Screen name="SubscriptionPlans" component={SubscriptionPlans} />
+      <Drawer.Screen name="EarnCoins" component={EarnCoins} />
       <Drawer.Screen name="SettingsStack" component={SettingsStack} />
     </Drawer.Navigator>
   );

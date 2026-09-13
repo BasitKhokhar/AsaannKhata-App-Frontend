@@ -20,18 +20,23 @@ import { useProfitMarginTrend } from '../../hooks/useDashboard';
 import { dashboardApi } from '../../services/dashboardApi';
 import { useShopStore } from '../../store/shopStore';
 import { formatCurrency } from '../../utils/money';
-
-const PERIODS = [
-  { key: 'week', label: 'This Week' },
-  { key: 'month', label: 'This Month' },
-  { key: 'year', label: 'This Year', cloud: true },
-];
+import { useT, useIsUrdu } from '../../store/languageStore';
 
 export default function SalesReport() {
   const { colors, radii, typography, spacing, elevation } = useTheme();
   const [period, setPeriod] = useState('week');
   const isCloudPeriod = period === 'year';
   const activeShopId = useShopStore((s) => s.activeShopId);
+  const t = useT();
+  const isUrdu = useIsUrdu();
+  const rowDirection = isUrdu ? 'row-reverse' : 'row';
+  const textAlign = isUrdu ? 'right' : 'left';
+
+  const PERIODS = [
+    { key: 'week', label: t('reports.sales.periodWeek') },
+    { key: 'month', label: t('reports.sales.periodMonth') },
+    { key: 'year', label: t('reports.sales.periodYear'), cloud: true },
+  ];
 
   const { data: report, isRefetching: isReportRefetching, refetch: refetchReport } = useSalesReport(isCloudPeriod ? 'month' : period, {
     enabled: !isCloudPeriod,
@@ -57,12 +62,13 @@ export default function SalesReport() {
 
     if (!report) return;
     const rowsHtml = report.topProducts.map((p) => `<tr><td>${p.name}</td><td style="text-align:right">${formatCurrency(p.total)}</td></tr>`).join('');
+    const periodLabel = period === 'week' ? t('reports.sales.periodWeek') : t('reports.sales.periodMonth');
     const html = `
       <html><body style="font-family:-apple-system,Helvetica,Arial,sans-serif;padding:24px;">
-        <h2>Sales Report — ${period === 'week' ? 'This Week' : 'This Month'}</h2>
-        <p>Net Profit: <b>${formatCurrency(report.netProfit)}</b></p>
-        <p>Revenue: <b>${formatCurrency(report.revenue)}</b> · Bills: <b>${report.billCount}</b></p>
-        <h3>Top Products</h3>
+        <h2>${t('reports.sales.reportTitle').replace('{period}', periodLabel)}</h2>
+        <p>${t('reports.sales.netProfit')}: <b>${formatCurrency(report.netProfit)}</b></p>
+        <p>${t('reports.sales.revenue')}: <b>${formatCurrency(report.revenue)}</b> · ${t('reports.sales.bills')}: <b>${report.billCount}</b></p>
+        <h3>${t('dashboard.topProducts')}</h3>
         <table style="width:100%;border-collapse:collapse;">${rowsHtml}</table>
       </body></html>
     `;
@@ -73,11 +79,11 @@ export default function SalesReport() {
   return (
     <AnimatedScreen>
       <SafeAreaView style={{ flex: 1 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: spacing.lg, paddingBottom: spacing.sm }}>
-          <Text style={[typography.h1, { color: colors.ink.primary }]}>Reports</Text>
+        <View style={{ flexDirection: rowDirection, alignItems: 'center', justifyContent: 'space-between', padding: spacing.lg, paddingBottom: spacing.sm }}>
+          <Text style={[typography.h1, { color: colors.ink.primary }]}>{t('nav.reports')}</Text>
         </View>
 
-        <View style={{ flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.lg, paddingBottom: spacing.sm }}>
+        <View style={{ flexDirection: rowDirection, gap: spacing.sm, paddingHorizontal: spacing.lg, paddingBottom: spacing.sm }}>
           {PERIODS.map((p) => (
             <Chip key={p.key} label={p.label} selected={period === p.key} onPress={() => setPeriod(p.key)} />
           ))}
@@ -89,25 +95,25 @@ export default function SalesReport() {
         >
           {isCloudPeriod ? (
             <>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-                <Text style={[typography.caption, { color: colors.ink.secondary, flex: 1 }]}>
-                  Year-long trends are computed on the server from synced data — run a sync first if this looks empty.
+              <View style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.sm }}>
+                <Text style={[typography.caption, { color: colors.ink.secondary, flex: 1, textAlign }]}>
+                  {t('reports.sales.yearlyNote')}
                 </Text>
-                <Badge label="Synced data" tone="brand" />
+                <Badge label={t('dashboard.syncedData')} tone="brand" />
               </View>
 
               <Card>
-                <SectionHeader title="Monthly revenue & margin" />
+                <SectionHeader title={t('reports.sales.monthlyRevenueMargin')} />
                 {marginTrendError ? (
-                  <Text style={[typography.caption, { color: colors.ink.secondary }]}>Couldn't load — check your connection.</Text>
+                  <Text style={[typography.caption, { color: colors.ink.secondary }]}>{t('dashboard.couldntLoad')}</Text>
                 ) : (marginTrend?.data || []).every((m) => !m.revenue) ? (
-                  <Text style={[typography.caption, { color: colors.ink.secondary }]}>No synced sales data for this year yet.</Text>
+                  <Text style={[typography.caption, { color: colors.ink.secondary }]}>{t('reports.sales.noSyncedDataYear')}</Text>
                 ) : (
                   marginTrend.data.map((m) => (
-                    <View key={m.label} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: spacing.xs }}>
+                    <View key={m.label} style={{ flexDirection: rowDirection, justifyContent: 'space-between', paddingVertical: spacing.xs }}>
                       <Text style={[typography.body, { color: colors.ink.primary }]}>{m.label}</Text>
                       <Text style={[typography.bodyMedium, { color: colors.ink.primary }]}>
-                        {formatCurrency(m.revenue)} · {m.marginPct}% margin
+                        {t('reports.sales.marginLabel').replace('{revenue}', formatCurrency(m.revenue)).replace('{margin}', m.marginPct)}
                       </Text>
                     </View>
                   ))
@@ -120,35 +126,35 @@ export default function SalesReport() {
                 colors={colors.gradient.header}
                 style={[{ borderRadius: radii.lg, padding: spacing.lg }, elevation.md]}
               >
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Text style={[typography.caption, { color: onBrandAlpha(0.7) }]}>Net Profit</Text>
+                <View style={{ flexDirection: rowDirection, alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Text style={[typography.caption, { color: onBrandAlpha(0.7) }]}>{t('reports.sales.netProfit')}</Text>
                   <Wallet size={16} color={onBrandAlpha(0.5)} />
                 </View>
                 <Text style={[typography.numericLarge, { color: colors.ink.onBrand, marginTop: 2 }]}>{formatCurrency(report?.netProfit)}</Text>
               </LinearGradient>
 
-              <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+              <View style={{ flexDirection: rowDirection, gap: spacing.sm }}>
                 <StatCard
                   icon={<TrendingUp size={18} color={colors.brand.primary} />}
                   value={formatCurrency(report?.revenue)}
-                  label="Revenue"
+                  label={t('reports.sales.revenue')}
                   tone="primary"
                 />
                 <StatCard
                   icon={<Receipt size={18} color={colors.brand.accent} />}
                   value={report?.billCount ?? 0}
-                  label="Bills"
+                  label={t('reports.sales.bills')}
                   tone="accent"
                 />
               </View>
 
               <Card>
-                <SectionHeader title="Top Products" />
+                <SectionHeader title={t('dashboard.topProducts')} />
                 {(report?.topProducts || []).length === 0 ? (
-                  <Text style={[typography.caption, { color: colors.ink.secondary }]}>No sales in this period yet.</Text>
+                  <Text style={[typography.caption, { color: colors.ink.secondary }]}>{t('reports.sales.noSalesPeriod')}</Text>
                 ) : (
                   report.topProducts.map((p) => (
-                    <View key={p.name} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: spacing.xs }}>
+                    <View key={p.name} style={{ flexDirection: rowDirection, justifyContent: 'space-between', paddingVertical: spacing.xs }}>
                       <Text style={[typography.body, { color: colors.ink.primary }]}>{p.name}</Text>
                       <Text style={[typography.bodyMedium, { color: colors.ink.primary }]}>{formatCurrency(p.total)}</Text>
                     </View>
@@ -161,7 +167,7 @@ export default function SalesReport() {
 
         <View style={{ padding: spacing.lg }}>
           <Button
-            title="Export Report"
+            title={t('reports.sales.exportReport')}
             variant="outline"
             onPress={handleExport}
             icon={<Download size={16} color={colors.brand.primary} strokeWidth={1.8} />}

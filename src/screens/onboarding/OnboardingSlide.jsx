@@ -9,6 +9,7 @@ import { ProgressDots } from '../../components/motion/ProgressDots';
 import { Button } from '../../components/ui/Button';
 import { useTheme } from '../../theme';
 import { useOnboardingStore } from '../../store/onboardingStore';
+import { useT } from '../../store/languageStore';
 
 const TOTAL_SLIDES = 4;
 
@@ -24,6 +25,7 @@ export function OnboardingSlide({ index, illustration, title, description, isLas
   const navigation = useNavigation();
   const { colors, typography, spacing } = useTheme();
   const completeOnboarding = useOnboardingStore((s) => s.completeOnboarding);
+  const t = useT();
 
   function finishOnboarding() {
     tapHaptic();
@@ -54,7 +56,7 @@ export function OnboardingSlide({ index, illustration, title, description, isLas
         <View style={[styles.topRow, { paddingHorizontal: spacing.xl, paddingTop: spacing.sm }]}>
           {!isLast ? (
             <Pressable onPress={finishOnboarding} hitSlop={8}>
-              <Text style={[typography.bodyMedium, { color: colors.ink.secondary }]}>Skip</Text>
+              <Text style={[typography.bodyMedium, { color: colors.ink.secondary }]}>{t('onboarding.skip')}</Text>
             </Pressable>
           ) : (
             <View />
@@ -81,14 +83,14 @@ export function OnboardingSlide({ index, illustration, title, description, isLas
         >
           {index > 0 && (
             <Button
-              title="Back"
+              title={t('onboarding.back')}
               variant="outline"
               onPress={handleBack}
               style={{ width: 96, marginRight: spacing.sm }}
             />
           )}
           <Button
-            title={isLast ? 'Get Started' : 'Next'}
+            title={isLast ? t('onboarding.getStarted') : t('onboarding.next')}
             variant={isLast ? 'accent' : 'primary'}
             onPress={handleNext}
             style={{

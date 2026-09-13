@@ -11,10 +11,15 @@ import { Button } from '../../components/ui/Button';
 import { useTheme } from '../../theme';
 import { useCreateShop } from '../../hooks/useShops';
 import { shopTypesApi } from '../../services/shopTypesApi';
+import { useT, useIsUrdu } from '../../store/languageStore';
 
 export default function AddShop() {
   const navigation = useNavigation();
   const { colors, radii, typography, spacing } = useTheme();
+  const t = useT();
+  const isUrdu = useIsUrdu();
+  const rowDirection = isUrdu ? 'row-reverse' : 'row';
+  const textAlign = isUrdu ? 'right' : 'left';
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('');
@@ -35,7 +40,7 @@ export default function AddShop() {
 
   function handleSubmit() {
     if (!name || !shopTypeCode) {
-      setError('Please name your shop and choose a shop type.');
+      setError(t('auth.register2.errorRequired'));
       return;
     }
     setError(null);
@@ -45,39 +50,39 @@ export default function AddShop() {
     );
   }
 
-  const submitError = error || (createShop.isError ? createShop.error?.response?.data?.message || 'Could not create shop. Are you online?' : null);
+  const submitError = error || (createShop.isError ? createShop.error?.response?.data?.message || t('home.addShop.genericError') : null);
 
   return (
     <AnimatedScreen>
       <SafeAreaView style={{ flex: 1 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.lg }}>
+        <View style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.sm, padding: spacing.lg }}>
           <Pressable onPress={() => navigation.goBack()} hitSlop={8}>
-            <Svg width={16} height={16} viewBox="0 0 16 16">
+            <Svg width={16} height={16} viewBox="0 0 16 16" style={isUrdu ? { transform: [{ scaleX: -1 }] } : undefined}>
               <Path d="M10.5 3l-5 5 5 5" stroke={colors.ink.primary} strokeWidth={1.6} fill="none" strokeLinecap="round" strokeLinejoin="round" />
             </Svg>
           </Pressable>
-          <Text style={[typography.h3, { color: colors.ink.primary }]}>Add Shop</Text>
+          <Text style={[typography.h3, { color: colors.ink.primary }]}>{t('home.addShop.title')}</Text>
         </View>
 
         <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
-          <TextField label="Shop name" value={name} onChangeText={setName} placeholder="Noor Hardware" />
-          <TextField label="Address (optional)" value={address} onChangeText={setAddress} placeholder="Johar Town, Lahore" />
-          <TextField label="Phone (optional)" value={phone} onChangeText={setPhone} placeholder="+92 300 1234567" keyboardType="phone-pad" />
+          <TextField label={t('home.addShop.shopName')} value={name} onChangeText={setName} placeholder="Noor Hardware" style={{ textAlign }} />
+          <TextField label={t('home.addShop.addressOptional')} value={address} onChangeText={setAddress} placeholder="Johar Town, Lahore" style={{ textAlign }} />
+          <TextField label={t('home.addShop.phoneOptional')} value={phone} onChangeText={setPhone} placeholder="+92 300 1234567" keyboardType="phone-pad" style={{ textAlign }} />
 
-          <Pressable onPress={pickLogo} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+          <Pressable onPress={pickLogo} style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.md }}>
             {logoAsset ? (
               <Image source={{ uri: logoAsset.uri }} style={{ width: 48, height: 48, borderRadius: radii.md }} />
             ) : (
               <View style={{ width: 48, height: 48, borderRadius: radii.md, backgroundColor: colors.surface.border, alignItems: 'center', justifyContent: 'center' }} />
             )}
-            <Text style={[typography.bodyMedium, { color: colors.brand.primary }]}>Add shop logo</Text>
+            <Text style={[typography.bodyMedium, { color: colors.brand.primary }]}>{t('auth.register2.addLogo')}</Text>
           </Pressable>
 
-          <Text style={[typography.label, { color: colors.ink.secondary, marginTop: spacing.xs }]}>Shop type</Text>
+          <Text style={[typography.label, { color: colors.ink.secondary, marginTop: spacing.xs, textAlign }]}>{t('auth.register2.shopType')}</Text>
           {!shopTypesData ? (
             <ActivityIndicator color={colors.brand.primary} />
           ) : (
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+            <View style={{ flexDirection: rowDirection, flexWrap: 'wrap', gap: spacing.sm }}>
               {shopTypes.map((type) => {
                 const selected = type.code === shopTypeCode;
                 return (
@@ -102,11 +107,11 @@ export default function AddShop() {
             </View>
           )}
 
-          {submitError ? <Text style={[typography.caption, { color: colors.semantic.danger }]}>{submitError}</Text> : null}
+          {submitError ? <Text style={[typography.caption, { color: colors.semantic.danger, textAlign }]}>{submitError}</Text> : null}
         </ScrollView>
 
         <View style={{ padding: spacing.lg }}>
-          <Button title="Save Shop" onPress={handleSubmit} loading={createShop.isPending} />
+          <Button title={t('home.addShop.saveShop')} onPress={handleSubmit} loading={createShop.isPending} />
         </View>
       </SafeAreaView>
     </AnimatedScreen>

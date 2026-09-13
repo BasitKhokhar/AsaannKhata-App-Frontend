@@ -1,0 +1,485 @@
+// Hindi (हिन्दी) — LTR, like English. Must define every key that exists in
+// src/i18n/en.js. See src/store/languageStore.js for fallback semantics.
+export const hi = {
+  // ---------------------------------------------------------------------
+  // Common / shared UI
+  // ---------------------------------------------------------------------
+  'common.save': 'सहेजें',
+  'common.cancel': 'रद्द करें',
+  'common.delete': 'हटाएं',
+  'common.edit': 'संपादित करें',
+  'common.add': 'जोड़ें',
+  'common.confirm': 'पुष्टि करें',
+  'common.back': 'वापस',
+  'common.next': 'अगला',
+  'common.retry': 'पुनः प्रयास करें',
+  'common.loading': 'लोड हो रहा है…',
+  'common.done': 'पूर्ण',
+  'common.search': 'खोजें',
+  'common.yes': 'हाँ',
+  'common.no': 'नहीं',
+  'common.ok': 'ठीक है',
+  'common.error': 'कुछ गलत हो गया',
+  'common.success': 'सफलता',
+  'common.close': 'बंद करें',
+  'common.justNow': 'अभी अभी',
+  'common.minutesAgo': '{count} मिनट पहले',
+  'common.hourAgo': '{count} घंटा पहले',
+  'common.hoursAgo': '{count} घंटे पहले',
+  'common.dayAgo': '{count} दिन पहले',
+  'common.daysAgo': '{count} दिन पहले',
+  'common.weekAgo': '{count} सप्ताह पहले',
+  'common.weeksAgo': '{count} सप्ताह पहले',
+
+  // ---------------------------------------------------------------------
+  // Navigation / drawer
+  // ---------------------------------------------------------------------
+  'nav.dashboard': 'डैशबोर्ड',
+  'nav.billing': 'बिलिंग',
+  'nav.products': 'उत्पाद',
+  'nav.stock': 'स्टॉक',
+  'nav.creditCustomers': 'उधार ग्राहक',
+  'nav.reports': 'रिपोर्ट्स',
+  'nav.myShops': 'मेरी दुकानें',
+  'nav.notifications': 'सूचनाएं',
+  'nav.subscription': 'सब्सक्रिप्शन',
+  'nav.settings': 'सेटिंग्स',
+  'nav.watchTutorial': 'ट्यूटोरियल देखें',
+  'nav.selectShop': 'दुकान चुनें',
+  'nav.switchShop': 'दुकान बदलें',
+  'nav.account': 'खाता',
+
+  // ---------------------------------------------------------------------
+  // Dashboard
+  // ---------------------------------------------------------------------
+  'dashboard.salesToday': 'आज की बिक्री',
+  'dashboard.profitToday': 'आज का मुनाफ़ा',
+  'dashboard.totalStockValue': 'कुल स्टॉक मूल्य',
+  'dashboard.dailyUsage': 'दैनिक उपयोग',
+  'dashboard.earnCoins': 'सिक्के कमाएं',
+  'dashboard.billsToday': 'आज के बिल',
+  'dashboard.adsWatchedToday': 'आज देखे गए विज्ञापन',
+  'dashboard.revenueThisWeek': 'इस सप्ताह की आय',
+  'dashboard.topLowStocked': 'कम स्टॉक वाली शीर्ष 5 वस्तुएं',
+  'dashboard.nothingLowStock': 'अभी कोई वस्तु कम स्टॉक में नहीं है।',
+  'dashboard.topProducts': 'शीर्ष उत्पाद',
+  'dashboard.syncedData': 'सिंक किया गया डेटा',
+  'dashboard.couldntLoad': 'लोड नहीं हो सका — अपना कनेक्शन जांचें।',
+  'dashboard.noSalesYet': 'इस दुकान के लिए अभी तक कोई बिक्री नहीं हुई।',
+  'dashboard.recentInvoices': 'हाल की इनवॉइस',
+  'dashboard.noInvoicesYet': 'अभी तक कोई इनवॉइस नहीं।',
+  'dashboard.paid': 'भुगतान हो गया',
+  'dashboard.pending': 'लंबित',
+  'dashboard.notSyncedYet': 'अभी तक सिंक नहीं हुआ',
+  'dashboard.syncedRelative': '{time} सिंक हुआ',
+  'dashboard.out': 'समाप्त',
+  'dashboard.left': '{count} बचे',
+
+  // ---------------------------------------------------------------------
+  // Settings
+  // ---------------------------------------------------------------------
+  'settings.title': 'सेटिंग्स',
+  'settings.profile': 'प्रोफ़ाइल',
+  'settings.profileDesc': 'आपके खाते और दुकान की जानकारी',
+  'settings.notifications': 'सूचनाएं',
+  'settings.notificationsDesc': 'इन-ऐप अलर्ट प्राथमिकताएं',
+  'settings.syncStatus': 'सिंक स्थिति',
+  'settings.syncStatusDesc': 'क्लाउड सिंक और जुड़े हुए डिवाइस',
+  'settings.earnCoins': 'सिक्के कमाएं',
+  'settings.earnCoinsDesc': 'विज्ञापन देखकर सिक्के कमाएं और सिंक अनलॉक करें',
+  'settings.helpSupport': 'सहायता और समर्थन',
+  'settings.helpSupportDesc': 'सामान्य प्रश्न और संपर्क',
+  'settings.about': 'ऐप के बारे में, नियम व गोपनीयता',
+  'settings.aboutDesc': 'संस्करण और कानूनी जानकारी',
+  'settings.language': 'भाषा',
+  'settings.languageDesc': 'ऐप की भाषा चुनें',
+  'settings.chooseLanguage': 'भाषा चुनें',
+  'settings.theme': 'थीम',
+  'settings.themeSystem': 'सिस्टम',
+  'settings.themeLight': 'लाइट',
+  'settings.themeDark': 'डार्क',
+  'settings.deleteAccount': 'खाता और डेटा हटाएं',
+  'settings.deleteAccountConfirmTitle': 'खाता और डेटा हटाएं',
+  'settings.deleteAccountConfirmMessage':
+    'यह इस डिवाइस से आपका सेशन हटा देता है और आपको साइन आउट कर देता है। सर्वर पर खाते को पूरी तरह हटाना अभी उपलब्ध नहीं है — यदि आप अपना खाता स्थायी रूप से हटवाना चाहते हैं तो सहायता टीम से संपर्क करें।',
+  'settings.confirmSignOut': 'साइन आउट करें और सेशन समाप्त करें',
+  'settings.logout': 'लॉग आउट',
+
+  // ---------------------------------------------------------------------
+  // Notifications
+  // ---------------------------------------------------------------------
+  'notifications.inboxTitle': 'सूचनाएं',
+  'notifications.inboxSubtitle': 'आपके खाते से जुड़े अपडेट',
+  'notifications.markAllRead': 'सभी को पढ़ा हुआ चिह्नित करें',
+  'notifications.empty': 'आप पूरी तरह अपडेट हैं — अभी कोई सूचना नहीं।',
+  'notifications.loadMore': 'और लोड करें',
+  'notifications.couldntLoad': 'सूचनाएं लोड नहीं हो सकीं — अपना कनेक्शन जांचें।',
+  'notifications.alertsSectionTitle': 'अलर्ट',
+  'notifications.subtitle': 'इन-ऐप अलर्ट प्राथमिकताएं',
+  'notifications.lowStockAlerts': 'कम स्टॉक अलर्ट',
+  'notifications.lowStockAlertsDesc': 'जब उत्पाद की मात्रा तय सीमा से कम हो जाए तो सूचित करें',
+  'notifications.syncStatusAlerts': 'सिंक स्थिति अलर्ट',
+  'notifications.syncStatusAlertsDesc': 'जब कोई दुकान सिंक करने में विफल हो या पीछे रह जाए तो सूचित करें',
+  'notifications.khataDueReminders': 'खाता बकाया रिमाइंडर',
+  'notifications.khataDueRemindersDesc': 'जब किसी ग्राहक का उधार बकाया हो तो सूचित करें',
+
+  // ---------------------------------------------------------------------
+  // Auth — Login
+  // ---------------------------------------------------------------------
+  'auth.login.welcomeBack': 'वापसी पर स्वागत है',
+  'auth.login.subtitle': 'अपनी दुकानों को प्रबंधित करने के लिए लॉग इन करें।',
+  'auth.login.emailOrPhone': 'ईमेल या फ़ोन नंबर',
+  'auth.login.password': 'पासवर्ड',
+  'auth.login.forgotPassword': 'पासवर्ड भूल गए?',
+  'auth.login.logIn': 'लॉग इन',
+  'auth.login.newToApp': 'आसान खाता में नए हैं?',
+  'auth.login.register': 'रजिस्टर करें',
+  'auth.login.genericError': 'लॉग इन नहीं हो सका। अपनी जानकारी जांचें और पुनः प्रयास करें।',
+
+  // ---------------------------------------------------------------------
+  // Auth — Register wizard
+  // ---------------------------------------------------------------------
+  'auth.register.createAccount': 'खाता बनाएं',
+  'auth.register.stepOf': 'चरण {step} / 3',
+  'auth.register.stepYourAccount': 'आपका खाता',
+  'auth.register.stepFirstShop': 'पहली दुकान',
+  'auth.register.stepChoosePlan': 'प्लान चुनें',
+
+  'auth.register1.fullName': 'पूरा नाम',
+  'auth.register1.email': 'ईमेल',
+  'auth.register1.phone': 'फ़ोन नंबर',
+  'auth.register1.password': 'पासवर्ड',
+  'auth.register1.confirmPassword': 'पासवर्ड की पुष्टि करें',
+  'auth.register1.continue': 'जारी रखें',
+  'auth.register1.errorRequired': 'कृपया अपना नाम, ईमेल और पासवर्ड भरें।',
+  'auth.register1.errorPasswordMismatch': 'पासवर्ड मेल नहीं खाते।',
+
+  'auth.register2.shopName': 'दुकान का नाम',
+  'auth.register2.addLogo': 'दुकान का लोगो जोड़ें',
+  'auth.register2.addLogoOptional': 'वैकल्पिक — आप इसे बाद में जोड़ सकते हैं',
+  'auth.register2.shopType': 'दुकान का प्रकार',
+  'auth.register2.continue': 'जारी रखें',
+  'auth.register2.errorRequired': 'कृपया अपनी दुकान का नाम रखें और दुकान का प्रकार चुनें।',
+
+  'auth.register3.freeTrialTitle': 'निःशुल्क ट्रायल',
+  'auth.register3.freeTrialBlurb': 'पूर्ण सुविधाएं, कार्ड की आवश्यकता नहीं',
+  'auth.register3.lifetimeTitle': 'लाइफटाइम',
+  'auth.register3.lifetimeBlurb': 'एकमुश्त भुगतान, एक डिवाइस',
+  'auth.register3.cloudSyncTitle': 'क्लाउड सिंक',
+  'auth.register3.cloudSyncBlurb': 'मासिक / अर्धवार्षिक / वार्षिक · कई डिवाइस',
+  'auth.register3.recommended': 'अनुशंसित',
+  'auth.register3.trialDaysFree': '{days} दिन मुफ़्त',
+  'auth.register3.agreePrefix': 'मैं सहमत हूं',
+  'auth.register3.termsOfService': 'सेवा की शर्तों',
+  'auth.register3.and': 'और',
+  'auth.register3.privacyPolicy': 'गोपनीयता नीति',
+  'auth.register3.createAccount': 'खाता बनाएं',
+  'auth.register3.errorAgree': 'कृपया सेवा की शर्तों और गोपनीयता नीति से सहमत हों।',
+  'auth.register3.genericError': 'आपका खाता नहीं बनाया जा सका।',
+
+  // ---------------------------------------------------------------------
+  // Auth — Forgot password / OTP
+  // ---------------------------------------------------------------------
+  'auth.forgotPassword.title': 'पासवर्ड भूल गए?',
+  'auth.forgotPassword.subtitle': 'अपने खाते से जुड़ा ईमेल दर्ज करें, हम आपको 6 अंकों का रीसेट कोड भेजेंगे।',
+  'auth.forgotPassword.email': 'ईमेल',
+  'auth.forgotPassword.sendResetCode': 'रीसेट कोड भेजें',
+  'auth.forgotPassword.comingSoon': 'पासवर्ड रीसेट जल्द आ रहा है।',
+  'auth.forgotPassword.rememberedIt': 'याद आ गया?',
+  'auth.forgotPassword.logIn': 'लॉग इन',
+
+  'auth.otp.title': 'सत्यापन कोड दर्ज करें',
+  'auth.otp.subtitle': 'हमने आपके ईमेल पर 6 अंकों का कोड भेजा है।',
+  'auth.otp.resendIn': 'कोड दोबारा भेजें',
+  'auth.otp.verify': 'सत्यापित करें',
+  'auth.otp.comingSoon': 'OTP सत्यापन जल्द आ रहा है।',
+
+  // ---------------------------------------------------------------------
+  // Onboarding
+  // ---------------------------------------------------------------------
+  'onboarding.skip': 'छोड़ें',
+  'onboarding.back': 'वापस',
+  'onboarding.next': 'अगला',
+  'onboarding.getStarted': 'शुरू करें',
+
+  'onboarding.slide1.title': 'हर तरह की दुकान चलाएं,\nएक ही ऐप',
+  'onboarding.slide1.description': 'जनरल स्टोर, फार्मेसी, हार्डवेयर, बुटीक — आसान खाता आपके व्यवसाय के अनुसार ढल जाता है।',
+  'onboarding.slide2.title': 'मात्रा, क्षेत्रफल, लंबाई,\nया पैक ट्रैक करें — अपने तरीके से',
+  'onboarding.slide2.description': 'हर दुकान के लिए स्टॉक मोड एक बार सेट करें। बिलिंग और इन्वेंट्री अपने आप ढल जाते हैं।',
+  'onboarding.slide3.title': 'ग्राहकों को बिल दें, खाता रखें,\nभुगतान पाएं',
+  'onboarding.slide3.description': 'आंशिक भुगतान लें और हर ग्राहक के लिए चालू उधार खाता बनाए रखें।',
+  'onboarding.slide4.title': 'ऑफ़लाइन काम करें, अपने\nडिवाइसों में सिंक करें',
+  'onboarding.slide4.description': 'हर दुकान बिना इंटरनेट के काम करती है, और ऑनलाइन आते ही सिंक हो जाती है।',
+
+  // ---------------------------------------------------------------------
+  // Billing / New Bill (dictionary coverage only)
+  // ---------------------------------------------------------------------
+  'billing.newBill': 'नया बिल',
+  'billing.addProductToCart': 'कार्ट में उत्पाद जोड़ें',
+  'billing.subtotal': 'उप-योग',
+  'billing.overallDiscount': 'कुल छूट',
+  'billing.total': 'कुल राशि',
+  'billing.amountReceived': 'प्राप्त राशि',
+  'billing.remainingDue': 'शेष बकाया (खाता)',
+  'billing.completeBill': 'बिल पूरा करें',
+  'billing.addProduct': 'उत्पाद जोड़ें',
+  'billing.searchProducts': 'उत्पाद खोजें',
+  'billing.noProductsFound': 'कोई उत्पाद नहीं मिला',
+  'billing.addAtLeastOneProduct': 'कार्ट में कम से कम एक उत्पाद जोड़ें।',
+
+  // ---------------------------------------------------------------------
+  // Billing / Bill Detail
+  // ---------------------------------------------------------------------
+  'billing.billDetail.title': 'बिल #{id}',
+  'billing.billDetail.print': 'प्रिंट करें',
+  'billing.billDetail.share': 'शेयर करें',
+  'billing.billDetail.paid': 'भुगतान हो गया',
+  'billing.billDetail.pendingDue': 'लंबित · {amount} बकाया',
+  'billing.billDetail.discount': 'छूट',
+
+  // ---------------------------------------------------------------------
+  // Billing / Credit Customers
+  // ---------------------------------------------------------------------
+  'billing.creditCustomers.totalOutstanding': 'कुल बकाया उधार',
+  'billing.creditCustomers.emptyTitle': 'अभी तक कोई उधार ग्राहक नहीं',
+  'billing.creditCustomers.emptyDescription': 'ग्राहक का खाता बैलेंस ट्रैक करने के लिए एक ग्राहक जोड़ें।',
+  'billing.creditCustomers.addCustomer': 'ग्राहक जोड़ें',
+  'billing.creditCustomers.lastActivity': 'आखिरी: {time}',
+  'billing.creditCustomers.name': 'नाम',
+  'billing.creditCustomers.phoneOptional': 'फ़ोन नंबर (वैकल्पिक)',
+  'billing.creditCustomers.saveCustomer': 'ग्राहक सहेजें',
+  'billing.creditCustomers.customerAdded': 'ग्राहक जोड़ा गया',
+
+  // ---------------------------------------------------------------------
+  // Billing / Customer Detail
+  // ---------------------------------------------------------------------
+  'billing.customerDetail.outstandingBalance': 'बकाया राशि',
+  'billing.customerDetail.allSettledUp': 'सब कुछ चुकता है',
+  'billing.customerDetail.recordPayment': 'भुगतान दर्ज करें',
+  'billing.customerDetail.history': 'इतिहास',
+  'billing.customerDetail.noActivity': 'अभी तक कोई गतिविधि नहीं।',
+  'billing.customerDetail.billAmount': 'बिल · {amount}',
+  'billing.customerDetail.paymentReceived': 'भुगतान प्राप्त हुआ',
+  'billing.customerDetail.savePayment': 'भुगतान सहेजें',
+  'billing.customerDetail.amount': 'राशि',
+  'billing.customerDetail.paymentRecorded': '{amount} का भुगतान दर्ज कर लिया गया',
+
+  // ---------------------------------------------------------------------
+  // Catalog / Add Product
+  // ---------------------------------------------------------------------
+  'catalog.addProduct.title': 'उत्पाद जोड़ें',
+  'catalog.addProduct.changePhoto': 'फ़ोटो बदलें',
+  'catalog.addProduct.addPhotoOptional': 'फ़ोटो जोड़ें (वैकल्पिक)',
+  'catalog.addProduct.productName': 'उत्पाद का नाम',
+  'catalog.addProduct.category': 'श्रेणी',
+  'catalog.addProduct.stockMode': 'स्टॉक मोड',
+  'catalog.addProduct.modeQty': 'मात्रा',
+  'catalog.addProduct.modeArea': 'क्षेत्रफल',
+  'catalog.addProduct.modeLength': 'लंबाई',
+  'catalog.addProduct.modePack': 'पैक',
+  'catalog.addProduct.areaFields': 'क्षेत्रफल विवरण',
+  'catalog.addProduct.width': 'चौड़ाई',
+  'catalog.addProduct.height': 'ऊंचाई',
+  'catalog.addProduct.sheetsInStock': 'स्टॉक में शीट्स की संख्या',
+  'catalog.addProduct.lengthFields': 'लंबाई विवरण',
+  'catalog.addProduct.currentStock': 'वर्तमान स्टॉक',
+  'catalog.addProduct.packFields': 'पैक विवरण',
+  'catalog.addProduct.unitsPerPack': 'प्रति पैक यूनिट',
+  'catalog.addProduct.fullPacks': 'पूरे पैक',
+  'catalog.addProduct.looseUnits': 'खुले यूनिट',
+  'catalog.addProduct.packPurchasePriceOptional': 'पैक खरीद मूल्य (वैकल्पिक)',
+  'catalog.addProduct.packSalePriceOptional': 'पैक बिक्री मूल्य (वैकल्पिक)',
+  'catalog.addProduct.purchasePrice': 'खरीद मूल्य',
+  'catalog.addProduct.salePrice': 'बिक्री मूल्य',
+  'catalog.addProduct.perUnit': 'प्रति {unit}',
+  'catalog.addProduct.lowStockThresholdOptional': 'कम स्टॉक सीमा (वैकल्पिक)',
+  'catalog.addProduct.saveProduct': 'उत्पाद सहेजें',
+  'catalog.addProduct.errorNameAndPrices': 'कृपया उत्पाद का नाम और कीमतें भरें।',
+  'catalog.addProduct.errorSheetDims': 'कृपया शीट की चौड़ाई और ऊंचाई दर्ज करें।',
+  'catalog.addProduct.errorPhotoPermission': 'उत्पाद की तस्वीर जोड़ने के लिए फ़ोटो एक्सेस करने की अनुमति आवश्यक है।',
+
+  // ---------------------------------------------------------------------
+  // Catalog / Products List
+  // ---------------------------------------------------------------------
+  'catalog.productsList.filterAll': 'सभी',
+  'catalog.productsList.filterLowStock': 'कम स्टॉक',
+  'catalog.productsList.emptyTitle': 'अभी तक कोई उत्पाद नहीं',
+  'catalog.productsList.emptyDescription': 'ग्राहकों को बिल देना और स्टॉक ट्रैक करना शुरू करने के लिए अपना पहला उत्पाद जोड़ें।',
+  'catalog.productsList.outOfStock': 'स्टॉक समाप्त',
+
+  // ---------------------------------------------------------------------
+  // Stock / Overview
+  // ---------------------------------------------------------------------
+  'stock.overview.totalSkus': 'कुल SKU',
+  'stock.overview.lowStock': 'कम स्टॉक',
+  'stock.overview.transactionHistory': 'लेनदेन इतिहास',
+  'stock.overview.filterAll': 'सभी',
+  'stock.overview.filterStockIn': 'स्टॉक इन',
+  'stock.overview.filterStockOut': 'स्टॉक आउट',
+  'stock.overview.filterPackBreak': 'पैक ब्रेक',
+  'stock.overview.emptyTitle': 'अभी तक कोई स्टॉक गतिविधि नहीं',
+  'stock.overview.emptyDescription': 'स्टॉक इन, स्टॉक आउट, और पैक-ब्रेक समायोजन यहां एक ऑडिट ट्रेल के रूप में दिखाई देंगे।',
+  'stock.overview.adjustStock': 'स्टॉक समायोजित करें',
+  'stock.overview.pickerTitle': 'कौन सा उत्पाद समायोजित करना है?',
+  'stock.overview.noProductsMatch': 'आपकी खोज से कोई उत्पाद मेल नहीं खाता।',
+
+  // ---------------------------------------------------------------------
+  // Stock / Adjustment
+  // ---------------------------------------------------------------------
+  'stock.adjustment.title': 'स्टॉक समायोजित करें',
+  'stock.adjustment.currentStockLabel': 'वर्तमान स्टॉक: {stock}',
+  'stock.adjustment.quantity': 'मात्रा',
+  'stock.adjustment.newValue': 'नया: {value}',
+  'stock.adjustment.reason': 'कारण',
+  'stock.adjustment.noteOptional': 'नोट (वैकल्पिक)',
+  'stock.adjustment.saveAdjustment': 'समायोजन सहेजें',
+  'stock.adjustment.errorQuantity': 'शून्य से अधिक मात्रा दर्ज करें।',
+  'stock.unitsLeft': '{count} यूनिट बचे',
+  'stock.areaInStock': '{count} फ़ुट² स्टॉक में',
+  'stock.lengthInStock': '{count} मीटर स्टॉक में',
+  'stock.packInStock': '{count} पैक + {loose} खुले',
+
+  // ---------------------------------------------------------------------
+  // Reports / Sales Report
+  // ---------------------------------------------------------------------
+  'reports.sales.periodWeek': 'इस सप्ताह',
+  'reports.sales.periodMonth': 'इस महीने',
+  'reports.sales.periodYear': 'इस वर्ष',
+  'reports.sales.yearlyNote': 'साल भर के रुझान सिंक किए गए डेटा से सर्वर पर गणना किए जाते हैं — अगर यह खाली दिखे तो पहले सिंक करें।',
+  'reports.sales.monthlyRevenueMargin': 'मासिक आय और मार्जिन',
+  'reports.sales.noSyncedDataYear': 'इस वर्ष के लिए अभी तक कोई सिंक किया गया बिक्री डेटा नहीं।',
+  'reports.sales.marginLabel': '{revenue} · {margin}% मार्जिन',
+  'reports.sales.netProfit': 'शुद्ध मुनाफ़ा',
+  'reports.sales.revenue': 'आय',
+  'reports.sales.bills': 'बिल',
+  'reports.sales.noSalesPeriod': 'इस अवधि में अभी तक कोई बिक्री नहीं।',
+  'reports.sales.exportReport': 'रिपोर्ट एक्सपोर्ट करें',
+  'reports.sales.reportTitle': 'बिक्री रिपोर्ट — {period}',
+
+  // ---------------------------------------------------------------------
+  // Home / Shops List & Add Shop
+  // ---------------------------------------------------------------------
+  'home.shopsList.emptyTitle': 'अभी तक कोई दुकान नहीं।',
+  'home.shopsList.addShop': 'दुकान जोड़ें',
+  'home.shopsList.active': 'सक्रिय',
+  'home.shopsList.defaultShopType': 'दुकान',
+
+  'home.addShop.title': 'दुकान जोड़ें',
+  'home.addShop.shopName': 'दुकान का नाम',
+  'home.addShop.addressOptional': 'पता (वैकल्पिक)',
+  'home.addShop.phoneOptional': 'फ़ोन नंबर (वैकल्पिक)',
+  'home.addShop.saveShop': 'दुकान सहेजें',
+  'home.addShop.genericError': 'दुकान नहीं बनाई जा सकी। क्या आप ऑनलाइन हैं?',
+
+  // ---------------------------------------------------------------------
+  // Settings / Profile
+  // ---------------------------------------------------------------------
+  'settings.profile.accountId': 'खाता आईडी: {id}',
+  'settings.profile.defaultName': 'दुकान मालिक',
+  'settings.profile.noEmail': 'कोई ईमेल दर्ज नहीं है',
+  'settings.profile.shopManagement': 'दुकान प्रबंधन',
+  'settings.profile.myShopsDesc': 'दुकानें देखें, संपादित करें, या जोड़ें',
+  'settings.profile.changePassword': 'पासवर्ड बदलें',
+  'settings.profile.changePasswordDesc': 'आसान खाता में साइन इन करने के लिए उपयोग होने वाला पासवर्ड अपडेट करें।',
+  'settings.profile.currentPassword': 'मौजूदा पासवर्ड',
+  'settings.profile.newPassword': 'नया पासवर्ड',
+  'settings.profile.newPasswordHint': 'कम से कम 6 अक्षर',
+  'settings.profile.updatePassword': 'पासवर्ड अपडेट करें',
+  'settings.profile.passwordUpdated': 'पासवर्ड अपडेट हो गया',
+  'settings.profile.errorFillBoth': 'अपना मौजूदा और नया पासवर्ड दर्ज करें।',
+  'settings.profile.errorMinLength': 'नया पासवर्ड कम से कम 6 अक्षर का होना चाहिए।',
+  'settings.profile.errorGeneric': 'पासवर्ड अपडेट नहीं हो सका। अपना मौजूदा पासवर्ड जांचें और पुनः प्रयास करें।',
+
+  // ---------------------------------------------------------------------
+  // Settings / About
+  // ---------------------------------------------------------------------
+  'settings.about.tagline': 'हर दुकान। एक ऐप।',
+  'settings.about.version': 'संस्करण {version}',
+  'settings.about.legal': 'कानूनी जानकारी',
+  'settings.about.comingSoon': 'जल्द आ रहा है',
+  'settings.about.copyright': '© {year} आसान खाता। सर्वाधिकार सुरक्षित।',
+
+  // ---------------------------------------------------------------------
+  // Settings / Help & Support
+  // ---------------------------------------------------------------------
+  'settings.helpSupport.faqTitle': 'अक्सर पूछे जाने वाले सवाल',
+  'settings.helpSupport.faqAddProductQ': 'मैं उत्पाद कैसे जोड़ूं?',
+  'settings.helpSupport.faqAddProductA':
+    'मेनू से स्टॉक पर जाएं, + बटन दबाएं, और उत्पाद का नाम, कीमत, मात्रा और श्रेणी भरें। आप एक फ़ोटो भी जोड़ सकते हैं।',
+  'settings.helpSupport.faqKhataQ': 'खाता/उधार ट्रैकिंग कैसे काम करती है?',
+  'settings.helpSupport.faqKhataA':
+    'ग्राहकों में से कोई ग्राहक खोलें, दिया गया उधार दर्ज करने के लिए "खाते में जोड़ें" दबाएं, या वापसी पर "भुगतान दर्ज करें" दबाएं। चालू बैलेंस अपने आप अपडेट हो जाता है।',
+  'settings.helpSupport.faqSyncQ': 'मैं डिवाइसों के बीच सिंक कैसे करूं?',
+  'settings.helpSupport.faqSyncA':
+    'क्लाउड सिंक योग्य प्लान पर आपका डेटा सुरक्षित रखता है और कई डिवाइसों पर उपलब्ध रखता है। इसे सेटिंग्स में सिंक स्थिति से चालू करें, फिर अपने दूसरे डिवाइस पर साइन इन करें।',
+  'settings.helpSupport.faqOfflineQ': 'अगर इंटरनेट न हो तो क्या होगा?',
+  'settings.helpSupport.faqOfflineA':
+    'आसान खाता पूरी तरह ऑफ़लाइन काम करता है — बिल, स्टॉक और खाता प्रविष्टियां इसी डिवाइस पर तुरंत सहेजी जाती हैं और ऑनलाइन आते ही अपने आप क्लाउड से सिंक हो जाती हैं।',
+  'settings.helpSupport.faqMultiShopQ': 'क्या मैं एक से अधिक दुकानों के लिए आसान खाता इस्तेमाल कर सकता हूं?',
+  'settings.helpSupport.faqMultiShopA':
+    'हां। प्रोफ़ाइल → मेरी दुकानें से अतिरिक्त दुकानें जोड़ें, और ऐप मेनू में दुकान चयनकर्ता से उनके बीच बदलें।',
+  'settings.helpSupport.contactUs': 'हमसे संपर्क करें',
+  'settings.helpSupport.emailSupport': 'ईमेल सहायता',
+  'settings.helpSupport.noPhoneSupport': 'अभी तक कोई फ़ोन सहायता लाइन सेट नहीं है — फ़िलहाल हम तक पहुंचने का सबसे तेज़ तरीका ईमेल है।',
+
+  // ---------------------------------------------------------------------
+  // Settings / Sync Status
+  // ---------------------------------------------------------------------
+  'settings.syncStatus.notActiveTitle': 'क्लाउड सिंक सक्रिय नहीं है',
+  'settings.syncStatus.notActiveDescription':
+    'आपका प्लान इस डिवाइस पर पूरी तरह ऑफ़लाइन काम करता है। बैकअप लेने और कई डिवाइसों पर सिंक करने के लिए क्लाउड सिंक में अपग्रेड करें।',
+  'settings.syncStatus.upgradeButton': 'क्लाउड सिंक में अपग्रेड करें',
+  'settings.syncStatus.syncing': 'सिंक हो रहा है…',
+  'settings.syncStatus.allSynced': 'सभी दुकानें सिंक हो गईं',
+  'settings.syncStatus.lastSynced': 'आखिरी सिंक: {time}',
+  'settings.syncStatus.never': 'कभी नहीं',
+  'settings.syncStatus.statusSynced': 'सिंक हो गया',
+  'settings.syncStatus.statusError': 'त्रुटि',
+  'settings.syncStatus.statusQueued': 'कतार में (ऑफ़लाइन)',
+  'settings.syncStatus.devices': 'डिवाइस',
+  'settings.syncStatus.devicesUsed': '{max} में से {active} डिवाइस उपयोग हो रहे हैं',
+  'settings.syncStatus.loadingDeviceUsage': 'डिवाइस उपयोग लोड हो रहा है…',
+  'settings.syncStatus.plan': 'प्लान: {tier}',
+  'settings.syncStatus.syncNow': 'अभी सिंक करें',
+
+  // ---------------------------------------------------------------------
+  // Subscription / Earn Coins
+  // ---------------------------------------------------------------------
+  'subscription.earnCoins.coinBalance': 'आपका सिक्का बैलेंस',
+  'subscription.earnCoins.watchAdSectionTitle': 'सिक्के कमाने के लिए विज्ञापन देखें',
+  'subscription.earnCoins.exhausted': 'आपने आज के लिए उपलब्ध सभी विज्ञापन देख लिए हैं — कल फिर से आएं।',
+  'subscription.earnCoins.watchDescription': '{coins} सिक्के कमाने के लिए एक छोटा विज्ञापन देखें। आज {max} में से {remaining} बचे हैं।',
+  'subscription.earnCoins.watchAdButton': 'सिक्के कमाने के लिए विज्ञापन देखें',
+  'subscription.earnCoins.cooldownWarning': 'लगातार बहुत सारे विज्ञापन देख लिए — थोड़ी देर बाद पुनः प्रयास करें।',
+  'subscription.earnCoins.unlockSyncTitle': 'अभी सिंक अनलॉक करें',
+  'subscription.earnCoins.coinsBadge': '{count} सिक्के',
+  'subscription.earnCoins.unlockDescription':
+    'आपके {count} रिकॉर्ड सिंक होने की प्रतीक्षा में हैं। अपने प्लान को अपग्रेड किए बिना क्लाउड सिंक अनलॉक करने के लिए सिक्के खर्च करें।',
+  'subscription.earnCoins.toastEarned': '+{coins} सिक्के मिले!',
+  'subscription.earnCoins.toastClosedEarly': 'विज्ञापन पूरा होने से पहले बंद कर दिया गया — कोई सिक्का नहीं मिला।',
+  'subscription.earnCoins.toastCooldown': 'और विज्ञापन देखने से पहले थोड़ा ब्रेक लें।',
+  'subscription.earnCoins.toastDailyCap': 'आप आज की विज्ञापन सीमा तक पहुंच गए हैं।',
+  'subscription.earnCoins.toastNotReady': 'विज्ञापन अभी तैयार नहीं है — थोड़ी देर बाद पुनः प्रयास करें।',
+  'subscription.earnCoins.toastGenericFail': 'अभी विज्ञापन नहीं दिखाया जा सका।',
+  'subscription.earnCoins.toastSyncUnlocked': 'सिंक अनलॉक हो गया!',
+  'subscription.earnCoins.toastNotEnoughCoins': 'अभी पर्याप्त सिक्के नहीं हैं — कुछ कमाने के लिए और विज्ञापन देखें।',
+  'subscription.earnCoins.toastUnlockFail': 'अभी सिंक अनलॉक नहीं हो सका।',
+
+  // ---------------------------------------------------------------------
+  // Subscription / Plans
+  // ---------------------------------------------------------------------
+  'subscription.plans.title': 'प्लान',
+  'subscription.plans.cloudSyncFeature': 'कई डिवाइसों पर क्लाउड सिंक',
+  'subscription.plans.offlineFeature': 'इस डिवाइस पर ऑफ़लाइन',
+  'subscription.plans.maxDevices': '{count} डिवाइस तक',
+  'subscription.plans.currentPlan': 'मौजूदा प्लान',
+  'subscription.plans.billedCycle': '{cycle} बिल किया जाता है',
+  'subscription.plans.manageSubscription': 'सब्सक्रिप्शन प्रबंधित करें',
+  'subscription.plans.restorePurchases': 'खरीदारी पुनर्स्थापित करें',
+  'subscription.plans.continueButton': 'जारी रखें',
+  'subscription.plans.planUnavailable': 'यह प्लान अभी खरीद के लिए उपलब्ध नहीं है — जल्द फिर से जांचें।',
+  'subscription.plans.purchaseFailed': 'खरीदारी पूरी नहीं हो सकी।',
+  'subscription.plans.subscriptionUpdated': 'सब्सक्रिप्शन अपडेट हो गई!',
+  'subscription.plans.purchasesRestored': 'खरीदारी पुनर्स्थापित हो गई।',
+  'subscription.plans.restoreFailed': 'खरीदारी पुनर्स्थापित नहीं हो सकी।',
+};

@@ -5,7 +5,7 @@ import { syncMetaRepository } from '../db/repositories/syncMetaRepository';
 import { useShopStore } from '../store/shopStore';
 import { useSyncStore } from '../store/syncStore';
 import { applyPullPage } from './pull';
-import { pushAllPending } from './push';
+import { pushAllPending, pushPendingCoinUsage } from './push';
 
 const SINCE_KEY = 'lastSyncSince';
 
@@ -38,6 +38,13 @@ export async function runSync() {
   const { activeShopId } = useShopStore.getState();
   const entitlement = entitlementRepository.get();
   const syncStore = useSyncStore.getState();
+
+  // Coin-usage reconciliation runs for every tier, even when cloud sync is
+  // locked — unlike everything below this line, it is NOT gated by
+  // cloudEnabled/sync-quota, because a free-tier user must always be able to
+  // true up their ad-coin balance once they're back online. It's a no-op
+  // (and never throws) when there's nothing pending or no connectivity.
+  await pushPendingCoinUsage();
 
   // FREE_TRIAL/LIFETIME tenants never call /sync/* at all — no needless
   // 403s, and offline-only tiers generate zero sync network traffic.

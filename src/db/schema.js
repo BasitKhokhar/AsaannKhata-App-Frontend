@@ -168,6 +168,21 @@ export const customerPayments = sqliteTable('customer_payments', {
   createdAt: text('created_at').notNull(),
 });
 
+// Append-only local ledger of ad-coin spending events (e.g. a bill created
+// offline on the free tier) — same shape convention as stock_transactions/
+// customer_payments above. Deliberately has NO shopId: unlike every other
+// syncable table, a coin balance is per-account rather than per-shop, and
+// the backend's fixed POST /ads/coin-usage/sync contract takes no shopId
+// either — see coinUsageLogRepository.js for the minimal repo this gets
+// instead of createSyncableRepository.
+export const coinUsageLog = sqliteTable('coin_usage_log', {
+  id: text('id').primaryKey(),
+  actionType: text('action_type').notNull(), // 'BILL'
+  amount: real('amount').notNull(),
+  syncStatus: text('sync_status').notNull().default('pending'),
+  createdAt: text('created_at').notNull(),
+});
+
 // Single-row table: this device's stable install identity + registration state.
 export const devices = sqliteTable('devices', {
   id: integer('id').primaryKey({ autoIncrement: true }),
