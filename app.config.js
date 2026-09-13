@@ -1,4 +1,5 @@
 require("dotenv").config();
+const withKotlinSkipMetadataVersionCheck = require("./plugins/withKotlinSkipMetadataVersionCheck");
 
 // Falls back to the Android emulator alias when EXPO_PUBLIC_API_BASE_URL
 // isn't set. Set the real value in the EAS "development"/"preview"/
@@ -85,14 +86,7 @@ module.exports = ({ config }) => ({
           androidAppId: process.env.GOOGLE_ADMOB_ANDROID_APP_ID,
         },
       ],
-      [
-        "expo-build-properties",
-        {
-          android: {
-            kotlinVersion: "2.2.20",
-          },
-        },
-      ],
+      withKotlinSkipMetadataVersionCheck,
     ],
     extra: {
       apiBaseUrl,
