@@ -89,7 +89,7 @@ module.exports = ({ config }) => ({
         "expo-build-properties",
         {
           android: {
-            kotlinVersion: "2.3.0",
+            kotlinVersion: "2.2.20",
           },
         },
       ],
