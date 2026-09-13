@@ -85,6 +85,14 @@ module.exports = ({ config }) => ({
           androidAppId: process.env.GOOGLE_ADMOB_ANDROID_APP_ID,
         },
       ],
+      [
+        "expo-build-properties",
+        {
+          android: {
+            kotlinVersion: "2.3.0",
+          },
+        },
+      ],
     ],
     extra: {
       apiBaseUrl,
