@@ -1,7 +1,14 @@
 import { registerRootComponent } from 'expo';
+import Constants from 'expo-constants';
+import * as Sentry from '@sentry/react-native';
 import messaging from '@react-native-firebase/messaging';
 
 import App from './App';
+
+const sentryDsn = Constants.expoConfig?.extra?.sentryDsn;
+if (sentryDsn) {
+  Sentry.init({ dsn: sentryDsn });
+}
 
 // Must be registered before registerRootComponent/App even mounts — this is
 // what fires when a push arrives while the app is backgrounded or fully
@@ -14,4 +21,4 @@ messaging().setBackgroundMessageHandler(async (remoteMessage) => {});
 // registerRootComponent calls AppRegistry.registerComponent('main', () => App);
 // It also ensures that whether you load the app in Expo Go or in a native build,
 // the environment is set up appropriately
-registerRootComponent(App);
+registerRootComponent(Sentry.wrap(App));

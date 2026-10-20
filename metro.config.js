@@ -1,6 +1,6 @@
-const { getDefaultConfig } = require('expo/metro-config');
+const { getSentryExpoConfig } = require('@sentry/react-native/metro');
 
-const config = getDefaultConfig(__dirname);
+const config = getSentryExpoConfig(__dirname);
 
 // Drizzle's expo-sqlite migrator imports .sql migration files directly
 // (see src/db/migrations/migrations.js) — Metro needs to treat them as a

@@ -22,14 +22,10 @@ module.exports = ({ config }) => ({
     newArchEnabled: true,
     ios: {
       supportsTablet: true,
-      bundleIdentifier: "com.asaankhata.app",
+      bundleIdentifier: "com.asaandukaan.app",
     },
     android: {
-      package: "com.asaankhata.app",
-      // Placeholder committed at repo root (mismatched package name, from a
-      // sister app) until the user swaps in the real Firebase config for
-      // com.asaankhata.app — referenced only via this standard path, never
-      // read/parsed by our own code.
+      package: "com.asaandukaan.app",
       googleServicesFile: "./google-services.json",
       // Play Data Safety hardening — this app's own backup story is the
       // server (cloud sync), not Android's auto-backup of local SQLite/
@@ -63,6 +59,7 @@ module.exports = ({ config }) => ({
       // it only needs the native Firebase app instance this plugin sets up
       // plus the googleServicesFile above.
       "@react-native-firebase/app",
+      "@sentry/react-native",
       [
         "expo-splash-screen",
         {
@@ -75,7 +72,7 @@ module.exports = ({ config }) => ({
         "expo-image-picker",
         {
           photosPermission:
-            "AsaanKhata uses your photos to set product images and shop logos.",
+            "AsaanDukaan uses your photos to set product images and shop logos.",
         },
       ],
       "expo-sharing",
@@ -94,6 +91,7 @@ module.exports = ({ config }) => ({
       bannerAdUnitId: process.env.BANNER_AD_UNIT_ID,
       interstitialAdUnitId: process.env.INTERSTITIAL_AD_UNIT_ID,
       rewardAdUnitId: process.env.REWARD_AD_UNIT_ID,
+      sentryDsn: process.env.SENTRY_DSN || process.env.SNETRY_DSN,
       eas: {
         projectId: process.env.EXPO_ID,
       },
