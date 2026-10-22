@@ -21,6 +21,7 @@ import { billRepository } from '../../db/repositories/billRepository';
 import { stockRepository } from '../../db/repositories/stockRepository';
 import { customerPaymentRepository } from '../../db/repositories/customerPaymentRepository';
 import { useT, useIsUrdu } from '../../store/languageStore';
+import { runSync } from '../../sync/syncEngine';
 
 // Any row this device still owes the server — used to decide whether
 // "Unlock sync now" is worth showing. A cheap local count, not a network
@@ -98,6 +99,7 @@ export default function EarnCoins() {
       useCoinsStore.getState().applyUnlockResult(result);
       showToast(t('subscription.earnCoins.toastSyncUnlocked'), 'success');
       refresh();
+      await runSync();
     } catch (err) {
       if (err?.response?.status === 402) {
         showToast(t('subscription.earnCoins.toastNotEnoughCoins'), 'warning');

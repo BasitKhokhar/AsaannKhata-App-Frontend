@@ -486,4 +486,7 @@ export const en = {
   'subscription.plans.subscriptionUpdated': 'Subscription updated!',
   'subscription.plans.purchasesRestored': 'Purchases restored.',
   'subscription.plans.restoreFailed': 'Could not restore purchases.',
+  'subscription.plans.verificationPending': 'Purchase completed, but access is still being confirmed. Please check again shortly or use Restore Purchases.',
+  'subscription.plans.noPurchasesFound': 'No active paid purchase was found for this account.',
+  'subscription.plans.priceAtCheckout': 'Price at checkout',
 };

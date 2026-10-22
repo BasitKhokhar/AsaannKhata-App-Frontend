@@ -484,4 +484,7 @@ export const ur = {
   'subscription.plans.subscriptionUpdated': 'سبسکرپشن اپ ڈیٹ ہو گئی!',
   'subscription.plans.purchasesRestored': 'خریداریاں بحال ہو گئیں۔',
   'subscription.plans.restoreFailed': 'خریداریاں بحال نہیں ہو سکیں۔',
+  'subscription.plans.verificationPending': 'خریداری مکمل ہو گئی ہے، لیکن رسائی کی تصدیق جاری ہے۔ تھوڑی دیر بعد دوبارہ چیک کریں یا خریداری بحال کریں۔',
+  'subscription.plans.noPurchasesFound': 'اس اکاؤنٹ کے لیے کوئی فعال ادا شدہ خریداری نہیں ملی۔',
+  'subscription.plans.priceAtCheckout': 'ادائیگی کے وقت قیمت',
 };

@@ -6,7 +6,13 @@ import { entitlementCache } from '../schema';
 // screen that needs to know `canWrite`/`cloudEnabled` without waiting on a
 // network round trip (critical for the app's offline-first guarantee).
 function get() {
-  return db.select().from(entitlementCache).get() ?? null;
+  const cached = db.select().from(entitlementCache).get() ?? null;
+  if (!cached?.expiryDate) return cached;
+  const expiry = new Date(cached.expiryDate).getTime();
+  if (!Number.isFinite(expiry) || expiry > Date.now()) return cached;
+  // Offline access must not outlive a paid period just because the last
+  // successful server refresh happened before expiration.
+  return { ...cached, status: 'EXPIRED', canWrite: false, cloudEnabled: false };
 }
 
 function save(entitlement) {
@@ -31,4 +37,8 @@ function save(entitlement) {
   }
 }
 
-export const entitlementRepository = { get, save };
+function clear() {
+  db.delete(entitlementCache).run();
+}
+
+export const entitlementRepository = { get, save, clear };

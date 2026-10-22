@@ -11,6 +11,7 @@ import { adsApi } from '../services/adsApi';
 export const useCoinsStore = create(
   persist(
     (set, get) => ({
+      ownerAdminId: null,
       adCoins: 0,
       adsWatchedToday: 0,
       adsRemainingToday: 0,
@@ -22,6 +23,26 @@ export const useCoinsStore = create(
       syncUnlockExpiresAt: null,
       rewardAdCoinValue: 0,
       cloudEnabled: false,
+
+      setOwner: (adminId) => set((state) => {
+        if (String(state.ownerAdminId) === String(adminId)) return {};
+        return {
+          ownerAdminId: adminId,
+          adCoins: 0,
+          adsWatchedToday: 0,
+          adsRemainingToday: 0,
+          maxRewardAdsPerDay: 0,
+          syncCoinCost: 0,
+          freeDailyRecordLimit: 0,
+          billCoinCost: 1,
+          billsUsedToday: 0,
+          syncUnlockExpiresAt: null,
+          rewardAdCoinValue: 0,
+          cloudEnabled: false,
+          consecutiveRewardedAds: 0,
+          rewardedCooldownUntil: null,
+        };
+      }),
 
       // Local-only anti-farming pacing (never sent to/read from the
       // backend) — see showRewardedAd()'s batch cooldown in adsService.js.

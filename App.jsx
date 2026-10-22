@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { AppState } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
@@ -20,11 +21,13 @@ import { ThemeProvider } from './src/theme';
 import { useDbMigrations } from './src/db/migrator';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { useAuthStore } from './src/store/authStore';
+import { useCoinsStore } from './src/store/coinsStore';
 import * as secureSession from './src/services/secureSession';
 import { useSyncTriggers } from './src/sync/triggers';
 import { initAds } from './src/services/adsService';
 import { initAnalytics } from './src/services/analyticsService';
 import { initFcm } from './src/services/fcmService';
+import { loginRevenueCat } from './src/services/revenueCat';
 import { Toast } from './src/components/ui/Toast';
 import { ConfirmDialog } from './src/components/ui/ConfirmDialog';
 
@@ -58,8 +61,14 @@ export default function App() {
   useEffect(() => {
     secureSession
       .loadSession()
-      .then((session) => {
-        if (session) setSession(session);
+      .then(async (session) => {
+        if (session) {
+          await useCoinsStore.persist.rehydrate();
+          useCoinsStore.getState().setOwner(session.adminId);
+          setSession(session);
+          // Billing/network availability must not block offline startup.
+          loginRevenueCat(session.adminId).catch(() => {});
+        }
       })
       .finally(() => {
         setHydrated(true);
@@ -70,6 +79,15 @@ export default function App() {
   const ready = fontsLoaded && migrationsReady && sessionChecked && isHydrated;
 
   useSyncTriggers(migrationsReady);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active' && useAuthStore.getState().adminId) {
+        queryClient.invalidateQueries({ queryKey: ['entitlement'] });
+      }
+    });
+    return () => subscription.remove();
+  }, []);
 
   useEffect(() => {
     // Fire-and-forget: never gates `ready`/splash-hide on ad SDK init, since

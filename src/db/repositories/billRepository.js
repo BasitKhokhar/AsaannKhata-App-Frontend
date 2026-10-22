@@ -1,6 +1,6 @@
 import { eq, and, desc } from 'drizzle-orm';
 import { randomUUID } from 'expo-crypto';
-import { db } from '../client';
+import { db, expoDb } from '../client';
 import { bills, billItems, products } from '../schema';
 import { createSyncableRepository } from './createSyncableRepository';
 import { productRepository } from './productRepository';
@@ -18,6 +18,8 @@ const base = createSyncableRepository(bills);
 function createBillWithItems({ shopId, customerId, customerName, customerPhone, subtotal, discount, totalAmount, totalReceived, changeDue, remainingDue, status, items }) {
   const timestamp = new Date().toISOString();
   const billId = randomUUID();
+  let createdBill;
+  expoDb.withTransactionSync(() => {
 
   db.insert(bills)
     .values({
@@ -65,10 +67,11 @@ function createBillWithItems({ shopId, customerId, customerName, customerPhone, 
 
     // Decrement stock by whichever counter this item's stockType uses.
     const product = productRepository.getById(item.productId);
-    if (product) {
-      const patch = stockPatchForSale(product, item);
-      productRepository.adjustStock(item.productId, patch);
+    if (!product || product.shopId !== shopId || product.isDeleted) {
+      throw new Error(`Product ${item.productId} is not available in this shop`);
     }
+    const patch = stockPatchForSale(product, item);
+    productRepository.adjustStock(item.productId, patch);
 
     stockRepository.create({
       shopId,
@@ -84,7 +87,9 @@ function createBillWithItems({ shopId, customerId, customerName, customerPhone, 
     customerRepository.adjustBalance(customerId, remainingDue);
   }
 
-  return getWithItems(billId);
+    createdBill = getWithItems(billId);
+  });
+  return createdBill;
 }
 
 function stockPatchForSale(product, item) {

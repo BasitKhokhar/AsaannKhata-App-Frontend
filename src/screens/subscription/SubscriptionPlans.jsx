@@ -9,8 +9,9 @@ import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { useTheme } from '../../theme';
 import { subscriptionsApi } from '../../services/subscriptionsApi';
-import { useEntitlement, refreshEntitlement } from '../../hooks/useEntitlement';
+import { useEntitlement, verifyRevenueCatEntitlement } from '../../hooks/useEntitlement';
 import { getOfferings, purchasePackage, restorePurchases } from '../../services/revenueCat';
+import { useAuthStore } from '../../store/authStore';
 import { showToast } from '../../store/toastStore';
 import { formatCurrency } from '../../utils/money';
 import { useT, useIsUrdu } from '../../store/languageStore';
@@ -27,6 +28,7 @@ function PlanFeature({ text, colors, typography, rowDirection }) {
 export default function SubscriptionPlans() {
   const { mode, colors, radii, typography, spacing } = useTheme();
   const queryClient = useQueryClient();
+  const adminId = useAuthStore((s) => s.adminId);
   const { data: entitlement } = useEntitlement();
   const [selectedCode, setSelectedCode] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -37,7 +39,16 @@ export default function SubscriptionPlans() {
   const textAlign = isUrdu ? 'right' : 'left';
 
   const { data: plansData } = useQuery({ queryKey: ['subscriptionPlans'], queryFn: subscriptionsApi.plans });
+  const { data: offering, refetch: refetchOffering } = useQuery({
+    queryKey: ['revenueCatOffering', adminId],
+    queryFn: () => getOfferings(adminId),
+    enabled: !!adminId,
+    retry: false,
+    staleTime: 5 * 60_000,
+  });
   const plans = (Array.isArray(plansData) ? plansData : plansData?.plans || []).filter((p) => p.isActive !== false);
+  const packageFor = (currentOffering, plan) =>
+    currentOffering?.availablePackages?.find((pkg) => pkg.product.identifier === plan.revenueCatProductId);
 
   const currentPlanCode = entitlement?.planCode;
   // Dark mode's card surface sits closer to the accent hue than the light
@@ -49,19 +60,28 @@ export default function SubscriptionPlans() {
     if (plan.tier === 'FREE_TRIAL') return;
     setBusy(true);
     setMessage(null);
+    let storePurchaseCompleted = false;
     try {
-      const offering = await getOfferings();
-      const pkg = offering?.availablePackages?.find((p) => p.product.identifier === plan.revenueCatProductId);
+      const availableOffering = offering || (await refetchOffering()).data;
+      const pkg = packageFor(availableOffering, plan);
       if (!pkg) {
         setMessage({ text: t('subscription.plans.planUnavailable'), tone: 'warning' });
         return;
       }
-      await purchasePackage(pkg);
-      await refreshEntitlement(queryClient);
+      await purchasePackage(pkg, adminId);
+      storePurchaseCompleted = true;
+      const confirmed = await verifyRevenueCatEntitlement(queryClient);
+      if (confirmed.planCode !== plan.code || !confirmed.canWrite) {
+        setMessage({ text: t('subscription.plans.verificationPending'), tone: 'warning' });
+        return;
+      }
       showToast(t('subscription.plans.subscriptionUpdated'), 'success');
     } catch (err) {
       if (err?.userCancelled) return;
-      setMessage({ text: err.message || t('subscription.plans.purchaseFailed'), tone: 'danger' });
+      setMessage({
+        text: storePurchaseCompleted ? t('subscription.plans.verificationPending') : t('subscription.plans.purchaseFailed'),
+        tone: storePurchaseCompleted ? 'warning' : 'danger',
+      });
     } finally {
       setBusy(false);
     }
@@ -70,12 +90,21 @@ export default function SubscriptionPlans() {
   async function handleRestore() {
     setBusy(true);
     setMessage(null);
+    let storeRestoreCompleted = false;
     try {
-      await restorePurchases();
-      await refreshEntitlement(queryClient);
+      await restorePurchases(adminId);
+      storeRestoreCompleted = true;
+      const confirmed = await verifyRevenueCatEntitlement(queryClient);
+      if (confirmed.tier === 'FREE_TRIAL' || !confirmed.canWrite) {
+        setMessage({ text: t('subscription.plans.noPurchasesFound'), tone: 'warning' });
+        return;
+      }
       showToast(t('subscription.plans.purchasesRestored'), 'success');
     } catch (err) {
-      setMessage({ text: err.message || t('subscription.plans.restoreFailed'), tone: 'danger' });
+      setMessage({
+        text: t(storeRestoreCompleted ? 'subscription.plans.verificationPending' : 'subscription.plans.restoreFailed'),
+        tone: storeRestoreCompleted ? 'warning' : 'danger',
+      });
     } finally {
       setBusy(false);
     }
@@ -112,7 +141,9 @@ export default function SubscriptionPlans() {
                     <Text style={[typography.h3, { color: colors.ink.primary }]}>{plan.name}</Text>
                   </View>
                   <Text style={[typography.h3, { color: colors.brand.accentDark }]}>
-                    {plan.isTrialPlan ? t('auth.register3.trialDaysFree').replace('{days}', plan.durationDays) : formatCurrency(plan.price, plan.currency)}
+                    {plan.isTrialPlan
+                      ? t('auth.register3.trialDaysFree').replace('{days}', plan.durationDays)
+                      : packageFor(offering, plan)?.product?.priceString || (plan.price > 0 ? formatCurrency(plan.price, plan.currency) : t('subscription.plans.priceAtCheckout'))}
                   </Text>
                 </View>
                 {plan.billingCycle ? (
@@ -146,7 +177,7 @@ export default function SubscriptionPlans() {
               <Settings2 size={14} color={colors.brand.accentDark} />
               <Text style={[typography.label, { color: colors.brand.accentDark }]}>{t('subscription.plans.manageSubscription')}</Text>
             </Pressable>
-            <Pressable onPress={handleRestore} style={{ flexDirection: rowDirection, alignItems: 'center', gap: 6 }} hitSlop={8}>
+            <Pressable onPress={handleRestore} disabled={busy} style={{ flexDirection: rowDirection, alignItems: 'center', gap: 6 }} hitSlop={8}>
               <RotateCcw size={14} color={colors.ink.secondary} />
               <Text style={[typography.label, { color: colors.ink.secondary }]}>{t('subscription.plans.restorePurchases')}</Text>
             </Pressable>

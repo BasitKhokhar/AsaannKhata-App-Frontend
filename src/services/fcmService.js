@@ -24,7 +24,7 @@ async function requestPermission() {
   return status === messaging.AuthorizationStatus.AUTHORIZED || status === messaging.AuthorizationStatus.PROVISIONAL;
 }
 
-async function registerCurrentToken() {
+export async function registerCurrentToken() {
   const device = deviceRepository.getOrCreate();
   if (!device.registered) {
     // Mirrors ensureDeviceRegistered() in src/sync/syncEngine.js — a device

@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 import { runSync } from './syncEngine';
+import { useAuthStore } from '../store/authStore';
 
 const FOREGROUND_INTERVAL_MS = 5 * 60 * 1000;
 
@@ -12,9 +13,10 @@ const FOREGROUND_INTERVAL_MS = 5 * 60 * 1000;
 // tables (e.g. entitlement_cache) that don't exist until then.
 export function useSyncTriggers(enabled) {
   const wasOffline = useRef(false);
+  const isAuthenticated = useAuthStore((s) => !!s.accessToken);
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || !isAuthenticated) return;
 
     runSync();
 
@@ -37,5 +39,5 @@ export function useSyncTriggers(enabled) {
       netInfoSub();
       clearInterval(interval);
     };
-  }, [enabled]);
+  }, [enabled, isAuthenticated]);
 }

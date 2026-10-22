@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { RegisterWizardHeader } from './RegisterWizardHeader';
 import { Button } from '../../components/ui/Button';
@@ -12,6 +12,9 @@ import { useRegisterStore } from '../../store/registerStore';
 import { useRegisterMutation } from '../../hooks/useAuth';
 import { subscriptionsApi } from '../../services/subscriptionsApi';
 import { getOfferings, purchasePackage } from '../../services/revenueCat';
+import { verifyRevenueCatEntitlement } from '../../hooks/useEntitlement';
+import { useAuthStore } from '../../store/authStore';
+import { showToast } from '../../store/toastStore';
 import { useT, useIsUrdu } from '../../store/languageStore';
 
 const PLAN_TIERS = [
@@ -27,6 +30,7 @@ export default function RegisterStep3() {
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState(null);
   const registerMutation = useRegisterMutation();
+  const queryClient = useQueryClient();
   const t = useT();
   const isUrdu = useIsUrdu();
   const rowDirection = isUrdu ? 'row-reverse' : 'row';
@@ -45,45 +49,55 @@ export default function RegisterStep3() {
     return plans.find((p) => p.tier === tier);
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!agreed) {
       setError(t('auth.register3.errorAgree'));
       return;
     }
     setError(null);
 
-    registerMutation.mutate(
-      {
-        name: store.name,
-        email: store.email,
-        password: store.password,
-        phone: store.phone || undefined,
-        shopName: store.shopName,
-        shopTypeCode: store.shopTypeCode,
-      },
-      {
-        onSuccess: async () => {
-          store.reset();
-          // Backend always seeds FREE_TRIAL regardless of this pick. A
-          // Lifetime/Cloud Sync pick drives the RevenueCat purchase right
-          // away — best-effort: a failure here just leaves the new account
-          // on its free trial, landing on Dashboard either way.
-          if (planTier !== 'FREE_TRIAL') {
-            const plan = planForTier(planTier);
-            if (plan?.revenueCatProductId) {
-              try {
-                const offering = await getOfferings();
-                const pkg = offering?.availablePackages?.find((p) => p.product.identifier === plan.revenueCatProductId);
-                if (pkg) await purchasePackage(pkg);
-              } catch (err) {
-                // Dev-only log: avoid printing RevenueCat/purchase error details in production builds.
-                if (__DEV__) console.warn('Post-registration purchase skipped:', err.message);
-              }
-            }
-          }
-        },
+    const registered = await registerMutation.mutateAsync({
+      name: store.name,
+      email: store.email,
+      password: store.password,
+      phone: store.phone || undefined,
+      shopName: store.shopName,
+      shopTypeCode: store.shopTypeCode,
+    }).catch(() => null);
+    if (!registered) return;
+
+    store.reset();
+    // Account creation succeeds independently of store checkout. Keep this
+    // async flow alive after navigation unmounts the registration screen.
+    if (planTier !== 'FREE_TRIAL') {
+      const plan = planForTier(planTier);
+      if (!plan?.revenueCatProductId) {
+        showToast(t('subscription.plans.planUnavailable'), 'warning');
+        return;
       }
-    );
+      let storePurchaseCompleted = false;
+      try {
+        const adminId = useAuthStore.getState().adminId;
+        const offering = await getOfferings(adminId);
+        const pkg = offering?.availablePackages?.find((p) => p.product.identifier === plan.revenueCatProductId);
+        if (!pkg) {
+          showToast(t('subscription.plans.planUnavailable'), 'warning');
+          return;
+        }
+        await purchasePackage(pkg, adminId);
+        storePurchaseCompleted = true;
+        const entitlement = await verifyRevenueCatEntitlement(queryClient);
+        const confirmed = entitlement.planCode === plan.code && entitlement.canWrite;
+        showToast(t(confirmed ? 'subscription.plans.subscriptionUpdated' : 'subscription.plans.verificationPending'), confirmed ? 'success' : 'warning');
+      } catch (err) {
+        if (!err?.userCancelled) {
+          showToast(
+            t(storePurchaseCompleted ? 'subscription.plans.verificationPending' : 'subscription.plans.purchaseFailed'),
+            storePurchaseCompleted ? 'warning' : 'danger'
+          );
+        }
+      }
+    }
   }
 
   const submitError =
@@ -122,7 +136,7 @@ export default function RegisterStep3() {
                     <Text style={[typography.h3, { color: colors.brand.accentDark }]}>
                       {plan.isTrialPlan
                         ? t('auth.register3.trialDaysFree').replace('{days}', plan.durationDays)
-                        : `${plan.currency} ${plan.price}`}
+                        : plan.price > 0 ? `${plan.currency} ${plan.price}` : t('subscription.plans.priceAtCheckout')}
                     </Text>
                   ) : null}
                 </View>

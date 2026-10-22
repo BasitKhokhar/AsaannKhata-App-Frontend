@@ -26,6 +26,16 @@ export function useEntitlement() {
 export async function refreshEntitlement(queryClient) {
   const remote = await subscriptionsApi.me();
   entitlementRepository.save(remote);
-  queryClient?.invalidateQueries({ queryKey: ['entitlement'] });
+  queryClient?.setQueryData(['entitlement'], remote);
   return remote;
+}
+
+// A completed store transaction is not a server entitlement. Reconcile via
+// the authenticated backend before updating either the UI or offline cache.
+export async function verifyRevenueCatEntitlement(queryClient) {
+  const result = await subscriptionsApi.verify();
+  if (!result?.entitlement) throw new Error('Subscription verification returned no entitlement');
+  entitlementRepository.save(result.entitlement);
+  queryClient?.setQueryData(['entitlement'], result.entitlement);
+  return result.entitlement;
 }

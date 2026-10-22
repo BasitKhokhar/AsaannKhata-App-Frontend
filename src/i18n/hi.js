@@ -482,4 +482,7 @@ export const hi = {
   'subscription.plans.subscriptionUpdated': 'सब्सक्रिप्शन अपडेट हो गई!',
   'subscription.plans.purchasesRestored': 'खरीदारी पुनर्स्थापित हो गई।',
   'subscription.plans.restoreFailed': 'खरीदारी पुनर्स्थापित नहीं हो सकी।',
+  'subscription.plans.verificationPending': 'खरीदारी पूरी हुई, लेकिन एक्सेस की पुष्टि बाकी है। थोड़ी देर बाद फिर जांचें या खरीदारी पुनर्स्थापित करें।',
+  'subscription.plans.noPurchasesFound': 'इस खाते के लिए कोई सक्रिय भुगतान वाली खरीदारी नहीं मिली।',
+  'subscription.plans.priceAtCheckout': 'भुगतान के समय कीमत',
 };

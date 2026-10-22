@@ -16,6 +16,10 @@ import { showConfirm } from '../../store/confirmStore';
 import * as secureSession from '../../services/secureSession';
 import { setAnalyticsUserId } from '../../services/analyticsService';
 import { unregisterCurrentDevice } from '../../services/fcmService';
+import { useShopStore } from '../../store/shopStore';
+import { logoutRevenueCat } from '../../services/revenueCat';
+import { useQueryClient } from '@tanstack/react-query';
+import { entitlementRepository } from '../../db/repositories/entitlementRepository';
 
 function rows(t) {
   return [
@@ -42,6 +46,7 @@ const LANGUAGES = [
 
 export default function Settings() {
   const navigation = useNavigation();
+  const queryClient = useQueryClient();
   const { colors, radii, typography, spacing } = useTheme();
   const clearSession = useAuthStore((s) => s.clearSession);
   const mode = useThemeStore((s) => s.mode);
@@ -53,10 +58,14 @@ export default function Settings() {
   const rowDirection = isUrdu ? 'row-reverse' : 'row';
 
   async function handleLogout() {
+    await unregisterCurrentDevice();
+    useShopStore.getState().setActiveShopId(null);
     clearSession();
     await secureSession.clearSession();
     setAnalyticsUserId(null);
-    unregisterCurrentDevice().catch(() => {});
+    entitlementRepository.clear();
+    queryClient.clear();
+    logoutRevenueCat().catch(() => {});
     // Local SQLite business data is deliberately left intact — the same
     // shop owner logging back in should see it instantly (offline-first).
   }

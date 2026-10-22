@@ -30,8 +30,9 @@ function upsertMany(shopRows) {
   }
 }
 
-function listAll() {
-  return db.select().from(shops).all();
+function listAll(adminId) {
+  if (!adminId) return [];
+  return db.select().from(shops).where(eq(shops.adminId, adminId)).all();
 }
 
 function getById(id) {

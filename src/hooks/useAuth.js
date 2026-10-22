@@ -8,11 +8,15 @@ import { shopRepository } from '../db/repositories/shopRepository';
 import { entitlementRepository } from '../db/repositories/entitlementRepository';
 import { loginRevenueCat } from '../services/revenueCat';
 import { setAnalyticsUserId } from '../services/analyticsService';
+import { useCoinsStore } from '../store/coinsStore';
 
 // Shared by both login and register success paths: persist the session,
 // cache shops/entitlement locally so the app has them offline, and hand off
 // to RevenueCat so app_user_id == backend adminId (see services/revenueCat.js).
 async function establishSession(data) {
+  await useCoinsStore.persist.rehydrate();
+  entitlementRepository.clear();
+  useCoinsStore.getState().setOwner(data.adminId);
   useAuthStore.getState().setSession(data);
   await secureSession.saveSession(data);
   setAnalyticsUserId(data.adminId);
@@ -24,6 +28,8 @@ async function establishSession(data) {
     if (!activeShopId || !stillOwned) {
       setActiveShopId(String(data.shops[0].id));
     }
+  } else {
+    useShopStore.getState().setActiveShopId(null);
   }
 
   if (data.entitlement) {

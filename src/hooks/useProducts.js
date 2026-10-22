@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { productRepository } from '../db/repositories/productRepository';
 import { stockRepository } from '../db/repositories/stockRepository';
+import { expoDb } from '../db/client';
 import { useShopStore } from '../store/shopStore';
 import { convertToCm, calculateAreaCm2, getAreaConversionFactor, getLengthConversionFactor } from '../utils/unitConverter';
 
@@ -84,19 +85,21 @@ export function useCreateProduct() {
     mutate: (rawFields, options) => {
       try {
         const normalized = normalizeProductFields(rawFields);
-        const product = productRepository.create({ ...normalized, shopId: activeShopId });
-
-        const initialQty = initialStockQuantityFor(product);
-        if (initialQty > 0) {
-          stockRepository.create({
-            shopId: activeShopId,
-            productId: product.id,
-            type: 'IN',
-            quantity: initialQty,
-            price: normalized.purchasePrice,
-            description: 'Initial stock',
-          });
-        }
+        let product;
+        expoDb.withTransactionSync(() => {
+          product = productRepository.create({ ...normalized, shopId: activeShopId });
+          const initialQty = initialStockQuantityFor(product);
+          if (initialQty > 0) {
+            stockRepository.create({
+              shopId: activeShopId,
+              productId: product.id,
+              type: 'IN',
+              quantity: initialQty,
+              price: normalized.purchasePrice,
+              description: 'Initial stock',
+            });
+          }
+        });
 
         queryClient.invalidateQueries({ queryKey: ['products', activeShopId] });
         options?.onSuccess?.(product);
@@ -134,17 +137,18 @@ export function useAdjustStock() {
         const product = productRepository.getById(productId);
         const signedQty = type === 'OUT' ? -Math.abs(quantity) : Math.abs(quantity);
 
-        if (type === 'PACK_BREAK') {
-          productRepository.adjustStock(productId, {
-            stockPacks: Math.max(0, (product.stockPacks || 0) - quantity),
-            stockLooseUnits: (product.stockLooseUnits || 0) + quantity * (product.packSize || 1),
-          });
-        } else {
-          const patch = patchForStockType(product, signedQty);
-          productRepository.adjustStock(productId, patch);
-        }
-
-        stockRepository.create({ shopId: activeShopId, productId, type, quantity, price, description });
+        expoDb.withTransactionSync(() => {
+          if (type === 'PACK_BREAK') {
+            productRepository.adjustStock(productId, {
+              stockPacks: Math.max(0, (product.stockPacks || 0) - quantity),
+              stockLooseUnits: (product.stockLooseUnits || 0) + quantity * (product.packSize || 1),
+            });
+          } else {
+            const patch = patchForStockType(product, signedQty);
+            productRepository.adjustStock(productId, patch);
+          }
+          stockRepository.create({ shopId: activeShopId, productId, type, quantity, price, description });
+        });
 
         queryClient.invalidateQueries({ queryKey: ['products', activeShopId] });
         queryClient.invalidateQueries({ queryKey: ['product', productId] });

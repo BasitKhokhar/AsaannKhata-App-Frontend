@@ -92,6 +92,8 @@ module.exports = ({ config }) => ({
       interstitialAdUnitId: process.env.INTERSTITIAL_AD_UNIT_ID,
       rewardAdUnitId: process.env.REWARD_AD_UNIT_ID,
       sentryDsn: process.env.SENTRY_DSN || process.env.SNETRY_DSN,
+      revenueCatIosSdkKey: process.env.REVENUECAT_IOS_SDK_KEY,
+      revenueCatAndroidSdkKey: process.env.REVENUECAT_ANDROID_SDK_KEY,
       eas: {
         projectId: process.env.EXPO_ID,
       },

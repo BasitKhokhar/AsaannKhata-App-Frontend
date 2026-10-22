@@ -14,6 +14,10 @@ function upsert(table, serverRow, local) {
   const existing = byServerId || byClientId;
 
   if (existing) {
+    // A server snapshot fetched before our pending writes are pushed must
+    // never replace local edits or mark them synced. The next pull after a
+    // successful push can reconcile the echoed server row.
+    if (existing.syncStatus === 'pending' || existing.syncStatus === 'conflict') return existing.id;
     db.update(table).set({ ...local, syncStatus: 'synced' }).where(eq(table.id, existing.id)).run();
     return existing.id;
   }
@@ -103,6 +107,9 @@ function upsertBill(row) {
     updatedAt: row.updatedAt,
     createdAt: row.createdAt,
   });
+
+  const localBill = db.select({ syncStatus: bills.syncStatus }).from(bills).where(eq(bills.id, billLocalId)).get();
+  if (localBill?.syncStatus === 'pending' || localBill?.syncStatus === 'conflict') return;
 
   // Bill items sync nested inside their parent bill — replace this bill's
   // local items wholesale with the server's current set (simpler and safe
