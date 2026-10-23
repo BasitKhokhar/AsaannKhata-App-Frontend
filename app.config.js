@@ -20,7 +20,7 @@ module.exports = ({ config }) => ({
   ...config,
   expo: {
     name: "AsaanKhata",
-    slug: "asaankhataapp",
+    slug: "asaandukaanaapp",
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/icon.png",

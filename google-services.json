@@ -8,9 +8,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1057276886106:android:2d83fc68fc613823a8ac63",
+        "mobilesdk_app_id": "1:1057276886106:android:f049b59cb17affcda8ac63",
         "android_client_info": {
-          "package_name": "com.asaankhata.app"
+          "package_name": "com.asaandukaan.app"
         }
       },
       "oauth_client": [
@@ -67,6 +67,35 @@
             "certificate_hash": "bb8ed7609eab551daddc11de4f6ebae19a38f964"
           }
         },
+        {
+          "client_id": "1057276886106-ntgnuok5rgc1hk54dgk5vsi4dh2kgli3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDrSXblBD_wCWjMpBPRwd3PfbPb0ihcnUU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1057276886106-ntgnuok5rgc1hk54dgk5vsi4dh2kgli3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1057276886106:android:c21a7fc53b9cdcfda8ac63",
+        "android_client_info": {
+          "package_name": "com.vertexfx.app"
+        }
+      },
+      "oauth_client": [
         {
           "client_id": "1057276886106-ntgnuok5rgc1hk54dgk5vsi4dh2kgli3.apps.googleusercontent.com",
           "client_type": 3
