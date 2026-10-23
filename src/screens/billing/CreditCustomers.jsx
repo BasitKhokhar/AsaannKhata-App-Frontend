@@ -3,7 +3,7 @@ import { View, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Users, Plus } from 'lucide-react-native';
+import { Users, Plus, Search } from 'lucide-react-native';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { StaggeredList } from '../../components/motion/StaggeredList';
 import { EmptyState } from '../../components/ui/EmptyState';
@@ -29,6 +29,7 @@ export default function CreditCustomers() {
   const { data: customers = [], isLoading, isRefetching, refetch } = useCustomers();
   const createCustomer = useCreateCustomer();
   const [addOpen, setAddOpen] = useState(false);
+  const [search, setSearch] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const t = useT();
@@ -36,7 +37,7 @@ export default function CreditCustomers() {
   const textAlign = isUrdu ? 'right' : 'left';
 
   const totalOutstanding = activeShopId ? customerRepository.totalOutstanding(activeShopId) : 0;
-  const owing = customers.filter((c) => c.balance > 0);
+  const visible = customers.filter((customer) => `${customer.name} ${customer.phone || ''}`.toLowerCase().includes(search.trim().toLowerCase()));
 
   function handleAdd() {
     if (!name) return;
@@ -67,6 +68,10 @@ export default function CreditCustomers() {
           />
         </View>
 
+        <View style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.sm }}>
+          <TextField value={search} onChangeText={setSearch} placeholder={t('billing.creditCustomers.searchPlaceholder')} right={<Search size={16} color={colors.ink.secondary} />} />
+        </View>
+
         {!isLoading && customers.length === 0 ? (
           <EmptyState
             icon={<Users size={32} color={colors.brand.primary} strokeWidth={1.6} />}
@@ -77,7 +82,7 @@ export default function CreditCustomers() {
           />
         ) : (
           <StaggeredList
-            data={owing.length ? owing : customers}
+            data={visible}
             estimatedItemSize={68}
             refreshing={isRefetching}
             onRefresh={refetch}

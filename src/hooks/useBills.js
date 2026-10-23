@@ -58,7 +58,9 @@ export function useCreateBill() {
         queryClient.invalidateQueries({ queryKey: ['bills', activeShopId] });
         queryClient.invalidateQueries({ queryKey: ['products', activeShopId] });
         queryClient.invalidateQueries({ queryKey: ['customers', activeShopId] });
+        queryClient.invalidateQueries({ queryKey: ['customer'] });
         queryClient.invalidateQueries({ queryKey: ['dashboardStats', activeShopId] });
+        queryClient.invalidateQueries({ queryKey: ['salesReport', activeShopId] });
         recordCoinUsageIfNeeded(entitlement);
         options?.onSuccess?.(bill);
       } catch (err) {

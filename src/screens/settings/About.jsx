@@ -23,7 +23,7 @@ export default function About() {
 
   return (
     <AnimatedScreen>
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1 }}>
         <Header title={t('settings.about')} subtitle={t('settings.aboutDesc')} />
         <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingTop: spacing.xs, gap: spacing.lg }}>
           <Card style={{ alignItems: 'center', gap: spacing.xs }}>

@@ -72,7 +72,8 @@ export function createSyncableRepository(table, { appendOnly = false } = {}) {
   }
 
   function markSynced(id, serverId) {
-    db.update(table).set({ syncStatus: 'synced', serverId }).where(eq(table.id, id)).run();
+    const current = getById(id);
+    db.update(table).set({ syncStatus: 'synced', serverId: serverId ?? current?.serverId ?? null }).where(eq(table.id, id)).run();
   }
 
   function markConflict(id) {

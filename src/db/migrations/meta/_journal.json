@@ -15,6 +15,20 @@
       "when": 1789233420331,
       "tag": "0001_loud_george_stacy",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1792752446021,
+      "tag": "0002_bill_payment_method",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1792753267677,
+      "tag": "0003_expenses",
+      "breakpoints": true
     }
   ]
 }

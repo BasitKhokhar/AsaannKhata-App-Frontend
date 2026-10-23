@@ -7,6 +7,7 @@ import { stockRepository } from '../db/repositories/stockRepository';
 import { customerRepository } from '../db/repositories/customerRepository';
 import { customerPaymentRepository } from '../db/repositories/customerPaymentRepository';
 import { billRepository } from '../db/repositories/billRepository';
+import { expenseRepository } from '../db/repositories/expenseRepository';
 import { coinUsageLogRepository } from '../db/repositories/coinUsageLogRepository';
 import { syncApi } from '../services/syncApi';
 import { adsApi } from '../services/adsApi';
@@ -23,7 +24,7 @@ function serverIdOf(table, localId) {
 
 function applyResults(repo, results) {
   for (const result of results) {
-    if (result.status === 'created' || result.status === 'updated') {
+    if (result.status === 'created' || result.status === 'updated' || result.status === 'deleted') {
       repo.markSynced(result.clientId, result.serverId);
     } else if (result.status === 'conflict') {
       repo.markConflict(result.clientId);
@@ -69,6 +70,7 @@ async function pushPendingProducts(shopId, deviceId) {
       packSalePrice: row.packSalePrice,
       purchasePrice: row.purchasePrice,
       salePrice: row.salePrice,
+      lowStockThreshold: row.lowStockThreshold,
     },
     baseUpdatedAt: row.updatedAt,
   }));
@@ -81,6 +83,10 @@ async function pushPendingStockAdjustments(shopId, deviceId) {
   if (!pending.length) return;
   const operations = pending
     .map((row) => {
+      // Sale logs are carried with their bill, which creates the matching
+      // server ledger row. Pushing them here would duplicate the sale.
+      const saleBillId = /^Sold in Bill #(.+)$/.exec(row.description || '')?.[1];
+      if (saleBillId && billRepository.getById(saleBillId)) return null;
       const productServerId = serverIdOf(products, row.productId);
       if (!productServerId) return null; // product hasn't synced yet — retry next round
       return {
@@ -111,10 +117,26 @@ async function pushPendingCustomers(shopId, deviceId) {
 async function pushPendingBills(shopId, deviceId) {
   const pending = billRepository.listPending(shopId);
   if (!pending.length) return;
+  const saleLogsByBill = new Map();
+  for (const log of stockRepository.listByShop(shopId).reverse()) {
+    const billId = /^Sold in Bill #(.+)$/.exec(log.description || '')?.[1];
+    if (!billId) continue;
+    const logs = saleLogsByBill.get(billId) || [];
+    logs.push(log);
+    saleLogsByBill.set(billId, logs);
+  }
   const operations = pending
     .map((row) => {
       const bill = billRepository.getWithItems(row.id);
-      const items = bill.items.map((item) => ({ ...item, productId: serverIdOf(products, item.productId) }));
+      // Older local bills used separate UUIDs for their sale logs. Match them
+      // by bill/product in creation order; new bills use the item UUID itself.
+      const saleLogs = [...(saleLogsByBill.get(row.id) || [])];
+      const items = bill.items.map((item) => {
+        const exactLogIndex = saleLogs.findIndex((log) => log.id === item.id);
+        const logIndex = exactLogIndex >= 0 ? exactLogIndex : saleLogs.findIndex((log) => log.productId === item.productId);
+        const log = logIndex >= 0 ? saleLogs.splice(logIndex, 1)[0] : null;
+        return { ...item, productId: serverIdOf(products, item.productId), stockTransactionClientId: log?.id || item.id };
+      });
       if (items.some((i) => !i.productId)) return null; // a line's product hasn't synced yet — retry next round
       return {
         clientId: row.id,
@@ -129,6 +151,7 @@ async function pushPendingBills(shopId, deviceId) {
           totalReceived: row.totalReceived,
           changeDue: row.changeDue,
           remainingDue: row.remainingDue,
+          paymentMethod: row.paymentMethod,
           status: row.status,
           items,
         },
@@ -153,6 +176,19 @@ async function pushPendingCustomerPayments(shopId, deviceId) {
   if (!operations.length) return;
   const { results } = await syncApi.pushCustomerPayments(deviceId, operations);
   applyResults(customerPaymentRepository, results);
+}
+
+async function pushPendingExpenses(shopId, deviceId) {
+  const pending = expenseRepository.listPending(shopId);
+  if (!pending.length) return;
+  const operations = pending.map((row) => ({
+    clientId: row.id,
+    operationType: row.isDeleted ? 'DELETE' : 'UPSERT',
+    payload: { category: row.category, amount: row.amount, note: row.note, occurredAt: row.occurredAt },
+    baseUpdatedAt: row.updatedAt,
+  }));
+  const { results } = await syncApi.pushExpenses(deviceId, operations);
+  applyResults(expenseRepository, results);
 }
 
 // Reconciles this device's local coin-usage ledger (see
@@ -199,4 +235,5 @@ export async function pushAllPending(shopId, deviceId) {
   await pushPendingCustomers(shopId, deviceId);
   await pushPendingBills(shopId, deviceId);
   await pushPendingCustomerPayments(shopId, deviceId);
+  await pushPendingExpenses(shopId, deviceId);
 }

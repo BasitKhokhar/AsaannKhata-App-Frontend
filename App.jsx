@@ -4,7 +4,8 @@ import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AppState } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from './src/services/queryClient';
 import { useFonts } from 'expo-font';
 import {
   Outfit_500Medium,
@@ -32,12 +33,6 @@ import { Toast } from './src/components/ui/Toast';
 import { ConfirmDialog } from './src/components/ui/ConfirmDialog';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: { retry: 1, staleTime: 30_000 },
-  },
-});
 
 export default function App() {
   const [fontsLoaded] = useFonts({

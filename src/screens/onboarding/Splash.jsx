@@ -1,5 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Boxes, ShoppingBag, Users, ChartNoAxesCombined, TrendingUp } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { GradientShiftBackground } from '../../components/motion/GradientShiftBackground';
 import { FloatingIconCluster } from '../../components/motion/FloatingIconCluster';
@@ -9,12 +11,14 @@ import { DotGlowLoader } from '../../components/motion/DotGlowLoader';
 import { Logo } from '../../components/ui/Logo';
 import { useTheme } from '../../theme';
 import { onBrandAlpha } from '../../theme/colors';
+import { useT } from '../../store/languageStore';
 
 const AUTO_ADVANCE_MS = 1800;
 
 export default function Splash() {
   const navigation = useNavigation();
   const { colors, typography, spacing, radii } = useTheme();
+  const t = useT();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -50,13 +54,27 @@ export default function Splash() {
             },
           ]}
         >
-          Every Shop. One App.
+          {t('onboarding.splashTagline')}
         </Text>
       </View>
 
-      <View style={styles.loaderWrap}>
+      <SafeAreaView edges={['bottom']} style={{ alignItems: 'center', gap: spacing.xl, paddingHorizontal: spacing.lg }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-around', width: '100%' }}>
+          {[
+            { icon: Boxes, label: t('onboarding.splashInventory') },
+            { icon: ShoppingBag, label: t('nav.sales') },
+            { icon: Users, label: t('dashboard.customersCount') },
+            { icon: ChartNoAxesCombined, label: t('nav.reports') },
+            { icon: TrendingUp, label: t('onboarding.splashGrow') },
+          ].map((item) => (
+            <View key={item.label} style={{ alignItems: 'center', gap: spacing.xs }}>
+              <item.icon size={17} color={colors.ink.onBrand} strokeWidth={1.5} />
+              <Text style={[typography.label, { color: onBrandAlpha(0.85), fontSize: 10 }]}>{item.label}</Text>
+            </View>
+          ))}
+        </View>
         <DotGlowLoader color={colors.brand.accent} />
-      </View>
+      </SafeAreaView>
     </GradientShiftBackground>
   );
 }
@@ -77,5 +95,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     overflow: 'hidden',
   },
-  loaderWrap: { alignItems: 'center', paddingBottom: 48 },
 });

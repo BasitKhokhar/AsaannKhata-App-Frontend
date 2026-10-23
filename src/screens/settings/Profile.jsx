@@ -69,7 +69,7 @@ export default function Profile() {
 
   return (
     <AnimatedScreen>
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1 }}>
         <Header title={t('settings.profile')} subtitle={t('settings.profileDesc')} />
         <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingTop: spacing.xs, gap: spacing.lg }}>
           <Card style={{ alignItems: 'center', gap: spacing.sm }}>

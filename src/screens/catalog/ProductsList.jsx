@@ -11,9 +11,11 @@ import { Badge } from '../../components/ui/Badge';
 import { Chip } from '../../components/ui/Chip';
 import { ListRow } from '../../components/ui/ListRow';
 import { SubscriptionBanner } from '../../components/ui/SubscriptionBanner';
+import { BottomNav } from '../../components/ui/BottomNav';
 import { useTheme } from '../../theme';
 import { useProducts } from '../../hooks/useProducts';
 import { formatStockLabel, isLowStock, isOutOfStock } from '../../utils/stock';
+import { formatCurrency } from '../../utils/money';
 import { useT, useIsUrdu } from '../../store/languageStore';
 
 const MODE_BADGE = { QUANTITY: 'QTY', AREA: 'AREA', LENGTH: 'LENGTH', PACK: 'PACK' };
@@ -38,7 +40,7 @@ export default function ProductsList() {
 
   return (
     <AnimatedScreen>
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1 }}>
         <Text style={[typography.h1, { color: colors.ink.primary, padding: spacing.lg, paddingBottom: spacing.sm, textAlign }]}>{t('nav.products')}</Text>
         <SubscriptionBanner />
 
@@ -134,17 +136,23 @@ export default function ProductsList() {
                       {outOfStock ? t('catalog.productsList.outOfStock') : formatStockLabel(item)}
                     </Text>
                   }
-                  trailing={<Badge label={MODE_BADGE[item.stockType] || 'QTY'} tone={item.stockType === 'AREA' || item.stockType === 'PACK' ? 'warning' : 'brand'} />}
+                  trailing={
+                    <View style={{ alignItems: isUrdu ? 'flex-start' : 'flex-end', gap: spacing.xs }}>
+                      <Text style={[typography.bodyMedium, { color: colors.ink.primary }]}>{formatCurrency(item.salePrice)}</Text>
+                      <Badge label={MODE_BADGE[item.stockType] || 'QTY'} tone={item.stockType === 'AREA' || item.stockType === 'PACK' ? 'warning' : 'brand'} />
+                    </View>
+                  }
                 />
               );
             }}
           />
         )}
 
-        <View style={{ position: 'absolute', bottom: spacing.xl, right: spacing.lg }}>
+        <View style={{ position: 'absolute', bottom: 16, right: spacing.lg }}>
           <PulseFab onPress={() => navigation.navigate('AddProduct')} icon={<Plus size={22} color={colors.ink.primary} strokeWidth={2} />} />
         </View>
       </SafeAreaView>
+      <BottomNav active="products" />
     </AnimatedScreen>
   );
 }

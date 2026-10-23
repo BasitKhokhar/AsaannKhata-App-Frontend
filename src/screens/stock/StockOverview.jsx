@@ -50,7 +50,7 @@ export default function StockOverview() {
 
   return (
     <AnimatedScreen>
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1 }}>
         <Header title={t('nav.stock')} showBack={false} />
 
         <View style={{ paddingHorizontal: spacing.lg, gap: spacing.lg }}>

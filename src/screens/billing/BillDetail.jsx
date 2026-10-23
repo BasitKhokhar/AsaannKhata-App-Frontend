@@ -15,12 +15,13 @@ import { useShops } from '../../hooks/useShops';
 import { useShopStore } from '../../store/shopStore';
 import { formatCurrency } from '../../utils/money';
 import { buildReceiptHtml } from '../../utils/receiptHtml';
+import { paymentMethodLabelKey } from '../../utils/paymentMethod';
 import { useT, useIsUrdu } from '../../store/languageStore';
 
 export default function BillDetail() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { colors, radii, typography, spacing, elevation, palette } = useTheme();
+  const { colors, radii, typography, spacing, elevation } = useTheme();
   const { data: bill } = useBill(route.params?.billId);
   const { data: shops = [] } = useShops();
   const activeShopId = useShopStore((s) => s.activeShopId);
@@ -44,7 +45,7 @@ export default function BillDetail() {
 
   return (
     <AnimatedScreen>
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1 }}>
         <Header title={t('billing.billDetail.title').replace('{id}', bill.serverId || bill.id.slice(0, 6))} onBack={() => navigation.goBack()} />
 
         <ScrollView contentContainerStyle={{ padding: spacing.lg }}>
@@ -73,16 +74,11 @@ export default function BillDetail() {
               ))}
             </View>
 
-            {/* Signature premium touch: this summary block is a fixed-dark
-               card (palette.navy900) in BOTH light and dark theme — deliberate
-               contrast against the theme-aware receipt above it, not a
-               theme-matching surface. Text uses ink.onBrand (fixed near-white)
-               since it's painted on a permanently-dark surface. */}
             <View
               style={[
                 {
                   marginTop: spacing.md,
-                  backgroundColor: palette.navy900,
+                  backgroundColor: colors.brand.primaryDark,
                   borderRadius: radii.lg,
                   padding: spacing.lg,
                   gap: spacing.xs,
@@ -97,6 +93,10 @@ export default function BillDetail() {
               <View style={{ flexDirection: rowDirection, justifyContent: 'space-between', marginTop: spacing.xs }}>
                 <Text style={[typography.h3, { color: colors.ink.onBrand }]}>{t('billing.total')}</Text>
                 <Text style={[typography.h3, { color: colors.ink.onBrand }]}>{formatCurrency(bill.totalAmount)}</Text>
+              </View>
+              <View style={{ flexDirection: rowDirection, justifyContent: 'space-between', marginTop: spacing.xs }}>
+                <Text style={[typography.caption, { color: colors.ink.onBrand, opacity: 0.7 }]}>{t('billing.payment.methodLabel')}</Text>
+                <Text style={[typography.caption, { color: colors.ink.onBrand }]}>{t(paymentMethodLabelKey(bill.paymentMethod))}</Text>
               </View>
 
               <View style={{ alignItems: 'center', marginTop: spacing.md }}>

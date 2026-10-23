@@ -32,11 +32,14 @@ export default function Login() {
       <SafeAreaView style={{ flex: 1 }}>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <ScrollView contentContainerStyle={{ flexGrow: 1, padding: spacing.xl }} keyboardShouldPersistTaps="handled">
-            <Logo size={40} color={colors.brand.primary} accentColor={colors.brand.accentLight} />
-            <Text style={[typography.h1, { color: colors.ink.primary, marginTop: spacing.lg, textAlign }]}>{t('auth.login.welcomeBack')}</Text>
-            <Text style={[typography.caption, { color: colors.ink.secondary, marginTop: spacing.xs, textAlign }]}>
-              {t('auth.login.subtitle')}
-            </Text>
+            <View style={{ alignItems: 'center', marginTop: spacing.xl }}>
+              <Logo size={68} color={colors.brand.primary} accentColor={colors.brand.accentLight} />
+              <Text style={[typography.h2, { color: colors.ink.primary, marginTop: spacing.sm }]}>AsaanKhata</Text>
+              <Text style={[typography.h1, { color: colors.ink.primary, marginTop: spacing.xl, textAlign: 'center' }]}>{t('auth.login.welcomeBack')}</Text>
+              <Text style={[typography.caption, { color: colors.ink.secondary, marginTop: spacing.xs, textAlign: 'center' }]}>
+                {t('auth.login.subtitle')}
+              </Text>
+            </View>
 
             <View style={{ marginTop: spacing.xxl, gap: spacing.md }}>
               <TextField

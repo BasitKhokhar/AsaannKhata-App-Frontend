@@ -1,0 +1,1 @@
+ALTER TABLE `bills` ADD `payment_method` text DEFAULT 'UNSPECIFIED' NOT NULL;

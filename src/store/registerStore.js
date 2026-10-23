@@ -10,6 +10,8 @@ export const useRegisterStore = create((set) => ({
   confirmPassword: '',
 
   shopName: '',
+  shopAddress: '',
+  shopPhone: '',
   shopTypeCode: '',
   logoAsset: null,
 
@@ -25,6 +27,8 @@ export const useRegisterStore = create((set) => ({
       password: '',
       confirmPassword: '',
       shopName: '',
+      shopAddress: '',
+      shopPhone: '',
       shopTypeCode: '',
       logoAsset: null,
       planCode: 'FREE_TRIAL',

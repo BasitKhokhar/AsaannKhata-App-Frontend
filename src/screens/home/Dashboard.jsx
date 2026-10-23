@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect, DrawerActions } from '@react-navigation/native';
 import { BarChart } from 'react-native-gifted-charts';
-import { ChevronDown, Menu, Boxes, Plus, Cloud, Coins } from 'lucide-react-native';
+import { ChevronDown, Menu, Boxes, Plus, Cloud, Coins, ShoppingCart, PackagePlus, Users, ReceiptText, Bell, AlertTriangle, Wallet } from 'lucide-react-native';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { PulseFab } from '../../components/motion/PulseFab';
 import { Card } from '../../components/ui/Card';
@@ -13,9 +13,12 @@ import { StatCard } from '../../components/ui/StatCard';
 import { SectionHeader } from '../../components/ui/SectionHeader';
 import { ListRow } from '../../components/ui/ListRow';
 import { AdBanner } from '../../components/ui/AdBanner';
+import { BottomNav } from '../../components/ui/BottomNav';
 import { useTheme } from '../../theme';
 import { useDashboardStats, useSalesByProduct } from '../../hooks/useDashboard';
 import { useShops } from '../../hooks/useShops';
+import { useProducts } from '../../hooks/useProducts';
+import { useCustomers } from '../../hooks/useCustomers';
 import { useShopStore } from '../../store/shopStore';
 import { useSyncStore } from '../../store/syncStore';
 import { useCoinsStore } from '../../store/coinsStore';
@@ -23,6 +26,7 @@ import { useNotificationPrefsStore } from '../../store/notificationPrefsStore';
 import { useT, useIsUrdu } from '../../store/languageStore';
 import { entitlementRepository } from '../../db/repositories/entitlementRepository';
 import { formatCurrency } from '../../utils/money';
+import { isLowStock, isOutOfStock } from '../../utils/stock';
 import { formatRelativeTime } from '../../utils/dates';
 
 export default function Dashboard() {
@@ -35,6 +39,11 @@ export default function Dashboard() {
   const { data: shops = [] } = useShops();
   const activeShopId = useShopStore((s) => s.activeShopId);
   const activeShop = shops.find((s) => String(s.id) === String(activeShopId));
+  const businessLabel = activeShop?.shopTypeCode
+    ? activeShop.shopTypeCode.toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
+    : t('dashboard.mainBranch');
+  const { data: products = [] } = useProducts();
+  const { data: customers = [] } = useCustomers();
   const { data: stats, isLoading, isRefetching, refetch } = useDashboardStats();
   const { data: topProducts, isError: topProductsError, refetch: refetchTopProducts } = useSalesByProduct({ limit: 5 });
 
@@ -69,46 +78,55 @@ export default function Dashboard() {
     label: d.label,
     frontColor: colors.brand.primary,
   }));
+  const pendingDues = customers.reduce((sum, customer) => sum + Math.max(0, Number(customer.balance) || 0), 0);
+  const lowStockCount = products.filter((product) => isLowStock(product) || isOutOfStock(product)).length;
+  const quickActions = [
+    { key: 'newSale', label: t('dashboard.quickNewSale'), icon: ShoppingCart, color: colors.brand.primary, route: 'BillingStack', screen: 'NewBill' },
+    { key: 'addItem', label: t('dashboard.quickAddItem'), icon: PackagePlus, color: colors.semantic.success, route: 'CatalogStack', screen: 'AddProduct' },
+    { key: 'customers', label: t('dashboard.quickCustomers'), icon: Users, color: colors.brand.accent, route: 'BillingStack', screen: 'CreditCustomers' },
+    { key: 'expenses', label: t('nav.expenses'), icon: ReceiptText, color: colors.semantic.danger, route: 'Expenses' },
+  ];
 
   return (
     <AnimatedScreen style={{ backgroundColor: colors.surface.bg }}>
-      <LinearGradient colors={colors.gradient.header}>
+      <View style={{ backgroundColor: colors.surface.bg }}>
         <SafeAreaView edges={['top']}>
-          <View style={{ flexDirection: rowDirection, alignItems: 'center', justifyContent: 'space-between', padding: spacing.md }}>
+          <View style={{ flexDirection: rowDirection, alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingVertical: spacing.md }}>
             <Pressable
               onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
               style={{
                 flexDirection: rowDirection,
                 alignItems: 'center',
                 gap: spacing.sm,
-                backgroundColor: 'rgba(255,255,255,0.1)',
-                borderRadius: radii.pill,
-                paddingVertical: spacing.xs,
-                paddingHorizontal: spacing.md,
               }}
             >
-              <Text numberOfLines={1} style={[typography.bodyMedium, { color: colors.ink.onBrand, maxWidth: 160 }]}>
-                {activeShop?.name || t('nav.selectShop')}
-              </Text>
-              <ChevronDown size={12} color={colors.ink.onBrand} strokeWidth={1.8} />
+              <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.brand.primary, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={[typography.label, { color: colors.ink.onBrand }]}>{activeShop?.name?.slice(0, 2)?.toUpperCase() || 'AK'}</Text>
+              </View>
+              <View>
+                <Text numberOfLines={1} style={[typography.h3, { color: colors.ink.primary, maxWidth: 190 }]}>{activeShop?.name || t('nav.selectShop')}</Text>
+                <Text style={[typography.caption, { color: colors.ink.secondary }]}>{businessLabel}</Text>
+              </View>
+              <ChevronDown size={14} color={colors.ink.secondary} strokeWidth={1.8} />
             </Pressable>
-            <Pressable onPress={() => navigation.dispatch(DrawerActions.openDrawer())} hitSlop={8}>
-              <Menu size={20} color={colors.ink.onBrand} strokeWidth={1.8} />
-            </Pressable>
+            <View style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.md }}>
+              <Pressable onPress={() => navigation.navigate('Notifications')} hitSlop={8}><Bell size={20} color={colors.ink.primary} strokeWidth={1.8} /></Pressable>
+              <Pressable onPress={() => navigation.dispatch(DrawerActions.openDrawer())} hitSlop={8}><Menu size={20} color={colors.ink.primary} strokeWidth={1.8} /></Pressable>
+            </View>
           </View>
           {entitlement?.cloudEnabled && syncStatusAlertsEnabled ? (
             <Pressable
               onPress={() => navigation.navigate('SettingsStack', { screen: 'SyncStatus' })}
               style={{ flexDirection: rowDirection, alignItems: 'center', gap: 6, paddingHorizontal: spacing.md, paddingBottom: spacing.sm }}
             >
-              <Cloud size={12} color={colors.ink.onBrand} strokeWidth={1.8} opacity={0.75} />
-              <Text style={[typography.caption, { color: colors.ink.onBrand, opacity: 0.75, fontSize: 11 }]}>
+              <Cloud size={12} color={colors.ink.secondary} strokeWidth={1.8} />
+              <Text style={[typography.caption, { color: colors.ink.secondary, fontSize: 11 }]}>
                 {lastSyncAt ? t('dashboard.syncedRelative').replace('{time}', formatRelativeTime(lastSyncAt)) : t('dashboard.notSyncedYet')}
               </Text>
             </Pressable>
           ) : null}
         </SafeAreaView>
-      </LinearGradient>
+      </View>
 
       <ScrollView
         contentContainerStyle={{ padding: spacing.md, gap: spacing.md }}
@@ -119,11 +137,26 @@ export default function Dashboard() {
           <StatCard value={formatCurrency(summary.profitToday)} label={t('dashboard.profitToday')} tone="accent" />
         </View>
 
-        <StatCard
-          icon={<Boxes size={18} color={colors.brand.primary} />}
-          value={formatCurrency(summary.totalInventoryValue)}
-          label={t('dashboard.totalStockValue')}
-        />
+        <View style={{ flexDirection: rowDirection, gap: spacing.sm }}>
+          <StatCard icon={<Boxes size={18} color={colors.brand.primary} />} value={String(products.length)} label={t('dashboard.itemsCount')} />
+          <StatCard icon={<Users size={18} color={colors.semantic.success} />} value={String(customers.length)} label={t('dashboard.customersCount')} tone="success" />
+        </View>
+        <View style={{ flexDirection: rowDirection, gap: spacing.sm }}>
+          <StatCard icon={<AlertTriangle size={18} color={colors.semantic.danger} />} value={String(lowStockCount)} label={t('dashboard.lowStockCount')} tone="danger" />
+          <StatCard icon={<Wallet size={18} color={colors.brand.primary} />} value={formatCurrency(pendingDues)} label={t('dashboard.pendingDues')} />
+        </View>
+
+        <Text style={[typography.h3, { color: colors.ink.primary, textAlign, marginTop: spacing.sm }]}>{t('dashboard.quickActions')}</Text>
+        <View style={{ flexDirection: rowDirection, gap: spacing.sm }}>
+          {quickActions.map((action) => (
+            <Pressable key={action.key} onPress={() => navigation.navigate(action.route, action.screen ? { screen: action.screen } : undefined)} style={{ flex: 1, alignItems: 'center', gap: spacing.xs }}>
+              <View style={{ width: 52, height: 52, borderRadius: radii.md, backgroundColor: action.color + '16', alignItems: 'center', justifyContent: 'center' }}>
+                <action.icon size={22} color={action.color} strokeWidth={1.9} />
+              </View>
+              <Text numberOfLines={1} style={[typography.label, { fontSize: 10, color: colors.ink.primary, textAlign: 'center' }]}>{action.label}</Text>
+            </Pressable>
+          ))}
+        </View>
 
         {!entitlement?.cloudEnabled ? (
           <Card>
@@ -249,12 +282,13 @@ export default function Dashboard() {
         </Card>
       </ScrollView>
 
-      <View style={{ position: 'absolute', bottom: spacing.xl, right: spacing.lg }}>
+      <View style={{ position: 'absolute', bottom: 84, right: spacing.lg }}>
         <PulseFab
           onPress={() => navigation.navigate('BillingStack', { screen: 'NewBill' })}
           icon={<Plus size={22} color={colors.ink.primary} strokeWidth={1.8} />}
         />
       </View>
+      <BottomNav active="home" />
     </AnimatedScreen>
   );
 }

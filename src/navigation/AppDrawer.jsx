@@ -7,6 +7,7 @@ import { BillingStack } from './stacks/BillingStack';
 import { SettingsStack } from './stacks/SettingsStack';
 import { ShopsStack } from './stacks/ShopsStack';
 import SalesReport from '../screens/reports/SalesReport';
+import Expenses from '../screens/expenses/Expenses';
 import SubscriptionPlans from '../screens/subscription/SubscriptionPlans';
 import EarnCoins from '../screens/subscription/EarnCoins';
 import Notifications from '../screens/shared/Notifications';
@@ -29,6 +30,7 @@ export function AppDrawer() {
       <Drawer.Screen name="StockStack" component={StockStack} />
       <Drawer.Screen name="ShopsStack" component={ShopsStack} />
       <Drawer.Screen name="SalesReport" component={SalesReport} />
+      <Drawer.Screen name="Expenses" component={Expenses} />
       <Drawer.Screen name="Notifications" component={Notifications} />
       <Drawer.Screen name="SubscriptionPlans" component={SubscriptionPlans} />
       <Drawer.Screen name="EarnCoins" component={EarnCoins} />

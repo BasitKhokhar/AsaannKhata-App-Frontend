@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { db } from '../db/client';
-import { categories, products, bills, billItems, stockTransactions, customers, customerPayments } from '../db/schema';
+import { categories, products, bills, billItems, stockTransactions, customers, customerPayments, expenses } from '../db/schema';
 import { resolveLocalIdByServerId } from './idMap';
 
 // Finds the existing local row for an incoming server row (matched by
@@ -63,6 +63,7 @@ function upsertProduct(row) {
     packSalePrice: row.packSalePrice ?? null,
     purchasePrice: row.purchasePrice,
     salePrice: row.salePrice,
+    lowStockThreshold: row.lowStockThreshold ?? null,
     isDeleted: !!row.isDeleted,
     deletedAt: row.deletedAt || null,
     deviceId: row.deviceId || null,
@@ -100,6 +101,7 @@ function upsertBill(row) {
     totalReceived: row.totalReceived ?? 0,
     changeDue: row.changeDue ?? 0,
     remainingDue: row.remainingDue ?? 0,
+    paymentMethod: row.paymentMethod || 'UNSPECIFIED',
     status: row.status || 'PENDING',
     isDeleted: !!row.isDeleted,
     deletedAt: row.deletedAt || null,
@@ -169,6 +171,22 @@ function upsertCustomerPayment(row) {
   });
 }
 
+function upsertExpense(row) {
+  upsert(expenses, row, {
+    serverId: row.id,
+    shopId: String(row.shopId),
+    category: row.category,
+    amount: row.amount,
+    note: row.note || null,
+    occurredAt: row.occurredAt,
+    isDeleted: !!row.isDeleted,
+    deletedAt: row.deletedAt || null,
+    deviceId: row.deviceId || null,
+    updatedAt: row.updatedAt,
+    createdAt: row.createdAt,
+  });
+}
+
 // Order matters: categories/customers before products/bills that reference
 // them, products before bill items/stock transactions that reference them.
 export function applyPullPage(page) {
@@ -178,4 +196,5 @@ export function applyPullPage(page) {
   (page.bills || []).forEach(upsertBill);
   (page.stockTransactions || []).forEach(upsertStockTransaction);
   (page.customerPayments || []).forEach(upsertCustomerPayment);
+  (page.expenses || []).forEach(upsertExpense);
 }

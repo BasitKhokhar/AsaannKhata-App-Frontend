@@ -10,9 +10,7 @@ import { SectionHeader } from '../../components/ui/SectionHeader';
 import { useTheme } from '../../theme';
 import { useT, useIsUrdu } from '../../store/languageStore';
 
-// support@asaankhata.app is a placeholder — no real support contact info
-// exists anywhere in the codebase yet. Swap this out once one is available.
-const SUPPORT_EMAIL = 'support@asaankhata.app';
+const SUPPORT_EMAIL = process.env.EXPO_PUBLIC_SUPPORT_EMAIL?.trim();
 
 function FaqRow({ question, answer }) {
   const { colors, radii, typography, spacing } = useTheme();
@@ -57,7 +55,7 @@ export default function HelpSupport() {
 
   return (
     <AnimatedScreen>
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1 }}>
         <Header title={t('settings.helpSupport')} subtitle={t('settings.helpSupportDesc')} />
         <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingTop: spacing.xs, gap: spacing.lg }}>
           <View>
@@ -71,7 +69,7 @@ export default function HelpSupport() {
 
           <View>
             <SectionHeader title={t('settings.helpSupport.contactUs')} style={{ flexDirection: rowDirection }} />
-            <Card bordered={false} style={{ padding: spacing.xs }}>
+            {SUPPORT_EMAIL ? <Card bordered={false} style={{ padding: spacing.xs }}>
               <ListRow
                 onPress={() => Linking.openURL(`mailto:${SUPPORT_EMAIL}`)}
                 style={{ flexDirection: rowDirection }}
@@ -94,7 +92,7 @@ export default function HelpSupport() {
                 titleStyle={{ textAlign: isUrdu ? 'right' : 'left' }}
                 showChevron
               />
-            </Card>
+            </Card> : <Text style={[typography.body, { color: colors.ink.secondary, paddingHorizontal: spacing.md, textAlign: isUrdu ? 'right' : 'left' }]}>{t('settings.helpSupport.contactUnavailable')}</Text>}
             <Text style={[typography.caption, { color: colors.ink.secondary, marginTop: spacing.sm, paddingHorizontal: spacing.md, textAlign: isUrdu ? 'right' : 'left' }]}>
               {t('settings.helpSupport.noPhoneSupport')}
             </Text>

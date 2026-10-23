@@ -10,8 +10,6 @@ import { Sheet } from '../../components/ui/Sheet';
 import { IconButton } from '../../components/ui/IconButton';
 import { useTheme } from '../../theme';
 import { useProducts } from '../../hooks/useProducts';
-import { useCustomers } from '../../hooks/useCustomers';
-import { useCreateBill } from '../../hooks/useBills';
 import { useCartStore } from '../../store/cartStore';
 import { formatCurrency } from '../../utils/money';
 import { useT, useIsUrdu } from '../../store/languageStore';
@@ -60,12 +58,9 @@ export default function NewBill() {
   const { colors, radii, typography, spacing, elevation } = useTheme();
   const [search, setSearch] = useState('');
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [amountReceived, setAmountReceived] = useState('');
   const [error, setError] = useState(null);
 
   const { data: searchResults = [] } = useProducts({ search });
-  const { data: customers = [] } = useCustomers();
-  const createBill = useCreateBill();
   const cart = useCartStore();
   const t = useT();
   const isUrdu = useIsUrdu();
@@ -74,9 +69,6 @@ export default function NewBill() {
 
   const subtotal = cart.subtotal();
   const total = Math.max(0, subtotal - (parseFloat(cart.overallDiscount) || 0));
-  const received = parseFloat(amountReceived) || 0;
-  const remainingDue = Math.max(0, round2(total - received));
-  const changeDue = Math.max(0, round2(received - total));
 
   function addProduct(product) {
     cart.addLine(defaultLineFor(product));
@@ -94,35 +86,13 @@ export default function NewBill() {
     }
   }
 
-  function handleComplete() {
+  function handleContinue() {
     if (cart.lines.length === 0) {
       setError(t('billing.addAtLeastOneProduct'));
       return;
     }
     setError(null);
-
-    createBill.mutate(
-      {
-        customerId: cart.customerId,
-        customerName: cart.customerName || 'Walk-in Customer',
-        customerPhone: cart.customerPhone,
-        subtotal,
-        discount: parseFloat(cart.overallDiscount) || 0,
-        totalAmount: total,
-        totalReceived: received,
-        changeDue,
-        remainingDue,
-        status: remainingDue > 0 ? 'PENDING' : 'PAID',
-        items: cart.lines,
-      },
-      {
-        onSuccess: (bill) => {
-          cart.reset();
-          setAmountReceived('');
-          navigation.navigate('BillDetail', { billId: bill.id });
-        },
-      }
-    );
+    navigation.navigate('Payment');
   }
 
   return (
@@ -219,43 +189,6 @@ export default function NewBill() {
               <View style={{ height: 1, backgroundColor: colors.surface.border, marginVertical: spacing.xs }} />
               <Row label={t('billing.total')} value={formatCurrency(total)} colors={colors} typography={typography} bold rowDirection={rowDirection} />
 
-              <View style={{ marginTop: spacing.sm }}>
-                <Text style={[typography.label, { color: colors.ink.secondary, marginBottom: spacing.xs, textAlign }]}>{t('billing.amountReceived')}</Text>
-                <TextInput
-                  value={amountReceived}
-                  onChangeText={setAmountReceived}
-                  keyboardType="numeric"
-                  placeholder={String(total)}
-                  placeholderTextColor={colors.ink.secondary}
-                  style={{
-                    height: 44,
-                    borderRadius: radii.sm,
-                    borderWidth: 1,
-                    borderColor: colors.surface.border,
-                    backgroundColor: colors.surface.bg,
-                    paddingHorizontal: spacing.md,
-                    color: colors.ink.primary,
-                    textAlign,
-                  }}
-                />
-              </View>
-
-              {remainingDue > 0 && (
-                <View
-                  style={{
-                    flexDirection: rowDirection,
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    backgroundColor: colors.semantic.warningBg,
-                    borderRadius: radii.sm,
-                    padding: spacing.sm,
-                    marginTop: spacing.xs,
-                  }}
-                >
-                  <Text style={[typography.label, { color: colors.semantic.warning }]}>{t('billing.remainingDue')}</Text>
-                  <Text style={[typography.bodyMedium, { color: colors.semantic.warning }]}>{formatCurrency(remainingDue)}</Text>
-                </View>
-              )}
             </View>
           )}
 
@@ -263,7 +196,7 @@ export default function NewBill() {
         </ScrollView>
 
         <View style={{ padding: spacing.lg }}>
-          <Button title={t('billing.completeBill')} variant="accent" onPress={handleComplete} loading={createBill.isPending} />
+          <Button title={t('billing.paymentContinue')} onPress={handleContinue} />
         </View>
       </SafeAreaView>
 

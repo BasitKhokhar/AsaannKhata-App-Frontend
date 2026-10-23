@@ -8,14 +8,14 @@ const PRESS_SPRING = { damping: 14, stiffness: 260 };
 
 // level: elevation token key ('none'|'xs'|'sm'|'md'|'lg'|'xl') — defaults to
 // a subtle 'sm' shadow so every Card gets a touch of depth for free.
-export function Card({ children, style, bordered = true, level = 'sm', onPress }) {
+export function Card({ children, style, bordered = true, level = 'xs', onPress }) {
   const { colors, radii, spacing, elevation } = useTheme();
   const scale = useSharedValue(1);
   const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
   const baseStyle = [
     {
-      backgroundColor: colors.surface.card,
+      backgroundColor: colors.surface.raised,
       borderRadius: radii.lg,
       padding: spacing.lg,
       borderWidth: bordered ? 1 : 0,

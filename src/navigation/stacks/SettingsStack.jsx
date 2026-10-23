@@ -5,6 +5,7 @@ import SyncStatus from '../../screens/settings/SyncStatus';
 import Profile from '../../screens/settings/Profile';
 import HelpSupport from '../../screens/settings/HelpSupport';
 import About from '../../screens/settings/About';
+import StaffManagement from '../../screens/settings/StaffManagement';
 import Notifications from '../../screens/shared/Notifications';
 
 const Stack = createNativeStackNavigator();
@@ -18,6 +19,7 @@ export function SettingsStack() {
       <Stack.Screen name="Notifications" component={Notifications} />
       <Stack.Screen name="HelpSupport" component={HelpSupport} />
       <Stack.Screen name="About" component={About} />
+      <Stack.Screen name="StaffManagement" component={StaffManagement} />
     </Stack.Navigator>
   );
 }

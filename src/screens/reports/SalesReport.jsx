@@ -13,16 +13,19 @@ import { Badge } from '../../components/ui/Badge';
 import { Chip } from '../../components/ui/Chip';
 import { StatCard } from '../../components/ui/StatCard';
 import { SectionHeader } from '../../components/ui/SectionHeader';
+import { BottomNav } from '../../components/ui/BottomNav';
 import { useTheme } from '../../theme';
 import { onBrandAlpha } from '../../theme/colors';
 import { useSalesReport } from '../../hooks/useSalesReport';
 import { useProfitMarginTrend } from '../../hooks/useDashboard';
 import { dashboardApi } from '../../services/dashboardApi';
 import { useShopStore } from '../../store/shopStore';
+import { useNavigation } from '@react-navigation/native';
 import { formatCurrency } from '../../utils/money';
 import { useT, useIsUrdu } from '../../store/languageStore';
 
 export default function SalesReport() {
+  const navigation = useNavigation();
   const { colors, radii, typography, spacing, elevation } = useTheme();
   const [period, setPeriod] = useState('week');
   const isCloudPeriod = period === 'year';
@@ -78,7 +81,7 @@ export default function SalesReport() {
 
   return (
     <AnimatedScreen>
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1 }}>
         <View style={{ flexDirection: rowDirection, alignItems: 'center', justifyContent: 'space-between', padding: spacing.lg, paddingBottom: spacing.sm }}>
           <Text style={[typography.h1, { color: colors.ink.primary }]}>{t('nav.reports')}</Text>
         </View>
@@ -148,6 +151,11 @@ export default function SalesReport() {
                 />
               </View>
 
+              <Card onPress={() => navigation.navigate('Expenses')} style={{ flexDirection: rowDirection, alignItems: 'center', justifyContent: 'space-between' }}>
+                <Text style={[typography.bodyMedium, { color: colors.ink.primary }]}>{t('nav.expenses')}</Text>
+                <Text style={[typography.bodyMedium, { color: colors.semantic.danger }]}>{formatCurrency(report?.expenseTotal)}</Text>
+              </Card>
+
               <Card>
                 <SectionHeader title={t('dashboard.topProducts')} />
                 {(report?.topProducts || []).length === 0 ? (
@@ -174,6 +182,7 @@ export default function SalesReport() {
           />
         </View>
       </SafeAreaView>
+      <BottomNav active="reports" />
     </AnimatedScreen>
   );
 }

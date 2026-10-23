@@ -15,7 +15,7 @@ const base = createSyncableRepository(bills);
 // — for khata sales — adds the unpaid remainder to the customer's balance.
 // All local writes succeed regardless of subscription/network state; only
 // the *push* of these rows to the server depends on entitlement/connectivity.
-function createBillWithItems({ shopId, customerId, customerName, customerPhone, subtotal, discount, totalAmount, totalReceived, changeDue, remainingDue, status, items }) {
+function createBillWithItems({ shopId, customerId, customerName, customerPhone, subtotal, discount, totalAmount, totalReceived, changeDue, remainingDue, paymentMethod, status, items }) {
   const timestamp = new Date().toISOString();
   const billId = randomUUID();
   let createdBill;
@@ -34,6 +34,7 @@ function createBillWithItems({ shopId, customerId, customerName, customerPhone, 
       totalReceived,
       changeDue,
       remainingDue,
+      paymentMethod: paymentMethod || 'UNSPECIFIED',
       status: status || 'PENDING',
       isDeleted: false,
       syncStatus: 'pending',
@@ -43,9 +44,10 @@ function createBillWithItems({ shopId, customerId, customerName, customerPhone, 
     .run();
 
   for (const item of items) {
+    const billItemId = randomUUID();
     db.insert(billItems)
       .values({
-        id: randomUUID(),
+        id: billItemId,
         billId,
         productId: item.productId,
         productName: item.productName,
@@ -74,6 +76,7 @@ function createBillWithItems({ shopId, customerId, customerName, customerPhone, 
     productRepository.adjustStock(item.productId, patch);
 
     stockRepository.create({
+      id: billItemId,
       shopId,
       productId: item.productId,
       type: 'OUT',

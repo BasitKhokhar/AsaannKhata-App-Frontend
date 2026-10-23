@@ -9,6 +9,7 @@ import { useAuthStore } from '../store/authStore';
 import { registerCurrentToken } from '../services/fcmService';
 import { applyPullPage } from './pull';
 import { pushAllPending, pushPendingCoinUsage } from './push';
+import { queryClient } from '../services/queryClient';
 
 const sinceKey = (shopId) => `lastSyncSince:${shopId}`;
 
@@ -74,5 +75,14 @@ export async function runSync() {
   } catch (err) {
     syncStore.syncFailed(err.message);
     syncStore.setShopStatus(activeShopId, 'error');
+  } finally {
+    // Pull and reconciliation write directly to SQLite, including when a
+    // later push fails. Refresh visible data from the committed local rows.
+    for (const key of ['categories', 'products', 'customers', 'bills', 'expenses', 'stockTransactions', 'salesReport', 'dashboardStats']) {
+      queryClient.invalidateQueries({ queryKey: [key, activeShopId] });
+    }
+    for (const key of ['bill', 'customer', 'product']) {
+      queryClient.invalidateQueries({ queryKey: [key] });
+    }
   }
 }

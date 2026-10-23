@@ -1,5 +1,6 @@
 import { formatCurrency } from './money';
 import { t } from '../store/languageStore';
+import { paymentMethodLabelKey } from './paymentMethod';
 
 // Minimal receipt HTML used by expo-print for both the Print and Share
 // actions on Bill Detail — kept in one place since both call sites need it.
@@ -30,6 +31,7 @@ export function buildReceiptHtml({ shopName, bill }) {
           <tr><td>${t('billing.subtotal')}</td><td style="text-align:right">${formatCurrency(bill.subtotal)}</td></tr>
           <tr><td>${t('billing.billDetail.discount')}</td><td style="text-align:right">-${formatCurrency(bill.discount)}</td></tr>
           <tr style="font-weight:bold;font-size:16px;"><td>${t('billing.total')}</td><td style="text-align:right">${formatCurrency(bill.totalAmount)}</td></tr>
+          <tr><td>${t('billing.payment.methodLabel')}</td><td style="text-align:right">${t(paymentMethodLabelKey(bill.paymentMethod))}</td></tr>
         </table>
         <p style="text-align:center;margin-top:16px;font-weight:bold;color:${bill.status === 'PAID' ? '#2E9E6B' : '#C6982F'};">
           ${bill.status === 'PAID' ? t('billing.billDetail.paid') : t('billing.billDetail.pendingDue').replace('{amount}', formatCurrency(bill.remainingDue))}

@@ -1,7 +1,8 @@
-import { eq, and, lt, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { db } from '../client';
 import { products } from '../schema';
 import { createSyncableRepository } from './createSyncableRepository';
+import { isLowStock } from '../../utils/stock';
 
 const base = createSyncableRepository(products);
 
@@ -17,18 +18,7 @@ function adjustStock(id, patch) {
 }
 
 function listLowStock(shopId) {
-  return db
-    .select()
-    .from(products)
-    .where(
-      and(
-        eq(products.shopId, shopId),
-        eq(products.isDeleted, false),
-        sql`${products.lowStockThreshold} is not null`,
-        lt(products.stockQuantity, products.lowStockThreshold)
-      )
-    )
-    .all();
+  return base.listByShop(shopId).filter(isLowStock);
 }
 
 export const productRepository = {

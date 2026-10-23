@@ -1,6 +1,7 @@
 import { eq, and, gte, sql } from 'drizzle-orm';
 import { db } from '../client';
-import { bills, billItems, products } from '../schema';
+import { bills, billItems, products, expenses } from '../schema';
+import { isLowStock } from '../../utils/stock';
 
 function startOfTodayIso() {
   const d = new Date();
@@ -28,7 +29,7 @@ export function computeSalesReport(shopId, period = 'week') {
 
   const revenue = periodBills.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
   const productTotals = new Map();
-  let netProfit = 0;
+  let grossProfit = 0;
 
   for (const bill of periodBills) {
     const items = db.select().from(billItems).where(eq(billItems.billId, bill.id)).all();
@@ -37,9 +38,10 @@ export function computeSalesReport(shopId, period = 'week') {
 
       const product = db.select().from(products).where(eq(products.id, item.productId)).get();
       if (product) {
-        const qty = item.quantity ?? item.totalArea ?? item.lengthCm ?? item.packQuantity ?? 0;
-        const costBasis = product.stockType === 'PACK' ? product.packPurchasePrice ?? product.purchasePrice : product.purchasePrice;
-        netProfit += (item.pricePerUnit - (costBasis || 0)) * qty;
+        const qty = item.stockType === 'PACK'
+          ? (item.packQuantity || 0) * (product.packSize || 1) + (item.looseQuantity || 0)
+          : item.quantity ?? item.totalArea ?? item.lengthCm ?? 0;
+        grossProfit += (item.total || 0) - (product.purchasePrice || 0) * qty;
       }
     }
   }
@@ -49,7 +51,9 @@ export function computeSalesReport(shopId, period = 'week') {
     .slice(0, 5)
     .map(([name, total]) => ({ name, total }));
 
-  return { netProfit, revenue, billCount: periodBills.length, topProducts };
+  const expenseRows = db.select().from(expenses).where(and(eq(expenses.shopId, shopId), eq(expenses.isDeleted, false), gte(expenses.occurredAt, since))).all();
+  const expenseTotal = expenseRows.reduce((sum, expense) => sum + expense.amount, 0);
+  return { grossProfit, expenseTotal, netProfit: grossProfit - expenseTotal, revenue, billCount: periodBills.length, topProducts };
 }
 
 // Best-effort offline fallback for the Dashboard when GET /dashboard/stats
@@ -75,11 +79,14 @@ export function computeLocalDashboardStats(shopId) {
     for (const item of items) {
       const product = db.select().from(products).where(eq(products.id, item.productId)).get();
       if (!product) continue;
-      const qty = item.quantity ?? item.totalArea ?? item.lengthCm ?? item.packQuantity ?? 0;
-      const costBasis = product.stockType === 'PACK' ? product.packPurchasePrice ?? product.purchasePrice : product.purchasePrice;
-      profitToday += (item.pricePerUnit - (costBasis || 0)) * qty;
+      const qty = item.stockType === 'PACK'
+        ? (item.packQuantity || 0) * (product.packSize || 1) + (item.looseQuantity || 0)
+        : item.quantity ?? item.totalArea ?? item.lengthCm ?? 0;
+      profitToday += (item.total || 0) - (product.purchasePrice || 0) * qty;
     }
   }
+  const todayExpenses = db.select().from(expenses).where(and(eq(expenses.shopId, shopId), eq(expenses.isDeleted, false), gte(expenses.occurredAt, since))).all();
+  profitToday -= todayExpenses.reduce((sum, expense) => sum + expense.amount, 0);
 
   const allProducts = db.select().from(products).where(and(eq(products.shopId, shopId), eq(products.isDeleted, false))).all();
   const totalInventoryValue = allProducts.reduce((sum, p) => {
@@ -110,9 +117,9 @@ export function computeLocalDashboardStats(shopId) {
   }
 
   const lowStockAlerts = allProducts
-    .filter((p) => p.lowStockThreshold != null && p.stockQuantity < p.lowStockThreshold)
+    .filter(isLowStock)
     .slice(0, 5)
-    .map((p) => ({ id: p.id, name: p.name, stock: p.stockQuantity }));
+    .map((p) => ({ id: p.id, name: p.name, stock: p.stockType === 'AREA' ? p.stockAreaCm2 : p.stockType === 'LENGTH' ? p.stockLengthCm : p.stockType === 'PACK' ? (p.stockPacks || 0) + (p.stockLooseUnits || 0) : p.stockQuantity }));
 
   const recentInvoices = db
     .select()

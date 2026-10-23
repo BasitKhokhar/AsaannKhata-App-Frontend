@@ -96,6 +96,22 @@ export const customers = sqliteTable('customers', {
   createdAt: text('created_at').notNull(),
 });
 
+export const expenses = sqliteTable('expenses', {
+  id: text('id').primaryKey(),
+  serverId: integer('server_id'),
+  shopId: text('shop_id').notNull(),
+  category: text('category').notNull(),
+  amount: real('amount').notNull(),
+  note: text('note'),
+  occurredAt: text('occurred_at').notNull(),
+  isDeleted: integer('is_deleted', { mode: 'boolean' }).notNull().default(false),
+  deletedAt: text('deleted_at'),
+  deviceId: text('device_id'),
+  syncStatus: text('sync_status').notNull().default('pending'),
+  updatedAt: text('updated_at').notNull(),
+  createdAt: text('created_at').notNull(),
+});
+
 export const bills = sqliteTable('bills', {
   id: text('id').primaryKey(),
   serverId: integer('server_id'),
@@ -109,6 +125,7 @@ export const bills = sqliteTable('bills', {
   totalReceived: real('total_received').notNull().default(0),
   changeDue: real('change_due').notNull().default(0),
   remainingDue: real('remaining_due').notNull().default(0),
+  paymentMethod: text('payment_method').notNull().default('UNSPECIFIED'),
   status: text('status').notNull().default('PENDING'), // PENDING | PAID
   isDeleted: integer('is_deleted', { mode: 'boolean' }).notNull().default(false),
   deletedAt: text('deleted_at'),

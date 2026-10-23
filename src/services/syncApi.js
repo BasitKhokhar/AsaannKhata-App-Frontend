@@ -15,6 +15,7 @@ export const syncApi = {
   pushBills: (deviceId, operations) => push('/sync/push/bills', deviceId, operations),
   pushCustomers: (deviceId, operations) => push('/sync/push/customers', deviceId, operations),
   pushCustomerPayments: (deviceId, operations) => push('/sync/push/customer-payments', deviceId, operations),
+  pushExpenses: (deviceId, operations) => push('/sync/push/expenses', deviceId, operations),
 };
 
 function push(path, deviceId, operations) {

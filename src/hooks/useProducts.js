@@ -14,7 +14,10 @@ function normalizeProductFields(raw) {
   const stockType = raw.stockType;
   const purchasePrice = parseFloat(raw.purchasePrice) || 0;
   const salePrice = parseFloat(raw.salePrice) || 0;
-  const data = { name: raw.name, categoryId: raw.categoryId || null, image: raw.image || null, stockType, purchasePrice, salePrice, lowStockThreshold: raw.lowStockThreshold != null ? parseFloat(raw.lowStockThreshold) : null };
+  const threshold = raw.lowStockThreshold == null ? null : Number(raw.lowStockThreshold);
+  const thresholdFactor = stockType === 'AREA' ? getAreaConversionFactor(raw.unit)
+    : stockType === 'LENGTH' ? getLengthConversionFactor(raw.unit) : 1;
+  const data = { name: raw.name, categoryId: raw.categoryId || null, image: raw.image || null, stockType, purchasePrice, salePrice, lowStockThreshold: threshold == null ? null : threshold * thresholdFactor };
 
   if (stockType === 'AREA') {
     const areaCm2 = calculateAreaCm2(parseFloat(raw.sheetWidth), parseFloat(raw.sheetHeight), raw.unit);
@@ -102,6 +105,7 @@ export function useCreateProduct() {
         });
 
         queryClient.invalidateQueries({ queryKey: ['products', activeShopId] });
+        queryClient.invalidateQueries({ queryKey: ['dashboardStats', activeShopId] });
         options?.onSuccess?.(product);
       } catch (err) {
         options?.onError?.(err);
@@ -118,6 +122,7 @@ export function useUpdateProduct() {
       try {
         const product = productRepository.update(id, fields);
         queryClient.invalidateQueries({ queryKey: ['products', activeShopId] });
+        queryClient.invalidateQueries({ queryKey: ['dashboardStats', activeShopId] });
         queryClient.invalidateQueries({ queryKey: ['product', id] });
         options?.onSuccess?.(product);
       } catch (err) {
@@ -151,6 +156,7 @@ export function useAdjustStock() {
         });
 
         queryClient.invalidateQueries({ queryKey: ['products', activeShopId] });
+        queryClient.invalidateQueries({ queryKey: ['dashboardStats', activeShopId] });
         queryClient.invalidateQueries({ queryKey: ['product', productId] });
         options?.onSuccess?.();
       } catch (err) {

@@ -12,8 +12,15 @@ export function useDashboardStats() {
       const local = computeLocalDashboardStats(activeShopId);
       try {
         const remote = await dashboardApi.stats({ shopId: activeShopId });
-        // Backend doesn't compute profit — always use the local estimate for it.
-        return { ...remote, summary: { ...remote.summary, profitToday: local.summary.profitToday } };
+        // The card labels say "today" and local rows include unsynced writes.
+        // The remote stats endpoint defaults to all-time, so keep the local
+        // summary and recent alerts while using its chart data when available.
+        return {
+          ...remote,
+          summary: local.summary,
+          lowStockAlerts: local.lowStockAlerts,
+          recentInvoices: local.recentInvoices,
+        };
       } catch (err) {
         return local;
       }

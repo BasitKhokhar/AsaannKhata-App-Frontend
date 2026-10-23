@@ -6,7 +6,7 @@ import { IconButton } from '../../components/ui/IconButton';
 import { useTheme } from '../../theme';
 import { useT, useIsUrdu } from '../../store/languageStore';
 
-const STEP_LABEL_KEYS = ['auth.register.stepYourAccount', 'auth.register.stepFirstShop', 'auth.register.stepChoosePlan'];
+const STEP_LABEL_KEYS = ['auth.register.stepBusinessType', 'auth.register.stepFirstShop', 'auth.register.stepYourAccount'];
 
 export function RegisterWizardHeader({ step }) {
   const navigation = useNavigation();

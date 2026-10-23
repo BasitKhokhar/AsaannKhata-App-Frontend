@@ -3,7 +3,7 @@ import { View, Text, ScrollView, Pressable, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
-import { Camera, Pencil } from 'lucide-react-native';
+import { Camera, Pencil, Package, Ruler, Boxes, ScanLine, ChevronRight } from 'lucide-react-native';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { Header } from '../../components/ui/Header';
 import { Chip } from '../../components/ui/Chip';
@@ -32,6 +32,7 @@ export default function AddProduct() {
   ];
 
   const [name, setName] = useState('');
+  const [step, setStep] = useState(0);
   const [image, setImage] = useState(null);
   const [categoryId, setCategoryId] = useState(null);
   const [stockType, setStockType] = useState('QUANTITY');
@@ -62,12 +63,22 @@ export default function AddProduct() {
   }
 
   function handleSave() {
-    if (!name || !purchasePrice || !salePrice) {
+    if (!name.trim() || purchasePrice.trim() === '' || salePrice.trim() === '') {
       setError(t('catalog.addProduct.errorNameAndPrices'));
+      return;
+    }
+    const validNonnegative = (value) => value === '' || (Number.isFinite(Number(value)) && Number(value) >= 0);
+    const numericFields = [purchasePrice, salePrice, quantity, lowStockThreshold, stockPacks, stockLooseUnits, packPurchasePrice, packSalePrice];
+    if (!numericFields.every(validNonnegative) || (stockType === 'PACK' && (!Number.isInteger(Number(packSize)) || Number(packSize) <= 0))) {
+      setError(t('catalog.addProduct.errorInvalidNumbers'));
       return;
     }
     if (stockType === 'AREA' && (!sheetWidth || !sheetHeight)) {
       setError(t('catalog.addProduct.errorSheetDims'));
+      return;
+    }
+    if (stockType === 'AREA' && (!(Number(sheetWidth) > 0) || !(Number(sheetHeight) > 0))) {
+      setError(t('catalog.addProduct.errorInvalidNumbers'));
       return;
     }
     setError(null);
@@ -92,15 +103,42 @@ export default function AddProduct() {
         packPurchasePrice,
         packSalePrice,
       },
-      { onSuccess: () => navigation.goBack() }
+      { onSuccess: () => navigation.goBack(), onError: () => setError(t('catalog.addProduct.errorSaveFailed')) }
     );
   }
 
   return (
     <AnimatedScreen>
-      <SafeAreaView style={{ flex: 1 }}>
-        <Header title={t('catalog.addProduct.title')} />
+      <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1 }}>
+        <Header title={t('catalog.addProduct.title')} onBack={step === 1 ? () => setStep(0) : undefined} />
+        <View style={{ flexDirection: rowDirection, gap: spacing.xs, paddingHorizontal: spacing.lg, paddingBottom: spacing.sm }}>
+          {[0, 1].map((index) => <View key={index} style={{ flex: 1, height: 4, borderRadius: 2, backgroundColor: index <= step ? colors.brand.primary : colors.surface.border }} />)}
+        </View>
 
+        {step === 0 ? (
+          <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.sm }}>
+            <Text style={[typography.body, { color: colors.ink.secondary, marginBottom: spacing.sm, textAlign }]}>{t('catalog.addProduct.chooseUnitDescription')}</Text>
+            {[
+              { key: 'QUANTITY', icon: Package, detail: 'catalog.addProduct.modeQtyDetail' },
+              { key: 'PACK', icon: Boxes, detail: 'catalog.addProduct.modePackDetail' },
+              { key: 'LENGTH', icon: Ruler, detail: 'catalog.addProduct.modeLengthDetail' },
+              { key: 'AREA', icon: ScanLine, detail: 'catalog.addProduct.modeAreaDetail' },
+            ].map((option) => {
+              const Icon = option.icon;
+              const selected = stockType === option.key;
+              return (
+                <Pressable key={option.key} accessibilityRole="radio" accessibilityState={{ checked: selected }} onPress={() => setStockType(option.key)} style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.md, backgroundColor: colors.surface.raised, borderRadius: radii.md, borderWidth: selected ? 2 : 1, borderColor: selected ? colors.brand.primary : colors.surface.border, padding: spacing.md }}>
+                  <View style={{ width: 42, height: 42, borderRadius: radii.md, backgroundColor: colors.brand.primary + '16', alignItems: 'center', justifyContent: 'center' }}><Icon size={21} color={colors.brand.primary} strokeWidth={1.8} /></View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[typography.bodyMedium, { color: colors.ink.primary, textAlign }]}>{MODES.find((mode) => mode.key === option.key)?.label}</Text>
+                    <Text style={[typography.caption, { color: colors.ink.secondary, textAlign }]}>{t(option.detail)}</Text>
+                  </View>
+                  <ChevronRight size={16} color={colors.ink.secondary} />
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        ) : (
         <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
           <Pressable
             onPress={handlePickImage}
@@ -244,7 +282,7 @@ export default function AddProduct() {
           </View>
 
           <TextField
-            label={t('catalog.addProduct.lowStockThresholdOptional')}
+            label={`${t('catalog.addProduct.lowStockThresholdOptional')}${stockType === 'AREA' ? ` (${unit}²)` : stockType === 'LENGTH' ? ` (${unit})` : ''}`}
             value={lowStockThreshold}
             onChangeText={setLowStockThreshold}
             placeholder="e.g. 10"
@@ -254,9 +292,10 @@ export default function AddProduct() {
 
           {error ? <Text style={[typography.caption, { color: colors.semantic.danger, textAlign }]}>{error}</Text> : null}
         </ScrollView>
+        )}
 
         <View style={{ padding: spacing.lg }}>
-          <Button title={t('catalog.addProduct.saveProduct')} onPress={handleSave} />
+          <Button title={step === 0 ? t('common.next') : t('catalog.addProduct.saveProduct')} onPress={step === 0 ? () => setStep(1) : handleSave} />
         </View>
       </SafeAreaView>
     </AnimatedScreen>
