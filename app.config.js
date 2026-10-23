@@ -19,8 +19,8 @@ const sentryDsn =
 module.exports = ({ config }) => ({
   ...config,
   expo: {
-    name: "AsaanKhata",
-    slug: "asaandukaanaapp",
+    name: "Asaan Dukaan",
+    slug: "asaandukaan",
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/icon.png",
