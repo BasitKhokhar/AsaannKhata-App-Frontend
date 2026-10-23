@@ -18,8 +18,7 @@ const sentryDsn =
 
 const sentryRelease =
   process.env.SENTRY_RELEASE ||
-  `${process.env.npm_package_name || "asaankhataapp"}@${
-    process.env.npm_package_version || "1.0.0"
+  `${process.env.npm_package_name || "asaankhataapp"}@${process.env.npm_package_version || "1.0.0"
   }`;
 
 const sentryEnvironment =

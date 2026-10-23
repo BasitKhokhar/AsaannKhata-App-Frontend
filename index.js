@@ -44,7 +44,7 @@ if (sentryDsn) {
 // `notification` block; this handler is the hook point for any future
 // data-message-only processing (e.g. updating a locally cached badge count)
 // and its presence silences Android's "missing background handler" warning.
-messaging().setBackgroundMessageHandler(async (remoteMessage) => {});
+messaging().setBackgroundMessageHandler(async (remoteMessage) => { });
 
 // registerRootComponent calls AppRegistry.registerComponent('main', () => App);
 // It also ensures that whether you load the app in Expo Go or in a native build,
