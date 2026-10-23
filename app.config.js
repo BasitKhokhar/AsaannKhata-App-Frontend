@@ -9,6 +9,25 @@ const withKotlinSkipMetadataVersionCheck = require("./plugins/withKotlinSkipMeta
 const apiBaseUrl =
   process.env.EXPO_PUBLIC_API_BASE_URL || "http://10.0.2.2:5000";
 
+const sentryDsn =
+  process.env.EXPO_PUBLIC_SENTRY_DSN ||
+  process.env.SENTRY_DSN ||
+  process.env.SENTRY_DSN_URL ||
+  process.env.SNETRY_DSN ||
+  "";
+
+const sentryRelease =
+  process.env.SENTRY_RELEASE ||
+  `${process.env.npm_package_name || "asaankhataapp"}@${
+    process.env.npm_package_version || "1.0.0"
+  }`;
+
+const sentryEnvironment =
+  process.env.SENTRY_ENVIRONMENT ||
+  process.env.APP_ENV ||
+  process.env.NODE_ENV ||
+  "production";
+
 module.exports = ({ config }) => ({
   ...config,
   expo: {
@@ -91,7 +110,12 @@ module.exports = ({ config }) => ({
       bannerAdUnitId: process.env.BANNER_AD_UNIT_ID,
       interstitialAdUnitId: process.env.INTERSTITIAL_AD_UNIT_ID,
       rewardAdUnitId: process.env.REWARD_AD_UNIT_ID,
-      sentryDsn: process.env.SENTRY_DSN || process.env.SNETRY_DSN,
+      sentryDsn,
+      sentryRelease,
+      sentryEnvironment,
+      sentryDist: process.env.SENTRY_DIST || undefined,
+      sentryOrg: process.env.SENTRY_ORG,
+      sentryProject: process.env.SENTRY_PROJECT,
       revenueCatIosSdkKey: process.env.REVENUECAT_IOS_SDK_KEY,
       revenueCatAndroidSdkKey: process.env.REVENUECAT_ANDROID_SDK_KEY,
       eas: {

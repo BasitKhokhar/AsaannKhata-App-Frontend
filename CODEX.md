@@ -231,7 +231,8 @@ Environment variable names currently used:
 - `REWARD_AD_UNIT_ID`
 - `SENTRY_ORG`
 - `SENTRY_PROJECT`
-- `SENTRY_DSN` (the local `.env` currently contains the misspelled `SNETRY_DSN`; `app.config.js` deliberately accepts either spelling)
+- `SENTRY_DSN` (preferred) or `SENTRY_DSN_URL` (used by the local `.env`); `app.config.js` also accepts the legacy `SNETRY_DSN` typo. One of these must be present in the selected EAS build environment for Sentry to initialize.
+- `SENTRY_AUTH_TOKEN` (sensitive build variable for Sentry source map upload; keep it out of app config and commits)
 - `REVENUECAT_ANDROID_SDK_KEY` and `REVENUECAT_IOS_SDK_KEY`
 
 Never place environment values or `google-services.json` contents in logs or documentation.
