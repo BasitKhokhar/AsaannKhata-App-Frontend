@@ -191,6 +191,7 @@ Most core domain reads/writes use repositories. Notable online/server paths incl
 - Reward coins are granted only after the SDK emits `EARNED_REWARD` and the backend accepts `/ads/reward`.
 - Interstitial navigation has a watchdog and must never block navigation indefinitely.
 - FCM uses `@react-native-firebase/messaging`, not `expo-notifications`.
+- Firebase Messaging and Analytics use the named modular APIs from React Native Firebase 26; those packages no longer export callable defaults.
 - The background message handler must remain registered in `index.js` before the app root.
 - FCM token registration reuses the sync device UUID and currently skips registration until that device has been registered with the backend.
 

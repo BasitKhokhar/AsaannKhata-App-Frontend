@@ -1,4 +1,4 @@
-import analytics from '@react-native-firebase/analytics';
+import { getAnalytics } from '@react-native-firebase/analytics';
 
 // Thin wrapper around @react-native-firebase/analytics — mirrors adsService's
 // shape (a handful of plain exported functions plus a grouped default-ish
@@ -11,7 +11,7 @@ let initPromise = null;
 // Call once at app startup (see App.jsx, alongside initAds()) — idempotent.
 export function initAnalytics() {
   if (initPromise) return initPromise;
-  initPromise = analytics()
+  initPromise = getAnalytics()
     .setAnalyticsCollectionEnabled(true)
     .catch(() => {});
   return initPromise;
@@ -21,21 +21,21 @@ export function initAnalytics() {
 // see src/navigation/RootNavigator.jsx.
 export function logScreenView(screenName) {
   if (!screenName) return;
-  analytics()
+  getAnalytics()
     .logScreenView({ screen_name: screenName, screen_class: screenName })
     .catch(() => {});
 }
 
 export function logEvent(name, params) {
   if (!name) return;
-  analytics()
+  getAnalytics()
     .logEvent(name, params)
     .catch(() => {});
 }
 
 export function setUserProperty(name, value) {
   if (!name) return;
-  analytics()
+  getAnalytics()
     .setUserProperty(name, value == null ? null : String(value))
     .catch(() => {});
 }
@@ -43,7 +43,7 @@ export function setUserProperty(name, value) {
 // Call after login/session-hydration with the account id, and with `null`
 // on logout to stop attributing further events to that user.
 export function setAnalyticsUserId(id) {
-  analytics()
+  getAnalytics()
     .setUserId(id == null ? null : String(id))
     .catch(() => {});
 }

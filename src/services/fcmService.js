@@ -1,4 +1,11 @@
-import messaging from '@react-native-firebase/messaging';
+import {
+  AuthorizationStatus,
+  getMessaging,
+  getToken,
+  onMessage,
+  onTokenRefresh,
+  requestPermission as requestMessagingPermission,
+} from '@react-native-firebase/messaging';
 import { deviceRepository } from '../db/repositories/deviceRepository';
 import { notificationsApi } from './notificationsApi';
 import { showToast } from '../store/toastStore';
@@ -20,8 +27,8 @@ async function requestPermission() {
   // On Android 13+ (API 33+) this triggers the runtime POST_NOTIFICATIONS
   // prompt (declared in app.config.js's android.permissions); on older
   // Android and iOS it resolves per that platform's own rules.
-  const status = await messaging().requestPermission();
-  return status === messaging.AuthorizationStatus.AUTHORIZED || status === messaging.AuthorizationStatus.PROVISIONAL;
+  const status = await requestMessagingPermission(getMessaging());
+  return status === AuthorizationStatus.AUTHORIZED || status === AuthorizationStatus.PROVISIONAL;
 }
 
 export async function registerCurrentToken() {
@@ -34,7 +41,7 @@ export async function registerCurrentToken() {
     // token-refresh cycle will retry.
     return null;
   }
-  const fcmToken = await messaging().getToken();
+  const fcmToken = await getToken(getMessaging());
   if (!fcmToken) return null;
   try {
     await notificationsApi.registerToken({ deviceId: device.deviceId, fcmToken });
@@ -58,7 +65,7 @@ export async function initFcm() {
 
     await registerCurrentToken();
 
-    unsubscribeTokenRefresh = messaging().onTokenRefresh(async (fcmToken) => {
+    unsubscribeTokenRefresh = onTokenRefresh(getMessaging(), async (fcmToken) => {
       const device = deviceRepository.getOrCreate();
       if (!device.registered || !fcmToken) return;
       try {
@@ -71,7 +78,7 @@ export async function initFcm() {
     // Foreground messages don't show a system tray notification on their
     // own — surface them as an in-app toast using this app's existing toast
     // queue (src/store/toastStore.js) instead of adding a new banner component.
-    unsubscribeForegroundMessage = messaging().onMessage(async (remoteMessage) => {
+    unsubscribeForegroundMessage = onMessage(getMessaging(), async (remoteMessage) => {
       const title = remoteMessage?.notification?.title;
       const body = remoteMessage?.notification?.body;
       const message = [title, body].filter(Boolean).join(' — ') || 'You have a new notification.';
