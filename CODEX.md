@@ -261,7 +261,7 @@ npm run web      # Expo web dev server
 
 There are currently no lint, typecheck, or test scripts. For changes, use the narrowest meaningful checks available, such as Expo diagnostics/config validation, a development build, and focused manual flows. Do not claim automated tests passed when none exist.
 
-EAS profiles are `development`, `development-simulator`, `preview`, and `production`; development/preview Android builds are APKs and production auto-increments the remote app version.
+EAS profiles are `development`, `development-simulator`, `preview`, and `production`; development/preview Android builds are APKs, while production Android builds are AABs (`android.buildType: app-bundle`) and auto-increment the remote app version.
 
 ## Known sharp edges and incomplete areas
 
