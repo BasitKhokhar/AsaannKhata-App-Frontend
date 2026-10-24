@@ -209,6 +209,7 @@ Most core domain reads/writes use repositories. Notable online/server paths incl
 
 `app.config.js` is environment-driven and configures:
 
+- Expo project slug `asaankhataapp`, matching the EAS project referenced by `EXPO_ID`
 - Android/iOS identity `com.asaandukaan.app`
 - portrait orientation, automatic system UI style, icons/splash
 - SQLite, SecureStore, fonts, image picker, sharing/file system
