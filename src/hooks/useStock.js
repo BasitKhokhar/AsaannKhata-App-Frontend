@@ -1,46 +1,36 @@
 import { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { stockRepository } from '../db/repositories/stockRepository';
 import { productRepository } from '../db/repositories/productRepository';
-import { stockApi } from '../services/stockApi';
 import { useShopStore } from '../store/shopStore';
 
-// Local-first, remote-merge — mirrors the hybrid pattern already established
-// in useDashboard.js: read the local SQLite ledger immediately, then try the
-// server's shop-wide transaction log (reflects adjustments made on other
-// synced devices) and prefer it when reachable, falling back to local on
-// failure — stock data is "as of last sync," not live (no realtime backend).
-export function useStockTransactions() {
+// Stock history is paged from SQLite. Sync imports other devices' changes
+// into the same shop-scoped ledger, so this screen works offline too.
+export function useStockTransactions(type = 'all') {
   const activeShopId = useShopStore((s) => s.activeShopId);
   const { data: products = [] } = useShopProducts(activeShopId);
 
-  const query = useQuery({
-    queryKey: ['stockTransactions', activeShopId],
-    queryFn: async () => {
-      const local = stockRepository.listByShop(activeShopId);
-      try {
-        const remote = await stockApi.list({ shopId: activeShopId });
-        const rows = Array.isArray(remote) ? remote : remote?.data;
-        return Array.isArray(rows) && rows.length ? rows : local;
-      } catch (err) {
-        return local;
-      }
-    },
+  const query = useInfiniteQuery({
+    queryKey: ['stockTransactions', activeShopId, type],
+    queryFn: ({ pageParam }) => stockRepository.listPageByShop(activeShopId, { type, cursor: pageParam, limit: 100 }),
+    initialPageParam: null,
+    getNextPageParam: (lastPage) => lastPage.length === 100
+      ? { createdAt: lastPage.at(-1).createdAt, id: lastPage.at(-1).id }
+      : undefined,
     enabled: !!activeShopId,
   });
 
   const productsById = useMemo(() => {
     const map = new Map();
-    for (const p of products) map.set(p.id, p);
+    for (const product of products) map.set(product.id, product);
     return map;
   }, [products]);
 
   const transactions = useMemo(
-    () =>
-      (query.data || []).map((t) => ({
-        ...t,
-        productName: productsById.get(t.productId)?.name || 'Unknown product',
-      })),
+    () => (query.data?.pages.flat() || []).map((transaction) => ({
+      ...transaction,
+      productName: productsById.get(transaction.productId)?.name || 'Unknown product',
+    })),
     [query.data, productsById]
   );
 
@@ -55,9 +45,6 @@ function useShopProducts(shopId) {
   });
 }
 
-// Overview counters for the Stock screen's stat row — reuses the same
-// low-stock computation Dashboard already relies on (productRepository.
-// listLowStock) rather than a second implementation.
 export function useStockOverview() {
   const activeShopId = useShopStore((s) => s.activeShopId);
   const { data: products = [] } = useShopProducts(activeShopId);

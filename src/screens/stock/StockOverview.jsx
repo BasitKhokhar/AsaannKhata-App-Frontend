@@ -31,7 +31,7 @@ export default function StockOverview() {
   const rowDirection = isUrdu ? 'row-reverse' : 'row';
 
   const { totalSkus, lowStockCount } = useStockOverview();
-  const { data: transactions = [], isLoading, isRefetching, refetch } = useStockTransactions();
+  const { data: transactions = [], isLoading, isRefetching, isFetchingNextPage, hasNextPage, fetchNextPage, refetch } = useStockTransactions(filter);
 
   const FILTERS = [
     { key: 'all', label: t('stock.overview.filterAll') },
@@ -46,7 +46,7 @@ export default function StockOverview() {
     PACK_BREAK: { icon: PackageOpen, tone: 'warning', label: t('stock.overview.filterPackBreak') },
   };
 
-  const visible = filter === 'all' ? transactions : transactions.filter((tx) => tx.type === filter);
+  const visible = transactions;
 
   return (
     <AnimatedScreen>
@@ -98,6 +98,9 @@ export default function StockOverview() {
             estimatedItemSize={72}
             refreshing={isRefetching}
             onRefresh={refetch}
+            onEndReached={() => { if (hasNextPage && !isFetchingNextPage) fetchNextPage(); }}
+            onEndReachedThreshold={0.5}
+            ListFooterComponent={isFetchingNextPage ? <SkeletonListRow /> : null}
             contentContainerStyle={{ padding: spacing.lg, paddingTop: spacing.sm, paddingBottom: 96 }}
             renderItem={({ item }) => {
               const meta = TYPE_META[item.type] || TYPE_META.IN;

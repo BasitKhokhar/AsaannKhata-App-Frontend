@@ -13,10 +13,14 @@ export function useCustomers() {
 }
 
 export function useCustomer(customerId) {
+  const activeShopId = useShopStore((s) => s.activeShopId);
   return useQuery({
-    queryKey: ['customer', customerId],
-    queryFn: () => customerRepository.getById(customerId),
-    enabled: !!customerId,
+    queryKey: ['customer', activeShopId, customerId],
+    queryFn: () => {
+      const customer = customerRepository.getById(customerId);
+      return customer?.shopId === activeShopId ? customer : null;
+    },
+    enabled: !!customerId && !!activeShopId,
   });
 }
 
@@ -46,10 +50,12 @@ export function useRecordCustomerPayment() {
     mutate: ({ customerId, amount, note }, options) => {
       try {
         const amt = parseFloat(amount) || 0;
+        const customer = customerRepository.getById(customerId);
+        if (!customer || customer.shopId !== activeShopId) throw new Error('Customer is not in the selected shop');
         const payment = customerPaymentRepository.create({ shopId: activeShopId, customerId, amount: amt, note: note || null });
         customerRepository.adjustBalance(customerId, -amt);
         queryClient.invalidateQueries({ queryKey: ['customers', activeShopId] });
-        queryClient.invalidateQueries({ queryKey: ['customer', customerId] });
+        queryClient.invalidateQueries({ queryKey: ['customer', activeShopId, customerId] });
         options?.onSuccess?.(payment);
       } catch (err) {
         options?.onError?.(err);

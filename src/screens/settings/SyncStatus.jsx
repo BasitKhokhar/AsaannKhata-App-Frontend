@@ -22,7 +22,7 @@ export default function SyncStatus() {
   const navigation = useNavigation();
   const { colors, radii, typography, spacing } = useTheme();
   const { data: shops = [] } = useShops();
-  const { isSyncing, lastSyncAt, perShopStatus } = useSyncStore();
+  const { isSyncing, lastSyncAt, lastError, perShopStatus } = useSyncStore();
   const entitlement = entitlementRepository.get();
   const { data: syncStatusData } = useSyncStatus();
   const t = useT();
@@ -66,7 +66,9 @@ export default function SyncStatus() {
               <Path d="M17.6 3v3.4H14.2M6.4 21v-3.4h3.4" stroke={colors.semantic.success} strokeWidth={1.8} fill="none" strokeLinecap="round" strokeLinejoin="round" />
             </Svg>
           </View>
-          <Text style={[typography.h3, { color: colors.ink.primary, marginTop: spacing.sm }]}>{isSyncing ? t('settings.syncStatus.syncing') : t('settings.syncStatus.allSynced')}</Text>
+          <Text style={[typography.h3, { color: colors.ink.primary, marginTop: spacing.sm }]}>
+            {isSyncing ? t('settings.syncStatus.syncing') : lastError ? t('settings.syncStatus.statusError') : t('settings.syncStatus.allSynced')}
+          </Text>
           <Text style={[typography.caption, { color: colors.ink.secondary }]}>
             {t('settings.syncStatus.lastSynced').replace('{time}', lastSyncAt ? formatRelativeTime(lastSyncAt) : t('settings.syncStatus.never'))}
           </Text>

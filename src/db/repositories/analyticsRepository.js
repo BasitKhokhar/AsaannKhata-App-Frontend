@@ -1,4 +1,4 @@
-import { eq, and, gte, sql } from 'drizzle-orm';
+import { eq, and, gte, inArray, sql } from 'drizzle-orm';
 import { db } from '../client';
 import { bills, billItems, products, expenses } from '../schema';
 import { isLowStock } from '../../utils/stock';
@@ -16,6 +16,27 @@ function daysAgoIso(days) {
   return d.toISOString();
 }
 
+// Fetch line items in bounded groups instead of one query per bill. The join
+// also obtains the current cost basis used by the existing profit estimate.
+function loadBillItems(billRows) {
+  const result = [];
+  for (let offset = 0; offset < billRows.length; offset += 500) {
+    const ids = billRows.slice(offset, offset + 500).map((bill) => bill.id);
+    result.push(...db.select({ item: billItems, purchasePrice: products.purchasePrice, packSize: products.packSize })
+      .from(billItems)
+      .leftJoin(products, eq(products.id, billItems.productId))
+      .where(inArray(billItems.billId, ids))
+      .all());
+  }
+  return result;
+}
+
+function lineQuantity(item, packSize) {
+  return item.stockType === 'PACK'
+    ? (item.packQuantity || 0) * (packSize || 1) + (item.looseQuantity || 0)
+    : item.quantity ?? item.totalArea ?? item.lengthCm ?? 0;
+}
+
 // Sales Report screen — period is 'week' | 'month'. Entirely local, since
 // this is a device-level analytics view, not something the backend exposes.
 export function computeSalesReport(shopId, period = 'week') {
@@ -31,18 +52,10 @@ export function computeSalesReport(shopId, period = 'week') {
   const productTotals = new Map();
   let grossProfit = 0;
 
-  for (const bill of periodBills) {
-    const items = db.select().from(billItems).where(eq(billItems.billId, bill.id)).all();
-    for (const item of items) {
-      productTotals.set(item.productName, (productTotals.get(item.productName) || 0) + item.total);
-
-      const product = db.select().from(products).where(eq(products.id, item.productId)).get();
-      if (product) {
-        const qty = item.stockType === 'PACK'
-          ? (item.packQuantity || 0) * (product.packSize || 1) + (item.looseQuantity || 0)
-          : item.quantity ?? item.totalArea ?? item.lengthCm ?? 0;
-        grossProfit += (item.total || 0) - (product.purchasePrice || 0) * qty;
-      }
+  for (const { item, purchasePrice, packSize } of loadBillItems(periodBills)) {
+    productTotals.set(item.productName, (productTotals.get(item.productName) || 0) + item.total);
+    if (purchasePrice != null) {
+      grossProfit += (item.total || 0) - purchasePrice * lineQuantity(item, packSize);
     }
   }
 
@@ -74,16 +87,9 @@ export function computeLocalDashboardStats(shopId) {
   const salesToday = todaysBills.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
 
   let profitToday = 0;
-  for (const bill of todaysBills) {
-    const items = db.select().from(billItems).where(eq(billItems.billId, bill.id)).all();
-    for (const item of items) {
-      const product = db.select().from(products).where(eq(products.id, item.productId)).get();
-      if (!product) continue;
-      const qty = item.stockType === 'PACK'
-        ? (item.packQuantity || 0) * (product.packSize || 1) + (item.looseQuantity || 0)
-        : item.quantity ?? item.totalArea ?? item.lengthCm ?? 0;
-      profitToday += (item.total || 0) - (product.purchasePrice || 0) * qty;
-    }
+  for (const { item, purchasePrice, packSize } of loadBillItems(todaysBills)) {
+    if (purchasePrice == null) continue;
+    profitToday += (item.total || 0) - purchasePrice * lineQuantity(item, packSize);
   }
   const todayExpenses = db.select().from(expenses).where(and(eq(expenses.shopId, shopId), eq(expenses.isDeleted, false), gte(expenses.occurredAt, since))).all();
   profitToday -= todayExpenses.reduce((sum, expense) => sum + expense.amount, 0);

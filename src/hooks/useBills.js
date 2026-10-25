@@ -39,10 +39,14 @@ export function useBills({ status } = {}) {
 }
 
 export function useBill(billId) {
+  const activeShopId = useShopStore((s) => s.activeShopId);
   return useQuery({
-    queryKey: ['bill', billId],
-    queryFn: () => billRepository.getWithItems(billId),
-    enabled: !!billId,
+    queryKey: ['bill', activeShopId, billId],
+    queryFn: () => {
+      const bill = billRepository.getWithItems(billId);
+      return bill?.shopId === activeShopId ? bill : null;
+    },
+    enabled: !!billId && !!activeShopId,
   });
 }
 

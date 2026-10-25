@@ -29,6 +29,20 @@
       "when": 1792753267677,
       "tag": "0003_expenses",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1792860154524,
+      "tag": "0004_greedy_gauntlet",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1792860688915,
+      "tag": "0005_thankful_piledriver",
+      "breakpoints": true
     }
   ]
 }

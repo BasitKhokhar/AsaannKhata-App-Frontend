@@ -1,6 +1,6 @@
 # AsaanKhata frontend project context
 
-Last repository review: 2026-10-23
+Last repository review: 2026-10-24
 
 This is the durable project map for coding agents. Read this before scanning the repository. Inspect only the files relevant to the current task after reading it, and update this document whenever an architectural change makes it inaccurate.
 
@@ -103,8 +103,9 @@ Syncable rows use these conventions:
 - `updatedAt` is the conflict/watermark field for mutable records.
 - Shops are not created offline; `shopRepository` is a read-through cache for server shops.
 - Bill items do not sync independently; they travel inside their parent bill and are replaced wholesale on pull.
+- Bill/customer detail hooks verify that the requested record belongs to the selected shop; bill creation and customer payments reject cross-shop references locally.
 
-`createSyncableRepository.js` is the shared CRUD/sync factory. Extend it or follow its conventions instead of creating incompatible persistence semantics.
+`createSyncableRepository.js` is the shared CRUD/sync factory. Extend it or follow its conventions instead of creating incompatible persistence semantics. Migrations `0004_greedy_gauntlet` and `0005_thankful_piledriver` add shop-scoped list/pending indexes, server-ID lookup indexes, bill-item parent lookup, and stock-history type/date lookup to keep multi-shop history queries efficient.
 
 ## Important write flows
 
@@ -128,6 +129,7 @@ Stock types are `QUANTITY`, `AREA`, `LENGTH`, and `PACK`.
 - PACK tracks full packs and loose units separately.
 - Product creation also writes an initial `IN` stock transaction when initial stock is positive.
 - Every stock adjustment changes counters on `products` and appends a stock transaction.
+- The Stock History screen pages SQLite transactions by selected shop and type (100 per page); cloud changes arrive through sync rather than a second unbounded history request.
 - Unit-conversion logic in `src/utils/unitConverter.js` must continue matching the backend contract.
 - Product low-stock thresholds are optional and synchronized to Prisma. AREA/LENGTH thresholds entered in the selected form unit are normalized to cm²/cm; alerts compare against the stored stock counter. PACK compares full packs plus loose units. An unset threshold suppresses that product's low-stock alert.
 
@@ -137,7 +139,7 @@ Customer balances live on the customer row. Credit bills increase the balance. S
 
 ### Expenses
 
-`useExpenseActions` writes shop-scoped expense rows locally through `expenseRepository`; edits and deletes use the same pending/soft-delete sync conventions as products. `Expenses` filters the ledger by date. Local sales reports calculate gross profit from sold lines and cost basis, then subtract expenses for net profit. Expense records have no attachment or staff attribution yet.
+`useExpenseActions` writes shop-scoped expense rows locally through `expenseRepository`; edits and deletes use the same pending/soft-delete sync conventions as products. `Expenses` filters the ledger by date. Local sales reports calculate gross profit from sold lines and cost basis, then subtract expenses for net profit. Report bill items and current product costs are fetched in bounded joined groups instead of one query per bill. Expense records have no attachment or staff attribution yet.
 
 ## Synchronization contract
 
@@ -146,11 +148,10 @@ All triggers call `runSync()` in `src/sync/syncEngine.js`. Triggers are app star
 Sync sequence:
 
 1. Reconcile pending account-level coin usage for every tier.
-2. Stop if no active shop or neither cached entitlement `cloudEnabled` nor a valid coin sync unlock is present.
-3. Upsert this install's stable device UUID for the active shop (server registration is shop-scoped), then retry FCM token registration.
-4. Pull all pages using the server-issued `nextSince`; persist the watermark per shop after every page. Pull preserves rows with pending/conflict local edits.
-5. Push pending records in FK-safe order: categories -> products -> stock adjustments -> customers -> bills -> customer payments -> expenses. Product stock counters are the snapshot sent to the server; synced adjustment and bill operations record audit rows without applying those stock movements again. Bill sale logs are sent with their parent bill and matched by client ID on the next pull.
-6. Mark successes synced, conflicts conflict, and leave errors pending for retry.
+2. Stop if neither cached entitlement `cloudEnabled` nor a valid coin sync unlock is present. Otherwise fetch the signed-in admin's authoritative shop list from the backend; the active shop is only a UI selection.
+3. For each owned shop, send an explicit `X-Shop-Id`, upsert this install's stable device UUID for that shop (server registration is shop-scoped), and pull all pages using the server-issued `nextSince`. Persist the watermark per shop after every page. Pulled rows are checked against the requested shop and pending/conflict local edits are preserved.
+4. Push that shop's pending records in FK-safe order: categories -> products -> stock adjustments -> customers -> bills -> customer payments -> expenses. Push requests are capped at 100 operations. Product stock counters are the snapshot sent to the server; synced adjustment and bill operations record audit rows without applying those stock movements again. Bill sale logs are sent with their parent bill and matched by client ID on the next pull.
+5. Mark successes synced, conflicts conflict, and leave errors pending for retry. A failure in one shop does not stop attempts for the remaining shops; the overall sync reports failure until all shops succeed.
 
 Pull ordering is categories -> customers -> products -> bills -> stock transactions -> customer payments -> expenses. Server integer FKs are resolved back to local UUIDs with `idMap.js`.
 
@@ -260,7 +261,7 @@ npm run ios      # native iOS development build
 npm run web      # Expo web dev server
 ```
 
-There are currently no lint, typecheck, or test scripts. For changes, use the narrowest meaningful checks available, such as Expo diagnostics/config validation, a development build, and focused manual flows. Do not claim automated tests passed when none exist.
+There are currently no package-level lint, typecheck, or test scripts. A focused multi-shop sync test is available with `node --test scripts/multiShopSync.test.cjs`. For other changes, use the narrowest meaningful checks available, such as Expo diagnostics/config validation, a development build, and focused manual flows. Do not claim broader automated coverage than exists.
 
 EAS profiles are `development`, `development-simulator`, `preview`, and `production`; development/preview Android builds are APKs, while production Android builds are AABs (`android.buildType: app-bundle`) and auto-increment the remote app version.
 

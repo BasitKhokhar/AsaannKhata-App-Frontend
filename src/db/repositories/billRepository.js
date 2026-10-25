@@ -21,6 +21,13 @@ function createBillWithItems({ shopId, customerId, customerName, customerPhone, 
   let createdBill;
   expoDb.withTransactionSync(() => {
 
+  if (customerId) {
+    const customer = customerRepository.getById(customerId);
+    if (!customer || customer.shopId !== shopId || customer.isDeleted) {
+      throw new Error('Customer is not available in this shop');
+    }
+  }
+
   db.insert(bills)
     .values({
       id: billId,

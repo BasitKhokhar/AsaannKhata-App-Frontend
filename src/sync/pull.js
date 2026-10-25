@@ -189,7 +189,12 @@ function upsertExpense(row) {
 
 // Order matters: categories/customers before products/bills that reference
 // them, products before bill items/stock transactions that reference them.
-export function applyPullPage(page) {
+export function applyPullPage(page, shopId) {
+  for (const key of ['categories', 'customers', 'products', 'bills', 'stockTransactions', 'customerPayments', 'expenses']) {
+    if ((page[key] || []).some((row) => String(row.shopId) !== String(shopId))) {
+      throw new Error(`Sync pull included a record outside shop ${shopId}`);
+    }
+  }
   (page.categories || []).forEach(upsertCategory);
   (page.customers || []).forEach(upsertCustomer);
   (page.products || []).forEach(upsertProduct);

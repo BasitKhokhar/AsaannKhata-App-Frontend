@@ -33,6 +33,19 @@ function applyResults(repo, results) {
   }
 }
 
+const PUSH_BATCH_SIZE = 100;
+
+async function pushBatches(shopId, deviceId, operations, send, repo) {
+  for (let offset = 0; offset < operations.length; offset += PUSH_BATCH_SIZE) {
+    const batch = operations.slice(offset, offset + PUSH_BATCH_SIZE);
+    const { results } = await send(shopId, deviceId, batch);
+    applyResults(repo, results);
+    if (results.some((result) => result.status === 'error' || result.status === 'conflict')) {
+      throw new Error('Some records could not be synchronized; pending or conflicted records remain on this device');
+    }
+  }
+}
+
 async function pushPendingCategories(shopId, deviceId) {
   const pending = categoryRepository.listPending(shopId);
   if (!pending.length) return;
@@ -42,8 +55,7 @@ async function pushPendingCategories(shopId, deviceId) {
     payload: { name: row.name, image: row.imageRemoteUrl },
     baseUpdatedAt: row.updatedAt,
   }));
-  const { results } = await syncApi.pushCategories(deviceId, operations);
-  applyResults(categoryRepository, results);
+  await pushBatches(shopId, deviceId, operations, syncApi.pushCategories, categoryRepository);
 }
 
 async function pushPendingProducts(shopId, deviceId) {
@@ -74,13 +86,13 @@ async function pushPendingProducts(shopId, deviceId) {
     },
     baseUpdatedAt: row.updatedAt,
   }));
-  const { results } = await syncApi.pushProducts(deviceId, operations);
-  applyResults(productRepository, results);
+  await pushBatches(shopId, deviceId, operations, syncApi.pushProducts, productRepository);
 }
 
 async function pushPendingStockAdjustments(shopId, deviceId) {
   const pending = stockRepository.listPending(shopId);
   if (!pending.length) return;
+  let deferred = 0;
   const operations = pending
     .map((row) => {
       // Sale logs are carried with their bill, which creates the matching
@@ -88,7 +100,10 @@ async function pushPendingStockAdjustments(shopId, deviceId) {
       const saleBillId = /^Sold in Bill #(.+)$/.exec(row.description || '')?.[1];
       if (saleBillId && billRepository.getById(saleBillId)) return null;
       const productServerId = serverIdOf(products, row.productId);
-      if (!productServerId) return null; // product hasn't synced yet — retry next round
+      if (!productServerId) {
+        deferred += 1;
+        return null;
+      }
       return {
         clientId: row.id,
         operationType: 'CREATE',
@@ -96,9 +111,8 @@ async function pushPendingStockAdjustments(shopId, deviceId) {
       };
     })
     .filter(Boolean);
-  if (!operations.length) return;
-  const { results } = await syncApi.pushStockAdjustments(deviceId, operations);
-  applyResults(stockRepository, results);
+  await pushBatches(shopId, deviceId, operations, syncApi.pushStockAdjustments, stockRepository);
+  if (deferred) throw new Error('Some stock adjustments are waiting for their products to sync');
 }
 
 async function pushPendingCustomers(shopId, deviceId) {
@@ -110,15 +124,14 @@ async function pushPendingCustomers(shopId, deviceId) {
     payload: { name: row.name, phone: row.phone },
     baseUpdatedAt: row.updatedAt,
   }));
-  const { results } = await syncApi.pushCustomers(deviceId, operations);
-  applyResults(customerRepository, results);
+  await pushBatches(shopId, deviceId, operations, syncApi.pushCustomers, customerRepository);
 }
 
 async function pushPendingBills(shopId, deviceId) {
   const pending = billRepository.listPending(shopId);
   if (!pending.length) return;
   const saleLogsByBill = new Map();
-  for (const log of stockRepository.listByShop(shopId).reverse()) {
+  for (const log of stockRepository.listPending(shopId).reverse()) {
     const billId = /^Sold in Bill #(.+)$/.exec(log.description || '')?.[1];
     if (!billId) continue;
     const logs = saleLogsByBill.get(billId) || [];
@@ -158,9 +171,10 @@ async function pushPendingBills(shopId, deviceId) {
       };
     })
     .filter(Boolean);
-  if (!operations.length) return;
-  const { results } = await syncApi.pushBills(deviceId, operations);
-  applyResults(billRepository, results);
+  await pushBatches(shopId, deviceId, operations, syncApi.pushBills, billRepository);
+  if (operations.length !== pending.length) {
+    throw new Error('Some bills are waiting for their products to sync');
+  }
 }
 
 async function pushPendingCustomerPayments(shopId, deviceId) {
@@ -173,9 +187,10 @@ async function pushPendingCustomerPayments(shopId, deviceId) {
       return { clientId: row.id, operationType: 'CREATE', payload: { customerId: customerServerId, amount: row.amount, note: row.note } };
     })
     .filter(Boolean);
-  if (!operations.length) return;
-  const { results } = await syncApi.pushCustomerPayments(deviceId, operations);
-  applyResults(customerPaymentRepository, results);
+  await pushBatches(shopId, deviceId, operations, syncApi.pushCustomerPayments, customerPaymentRepository);
+  if (operations.length !== pending.length) {
+    throw new Error('Some customer payments are waiting for their customers to sync');
+  }
 }
 
 async function pushPendingExpenses(shopId, deviceId) {
@@ -187,8 +202,7 @@ async function pushPendingExpenses(shopId, deviceId) {
     payload: { category: row.category, amount: row.amount, note: row.note, occurredAt: row.occurredAt },
     baseUpdatedAt: row.updatedAt,
   }));
-  const { results } = await syncApi.pushExpenses(deviceId, operations);
-  applyResults(expenseRepository, results);
+  await pushBatches(shopId, deviceId, operations, syncApi.pushExpenses, expenseRepository);
 }
 
 // Reconciles this device's local coin-usage ledger (see

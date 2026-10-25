@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, real, index } from 'drizzle-orm/sqlite-core';
 
 // -----------------------------------------------------------------------
 // Sync bookkeeping convention used on every syncable table:
@@ -27,7 +27,7 @@ export const shops = sqliteTable('shops', {
   logoRemoteUrl: text('logo_remote_url'),
   updatedAt: text('updated_at').notNull(),
   createdAt: text('created_at').notNull(),
-});
+}, (table) => [index('shops_admin_id_idx').on(table.adminId)]);
 
 export const categories = sqliteTable('categories', {
   id: text('id').primaryKey(),
@@ -42,7 +42,11 @@ export const categories = sqliteTable('categories', {
   syncStatus: text('sync_status').notNull().default('pending'),
   updatedAt: text('updated_at').notNull(),
   createdAt: text('created_at').notNull(),
-});
+}, (table) => [
+  index('categories_shop_created_idx').on(table.shopId, table.createdAt),
+  index('categories_shop_pending_idx').on(table.shopId, table.syncStatus),
+  index('categories_server_id_idx').on(table.serverId),
+]);
 
 export const products = sqliteTable('products', {
   id: text('id').primaryKey(),
@@ -79,7 +83,11 @@ export const products = sqliteTable('products', {
   syncStatus: text('sync_status').notNull().default('pending'),
   updatedAt: text('updated_at').notNull(),
   createdAt: text('created_at').notNull(),
-});
+}, (table) => [
+  index('products_shop_active_name_idx').on(table.shopId, table.isDeleted, table.name),
+  index('products_shop_pending_idx').on(table.shopId, table.syncStatus),
+  index('products_server_id_idx').on(table.serverId),
+]);
 
 export const customers = sqliteTable('customers', {
   id: text('id').primaryKey(),
@@ -94,7 +102,11 @@ export const customers = sqliteTable('customers', {
   syncStatus: text('sync_status').notNull().default('pending'),
   updatedAt: text('updated_at').notNull(),
   createdAt: text('created_at').notNull(),
-});
+}, (table) => [
+  index('customers_shop_created_idx').on(table.shopId, table.createdAt),
+  index('customers_shop_pending_idx').on(table.shopId, table.syncStatus),
+  index('customers_server_id_idx').on(table.serverId),
+]);
 
 export const expenses = sqliteTable('expenses', {
   id: text('id').primaryKey(),
@@ -110,7 +122,11 @@ export const expenses = sqliteTable('expenses', {
   syncStatus: text('sync_status').notNull().default('pending'),
   updatedAt: text('updated_at').notNull(),
   createdAt: text('created_at').notNull(),
-});
+}, (table) => [
+  index('expenses_shop_occurred_idx').on(table.shopId, table.isDeleted, table.occurredAt),
+  index('expenses_shop_pending_idx').on(table.shopId, table.syncStatus),
+  index('expenses_server_id_idx').on(table.serverId),
+]);
 
 export const bills = sqliteTable('bills', {
   id: text('id').primaryKey(),
@@ -133,7 +149,11 @@ export const bills = sqliteTable('bills', {
   syncStatus: text('sync_status').notNull().default('pending'),
   updatedAt: text('updated_at').notNull(),
   createdAt: text('created_at').notNull(),
-});
+}, (table) => [
+  index('bills_shop_created_idx').on(table.shopId, table.isDeleted, table.createdAt),
+  index('bills_shop_pending_idx').on(table.shopId, table.syncStatus),
+  index('bills_server_id_idx').on(table.serverId),
+]);
 
 // No independent sync fields — items sync nested inside their parent bill's
 // push payload and inherit the parent's syncStatus (matches backend BillItem).
@@ -155,7 +175,7 @@ export const billItems = sqliteTable('bill_items', {
   pricePerUnit: real('price_per_unit').notNull(),
   total: real('total').notNull(),
   createdAt: text('created_at').notNull(),
-});
+}, (table) => [index('bill_items_bill_id_idx').on(table.billId)]);
 
 // Append-only, like the backend — no isDeleted/update path.
 export const stockTransactions = sqliteTable('stock_transactions', {
@@ -170,7 +190,12 @@ export const stockTransactions = sqliteTable('stock_transactions', {
   deviceId: text('device_id'),
   syncStatus: text('sync_status').notNull().default('pending'),
   createdAt: text('created_at').notNull(),
-});
+}, (table) => [
+  index('stock_transactions_shop_created_idx').on(table.shopId, table.createdAt),
+  index('stock_transactions_shop_type_created_idx').on(table.shopId, table.type, table.createdAt),
+  index('stock_transactions_shop_pending_idx').on(table.shopId, table.syncStatus),
+  index('stock_transactions_server_id_idx').on(table.serverId),
+]);
 
 // Append-only, like stock_transactions.
 export const customerPayments = sqliteTable('customer_payments', {
@@ -183,7 +208,11 @@ export const customerPayments = sqliteTable('customer_payments', {
   deviceId: text('device_id'),
   syncStatus: text('sync_status').notNull().default('pending'),
   createdAt: text('created_at').notNull(),
-});
+}, (table) => [
+  index('customer_payments_shop_created_idx').on(table.shopId, table.createdAt),
+  index('customer_payments_shop_pending_idx').on(table.shopId, table.syncStatus),
+  index('customer_payments_server_id_idx').on(table.serverId),
+]);
 
 // Append-only local ledger of ad-coin spending events (e.g. a bill created
 // offline on the free tier) — same shape convention as stock_transactions/

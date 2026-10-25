@@ -1,0 +1,1 @@
+CREATE INDEX `stock_transactions_shop_type_created_idx` ON `stock_transactions` (`shop_id`,`type`,`created_at`);

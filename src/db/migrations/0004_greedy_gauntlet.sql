@@ -1,0 +1,23 @@
+CREATE INDEX `bill_items_bill_id_idx` ON `bill_items` (`bill_id`);--> statement-breakpoint
+CREATE INDEX `bills_shop_created_idx` ON `bills` (`shop_id`,`is_deleted`,`created_at`);--> statement-breakpoint
+CREATE INDEX `bills_shop_pending_idx` ON `bills` (`shop_id`,`sync_status`);--> statement-breakpoint
+CREATE INDEX `bills_server_id_idx` ON `bills` (`server_id`);--> statement-breakpoint
+CREATE INDEX `categories_shop_created_idx` ON `categories` (`shop_id`,`created_at`);--> statement-breakpoint
+CREATE INDEX `categories_shop_pending_idx` ON `categories` (`shop_id`,`sync_status`);--> statement-breakpoint
+CREATE INDEX `categories_server_id_idx` ON `categories` (`server_id`);--> statement-breakpoint
+CREATE INDEX `customer_payments_shop_created_idx` ON `customer_payments` (`shop_id`,`created_at`);--> statement-breakpoint
+CREATE INDEX `customer_payments_shop_pending_idx` ON `customer_payments` (`shop_id`,`sync_status`);--> statement-breakpoint
+CREATE INDEX `customer_payments_server_id_idx` ON `customer_payments` (`server_id`);--> statement-breakpoint
+CREATE INDEX `customers_shop_created_idx` ON `customers` (`shop_id`,`created_at`);--> statement-breakpoint
+CREATE INDEX `customers_shop_pending_idx` ON `customers` (`shop_id`,`sync_status`);--> statement-breakpoint
+CREATE INDEX `customers_server_id_idx` ON `customers` (`server_id`);--> statement-breakpoint
+CREATE INDEX `expenses_shop_occurred_idx` ON `expenses` (`shop_id`,`is_deleted`,`occurred_at`);--> statement-breakpoint
+CREATE INDEX `expenses_shop_pending_idx` ON `expenses` (`shop_id`,`sync_status`);--> statement-breakpoint
+CREATE INDEX `expenses_server_id_idx` ON `expenses` (`server_id`);--> statement-breakpoint
+CREATE INDEX `products_shop_active_name_idx` ON `products` (`shop_id`,`is_deleted`,`name`);--> statement-breakpoint
+CREATE INDEX `products_shop_pending_idx` ON `products` (`shop_id`,`sync_status`);--> statement-breakpoint
+CREATE INDEX `products_server_id_idx` ON `products` (`server_id`);--> statement-breakpoint
+CREATE INDEX `shops_admin_id_idx` ON `shops` (`admin_id`);--> statement-breakpoint
+CREATE INDEX `stock_transactions_shop_created_idx` ON `stock_transactions` (`shop_id`,`created_at`);--> statement-breakpoint
+CREATE INDEX `stock_transactions_shop_pending_idx` ON `stock_transactions` (`shop_id`,`sync_status`);--> statement-breakpoint
+CREATE INDEX `stock_transactions_server_id_idx` ON `stock_transactions` (`server_id`);
