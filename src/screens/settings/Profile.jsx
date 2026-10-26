@@ -14,6 +14,7 @@ import { Button } from '../../components/ui/Button';
 import { useTheme } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
 import { authApi } from '../../services/authApi';
+import * as secureSession from '../../services/secureSession';
 import { showToast } from '../../store/toastStore';
 import { useT, useIsUrdu } from '../../store/languageStore';
 
@@ -35,7 +36,9 @@ export default function Profile() {
 
   const updatePassword = useMutation({
     mutationFn: () => authApi.updatePassword({ currentPassword, newPassword }),
-    onSuccess: () => {
+    onSuccess: async () => {
+      await secureSession.clearSession();
+      useAuthStore.getState().clearSession();
       setCurrentPassword('');
       setNewPassword('');
       setFormError(null);
@@ -51,7 +54,7 @@ export default function Profile() {
       setFormError(t('settings.profile.errorFillBoth'));
       return;
     }
-    if (newPassword.length < 6) {
+    if (newPassword.length < 12 || newPassword.length > 128) {
       setFormError(t('settings.profile.errorMinLength'));
       return;
     }

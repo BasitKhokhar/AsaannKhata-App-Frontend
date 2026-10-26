@@ -5,4 +5,6 @@ export const authApi = {
   login: (payload) => apiClient.post('/auth/admin/login', payload).then((r) => r.data),
   refresh: (refreshToken) => apiClient.post('/auth/admin/refresh', { refreshToken }).then((r) => r.data),
   updatePassword: (payload) => apiClient.put('/auth/admin/update-password', payload).then((r) => r.data),
+  requestPasswordReset: (email) => apiClient.post('/auth/admin/password-reset/request', { email }).then((r) => r.data),
+  confirmPasswordReset: (payload) => apiClient.post('/auth/admin/password-reset/confirm', payload).then((r) => r.data),
 };

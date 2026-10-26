@@ -201,6 +201,7 @@ export const en = {
   'auth.register1.continue': 'Continue',
   'auth.register1.errorRequired': 'Please fill in your name, email, and password.',
   'auth.register1.errorPasswordMismatch': 'Passwords do not match.',
+  'auth.register1.errorPasswordLength': 'Password must be 12–128 characters.',
 
   'auth.register2.shopName': 'Shop name',
   'auth.register2.addLogo': 'Add shop logo',
@@ -241,6 +242,15 @@ export const en = {
   'auth.otp.resendIn': 'Resend code in',
   'auth.otp.verify': 'Verify',
   'auth.otp.comingSoon': 'OTP verification is coming soon.',
+  'auth.forgotPassword.invalidEmail': 'Enter a valid email address.',
+  'auth.forgotPassword.requestFailed': 'Could not request a reset code. Please try again.',
+  'auth.otp.code': '6-digit code',
+  'auth.otp.newPassword': 'New password',
+  'auth.otp.confirmPassword': 'Confirm new password',
+  'auth.otp.invalidCode': 'Enter the 6-digit code.',
+  'auth.otp.invalidPassword': 'Password must be 12–128 characters.',
+  'auth.otp.passwordMismatch': 'Passwords do not match.',
+  'auth.otp.resetFailed': 'Could not reset password. Check the code and try again.',
 
   // ---------------------------------------------------------------------
   // Onboarding
@@ -467,11 +477,11 @@ export const en = {
   'settings.profile.changePasswordDesc': 'Update the password used to sign in to AsaanKhata.',
   'settings.profile.currentPassword': 'Current password',
   'settings.profile.newPassword': 'New password',
-  'settings.profile.newPasswordHint': 'At least 6 characters',
+  'settings.profile.newPasswordHint': '12–128 characters',
   'settings.profile.updatePassword': 'Update Password',
   'settings.profile.passwordUpdated': 'Password updated',
   'settings.profile.errorFillBoth': 'Enter your current and new password.',
-  'settings.profile.errorMinLength': 'New password must be at least 6 characters.',
+  'settings.profile.errorMinLength': 'Password must be 12–128 characters.',
   'settings.profile.errorGeneric': 'Could not update password. Check your current password and try again.',
 
   // ---------------------------------------------------------------------

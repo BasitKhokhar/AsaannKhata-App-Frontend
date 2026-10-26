@@ -1,6 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
 
-// Tokens are sensitive and short-lived-ish (15/180 day JWTs) — SecureStore
+// Tokens are sensitive (15-minute access / 30-day refresh JWTs) — SecureStore
 // (Keychain/Keystore-backed) is the right place for them, not AsyncStorage.
 const KEYS = {
   accessToken: 'ak_access_token',

@@ -30,6 +30,10 @@ export default function RegisterStep3() {
       setError(t('auth.register1.errorRequired'));
       return;
     }
+    if (password.length < 12 || password.length > 128) {
+      setError(t('auth.register1.errorPasswordLength'));
+      return;
+    }
     if (password !== confirmPassword) {
       setError(t('auth.register1.errorPasswordMismatch'));
       return;

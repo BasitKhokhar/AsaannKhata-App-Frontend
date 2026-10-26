@@ -51,7 +51,7 @@ Firebase Analytics screen views are emitted on navigation route changes.
 ## Navigation map
 
 - Onboarding: `Splash` -> `Onboarding1` -> `Onboarding2` -> `Onboarding3` -> `Onboarding4`.
-- Auth: `Login`, three registration steps (business type, shop details, account), `ForgotPassword`, `OtpVerification`. Registration still creates the account and first shop in one backend call, with a free trial; paid plan selection is available after sign-in.
+- Auth: `Login`, three registration steps (business type, shop details, account), `ForgotPassword`, `OtpVerification`. Registration still creates the account and first shop in one backend call, with a free trial; paid plan selection is available after sign-in. ForgotPassword requests a 6-digit email code; OtpVerification confirms the code and sets a new password through backend auth endpoints.
 - Drawer routes:
   - `HomeStack`: `Dashboard`
   - `BillingStack`: `NewBill`, `Payment`, `BillDetail`, `CreditCustomers`, `CustomerDetail`
@@ -269,7 +269,7 @@ EAS profiles are `development`, `development-simulator`, `preview`, and `product
 
 - There is no dedicated migration-recovery UI; migration errors currently throw at the root.
 - Local bill, product creation and stock-adjustment writes use Expo SQLite synchronous transactions. The snapshot/ledger double-application path was removed for synced bills and adjustments, but concurrent edits from multiple devices and older pending rows still require end-to-end reconciliation against a migrated backend before release.
-- `ForgotPassword`/OTP behavior should be inspected before extending it; do not assume a complete backend reset flow from route names alone.
+- Password recovery uses `POST /auth/admin/password-reset/request` and `POST /auth/admin/password-reset/confirm`; SMTP stays on the backend. Keep reviewer credentials out of Expo environment variables and app bundles.
 - Help & Support requires `EXPO_PUBLIC_SUPPORT_EMAIL` for a contact action; otherwise it explains that contact is unavailable.
 - RevenueCat API keys are placeholders.
 - Low-stock thresholds are optional; products with no threshold do not appear in low-stock lists. The backend must deploy the matching Prisma migration before its product/sync/dashboard paths use this field.

@@ -198,6 +198,7 @@ export const hi = {
   'auth.register1.continue': 'जारी रखें',
   'auth.register1.errorRequired': 'कृपया अपना नाम, ईमेल और पासवर्ड भरें।',
   'auth.register1.errorPasswordMismatch': 'पासवर्ड मेल नहीं खाते।',
+  'auth.register1.errorPasswordLength': 'पासवर्ड 12–128 अक्षरों का होना चाहिए।',
 
   'auth.register2.shopName': 'दुकान का नाम',
   'auth.register2.addLogo': 'दुकान का लोगो जोड़ें',
@@ -238,6 +239,15 @@ export const hi = {
   'auth.otp.resendIn': 'कोड दोबारा भेजें',
   'auth.otp.verify': 'सत्यापित करें',
   'auth.otp.comingSoon': 'OTP सत्यापन जल्द आ रहा है।',
+  'auth.forgotPassword.invalidEmail': 'सही ईमेल पता दर्ज करें।',
+  'auth.forgotPassword.requestFailed': 'रीसेट कोड नहीं भेजा जा सका। फिर प्रयास करें।',
+  'auth.otp.code': '6 अंकों का कोड',
+  'auth.otp.newPassword': 'नया पासवर्ड',
+  'auth.otp.confirmPassword': 'नए पासवर्ड की पुष्टि करें',
+  'auth.otp.invalidCode': '6 अंकों का कोड दर्ज करें।',
+  'auth.otp.invalidPassword': 'पासवर्ड 12–128 अक्षरों का होना चाहिए।',
+  'auth.otp.passwordMismatch': 'पासवर्ड मेल नहीं खाते।',
+  'auth.otp.resetFailed': 'पासवर्ड रीसेट नहीं हुआ। कोड जाँचें और फिर प्रयास करें।',
 
   // ---------------------------------------------------------------------
   // Onboarding
@@ -463,11 +473,11 @@ export const hi = {
   'settings.profile.changePasswordDesc': 'आसान खाता में साइन इन करने के लिए उपयोग होने वाला पासवर्ड अपडेट करें।',
   'settings.profile.currentPassword': 'मौजूदा पासवर्ड',
   'settings.profile.newPassword': 'नया पासवर्ड',
-  'settings.profile.newPasswordHint': 'कम से कम 6 अक्षर',
+  'settings.profile.newPasswordHint': '12–128 अक्षर',
   'settings.profile.updatePassword': 'पासवर्ड अपडेट करें',
   'settings.profile.passwordUpdated': 'पासवर्ड अपडेट हो गया',
   'settings.profile.errorFillBoth': 'अपना मौजूदा और नया पासवर्ड दर्ज करें।',
-  'settings.profile.errorMinLength': 'नया पासवर्ड कम से कम 6 अक्षर का होना चाहिए।',
+  'settings.profile.errorMinLength': 'पासवर्ड 12–128 अक्षरों का होना चाहिए।',
   'settings.profile.errorGeneric': 'पासवर्ड अपडेट नहीं हो सका। अपना मौजूदा पासवर्ड जांचें और पुनः प्रयास करें।',
 
   // ---------------------------------------------------------------------

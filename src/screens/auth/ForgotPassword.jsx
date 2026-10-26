@@ -3,6 +3,7 @@ import { View, Text, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Lock } from 'lucide-react-native';
+import { authApi } from '../../services/authApi';
 import { GradientShiftBackground } from '../../components/motion/GradientShiftBackground';
 import { Header } from '../../components/ui/Header';
 import { TextField } from '../../components/ui/TextField';
@@ -10,16 +11,33 @@ import { Button } from '../../components/ui/Button';
 import { useTheme } from '../../theme';
 import { useT, useIsUrdu } from '../../store/languageStore';
 
-// The backend has no password-reset/OTP endpoints yet — this is built as
-// complete, on-brand UI with submission disabled, per the plan's decision
-// to flag this as a separate follow-up rather than fake the behavior.
 export default function ForgotPassword() {
   const navigation = useNavigation();
   const { colors, radii, typography, spacing, elevation } = useTheme();
   const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const t = useT();
   const isUrdu = useIsUrdu();
   const textAlign = isUrdu ? 'right' : 'left';
+
+  async function sendCode() {
+    const normalized = email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
+      setError(t('auth.forgotPassword.invalidEmail'));
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      await authApi.requestPasswordReset(normalized);
+      navigation.navigate('OtpVerification', { email: normalized });
+    } catch (err) {
+      setError(err.response?.data?.message || t('auth.forgotPassword.requestFailed'));
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <GradientShiftBackground colors={[colors.surface.bg, colors.brand.accentLight + '33']}>
@@ -61,10 +79,8 @@ export default function ForgotPassword() {
               />
             </View>
 
-            <Button title={t('auth.forgotPassword.sendResetCode')} onPress={() => {}} disabled style={{ marginTop: spacing.xl }} />
-            <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: 'center', marginTop: spacing.sm }]}>
-              {t('auth.forgotPassword.comingSoon')}
-            </Text>
+            {error ? <Text style={[typography.caption, { color: colors.semantic.danger, marginTop: spacing.sm, textAlign }]}>{error}</Text> : null}
+            <Button title={t('auth.forgotPassword.sendResetCode')} onPress={sendCode} loading={loading} disabled={!email.trim()} style={{ marginTop: spacing.xl }} />
 
             <View style={{ flex: 1 }} />
 
