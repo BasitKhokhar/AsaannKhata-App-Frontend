@@ -59,6 +59,7 @@ Firebase Analytics screen views are emitted on navigation route changes.
   - `StockStack`: `StockOverview`, `StockAdjustment`
   - `ShopsStack`: `ShopsList`, `AddShop`
   - Direct drawer screens: `SalesReport`, `Expenses`, `Notifications`, `SubscriptionPlans`, `EarnCoins`
+  - Direct drawer screen: `Records` (shop-scoped bill list, payment detail and Add Payment sheets)
   - `SettingsStack`: `Settings`, `SyncStatus`, `Profile`, `StaffManagement`, `Notifications`, `HelpSupport`, `About`
 - `StockAdjustment` deliberately exists in both Catalog and Stock stacks so each stack can navigate locally.
 - Cross-drawer navigation usually uses `navigation.navigate('SomeStack', { screen: 'SomeScreen' })`.
@@ -136,6 +137,7 @@ Stock types are `QUANTITY`, `AREA`, `LENGTH`, and `PACK`.
 ### Credit customers
 
 Customer balances live on the customer row. Credit bills increase the balance. Standalone payments append `customer_payments` and decrement the balance.
+The Records screen uses `billSettlementRepository` to associate later customer payments with a bill via a stable `asaankhata:bill:<bill client ID or server ID>|<payment ISO time>` note, using the existing sync payload. A payment and customer-balance adjustment commit in one SQLite transaction. Bill list/detail and customer history derive displayed due/status from the original bill plus its linked payments; no bill items or stock are rewritten when collecting a later payment. The timestamp in the note preserves the actual offline payment time after the backend assigns its receive time. The initial checkout payment is shown as the first history entry when positive.
 
 ### Expenses
 
@@ -275,6 +277,7 @@ EAS profiles are `development`, `development-simulator`, `preview`, and `product
 - Low-stock thresholds are optional; products with no threshold do not appear in low-stock lists. The backend must deploy the matching Prisma migration before its product/sync/dashboard paths use this field.
 - Local profit uses each product's current purchase cost as its cost basis. Historic margin can change after cost edits; a sale-time cost snapshot is still required for audited profit reports.
 - Sync conflict rows are marked but there is no general conflict-resolution workflow documented in the UI.
+- Bill-linked later payments sync as customer-payment ledger entries, but the current backend has no bill-payment relation or payment-only bill update sync operation. The backend Bill row's stored `remainingDue`/`status` may remain at its checkout values even when the app's Records, Bill Detail and customer history derive the settled values. Server-side reports using stored Bill fields need a matching backend contract before they can reflect later settlement accurately.
 - Pulled rows without a backend `clientId` may use stringified server IDs as local IDs; keep ID mapping logic centralized.
 - Several mojibake-looking comment/string sequences may reflect encoding issues. Preserve UTF-8 and verify user-visible receipt/text output when touching affected files.
 - No CI/test configuration is present in this repository.

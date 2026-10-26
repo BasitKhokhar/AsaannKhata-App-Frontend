@@ -21,6 +21,7 @@ export function buildReceiptHtml({ shopName, bill }) {
       <body style="font-family:-apple-system,Helvetica,Arial,sans-serif;padding:24px;color:#232733;">
         <div style="text-align:center;">
           <h2 style="margin:0;">${escapeHtml(shopName || 'AsaanKhata')}</h2>
+          <p style="font-size:12px;">${escapeHtml(bill.customerName)}${bill.customerPhone ? ` · ${escapeHtml(bill.customerPhone)}` : ''}</p>
           <p style="color:#6B7280;font-size:12px;">${new Date(bill.createdAt).toLocaleString()} · #${bill.serverId || bill.id}</p>
         </div>
         <table style="width:100%;border-collapse:collapse;margin-top:16px;font-size:14px;">
@@ -31,6 +32,8 @@ export function buildReceiptHtml({ shopName, bill }) {
           <tr><td>${t('billing.subtotal')}</td><td style="text-align:right">${formatCurrency(bill.subtotal)}</td></tr>
           <tr><td>${t('billing.billDetail.discount')}</td><td style="text-align:right">-${formatCurrency(bill.discount)}</td></tr>
           <tr style="font-weight:bold;font-size:16px;"><td>${t('billing.total')}</td><td style="text-align:right">${formatCurrency(bill.totalAmount)}</td></tr>
+          <tr><td>${t('records.paidAmount')}</td><td style="text-align:right">${formatCurrency(Math.min(bill.totalAmount, bill.totalReceived))}</td></tr>
+          <tr><td>${t('billing.remainingDue')}</td><td style="text-align:right">${formatCurrency(bill.remainingDue)}</td></tr>
           <tr><td>${t('billing.payment.methodLabel')}</td><td style="text-align:right">${t(paymentMethodLabelKey(bill.paymentMethod))}</td></tr>
         </table>
         <p style="text-align:center;margin-top:16px;font-weight:bold;color:${bill.status === 'PAID' ? '#2E9E6B' : '#C6982F'};">

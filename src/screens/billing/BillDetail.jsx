@@ -113,6 +113,9 @@ export default function BillDetail() {
           <Button title={t('billing.billDetail.print')} variant="outline" onPress={handlePrint} style={{ flex: 1 }} />
           <Button title={t('billing.billDetail.share')} onPress={handleShare} style={{ flex: 1 }} />
         </View>
+        <View style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.md }}>
+          <Button title={t('records.viewPaymentRecord')} variant="outline" onPress={() => navigation.navigate('Records', { billId: bill.id })} />
+        </View>
       </SafeAreaView>
     </AnimatedScreen>
   );

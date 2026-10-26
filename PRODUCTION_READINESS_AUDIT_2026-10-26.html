@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AsaanKhata | Production Readiness Scan | 26 October 2026</title>
+  <style>
+    :root { color-scheme: light; --bg:#f2f5f9; --paper:#fff; --ink:#12213a; --muted:#586780; --line:#dce4ef; --blue:#2f80d0; --green:#24805a; --amber:#be8420; --red:#c43d45; --shadow:0 10px 30px rgba(20,45,80,.04); }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif; }
+    a { color:#1767b2; text-underline-offset:3px; }
+    a:hover { color:#0e477f; }
+    .wrap { max-width:1260px; margin:auto; padding:32px 24px 96px; }
+    .eyebrow { color:var(--blue); font-size:.76rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; }
+    h1 { font-size:clamp(2rem,4vw,3.3rem); line-height:1.12; margin:8px 0 10px; }
+    h2 { font-size:1.85rem; margin:0 0 20px; padding-bottom:12px; border-bottom:2px solid var(--line); }
+    h3 { font-size:1.15rem; margin:0 0 8px; }
+    p { margin:0 0 14px; }
+    .muted { color:var(--muted); }
+    .small { font-size:.87rem; }
+    .hero { margin-bottom:30px; }
+    .meta { display:flex; flex-wrap:wrap; gap:10px; margin:20px 0; }
+    .pill { border:1px solid var(--line); background:var(--paper); border-radius:999px; padding:6px 12px; color:var(--muted); font-size:.83rem; }
+    .contents { display:flex; flex-wrap:wrap; gap:10px; margin-top:20px; }
+    .contents a { background:#e7eff8; border-radius:8px; padding:7px 11px; font-size:.85rem; font-weight:650; text-decoration:none; }
+    section { margin:42px 0 54px; scroll-margin-top:20px; }
+    .grid { display:grid; gap:20px; }
+    .grid.two { grid-template-columns:1fr 1fr; }
+    .grid.three { grid-template-columns:repeat(3,1fr); }
+    .card { background:var(--paper); border:1px solid var(--line); border-radius:22px; padding:28px; box-shadow:var(--shadow); }
+    .summary { display:grid; grid-template-columns:190px 1fr; align-items:center; gap:22px; }
+    .score { font-size:4.4rem; line-height:1; letter-spacing:-.07em; font-weight:800; color:#1555aa; }
+    .score span { font-size:1.35rem; letter-spacing:0; color:var(--muted); font-weight:500; }
+    .verdict { display:inline-block; margin-top:14px; color:#a82c38; background:#fae7e9; border-radius:7px; padding:5px 9px; font-weight:800; font-size:.83rem; text-transform:uppercase; letter-spacing:.06em; }
+    .mini-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:24px; }
+    .mini-stats div { background:#f5f8fb; border-radius:13px; padding:12px; }
+    .mini-stats strong { display:block; color:#1759a8; font-size:1.5rem; }
+    .mini-stats span { color:var(--muted); font-size:.76rem; text-transform:uppercase; letter-spacing:.05em; }
+    .bar-row { margin:0 0 15px; }
+    .bar-label { display:flex; justify-content:space-between; gap:12px; font-weight:650; font-size:.91rem; margin-bottom:5px; }
+    .bar-label strong { white-space:nowrap; }
+    .track { height:11px; border-radius:99px; background:#e3e9f0; overflow:hidden; }
+    .fill { height:100%; border-radius:99px; width:var(--value); background:var(--blue); }
+    .fill.green { background:var(--green); } .fill.amber { background:var(--amber); } .fill.red { background:var(--red); }
+    .notice { border-left:4px solid var(--amber); padding:14px 18px; background:#fff7e9; border-radius:0 10px 10px 0; }
+    .red-notice { border-left-color:var(--red); background:#fff0f0; }
+    .severity { display:inline-block; min-width:72px; text-align:center; border-radius:6px; padding:3px 7px; font-size:.74rem; font-weight:800; text-transform:uppercase; letter-spacing:.05em; }
+    .critical { color:#9d2631; background:#fde9eb; } .high { color:#9b590e; background:#fff0d7; } .medium { color:#185d94; background:#e5f1fa; }
+    .finding { border-top:1px solid var(--line); padding:18px 0; }
+    .finding:first-of-type { border-top:0; padding-top:0; }
+    .finding-head { display:flex; align-items:center; gap:10px; margin-bottom:5px; }
+    .finding-head h3 { margin:0; }
+    .evidence { color:var(--muted); font-size:.83rem; margin:7px 0 0; }
+    .evidence a { margin-right:9px; }
+    table { width:100%; border-collapse:collapse; }
+    th,td { text-align:left; padding:11px 12px; border-bottom:1px solid var(--line); vertical-align:top; }
+    th { color:#52647b; font-size:.75rem; text-transform:uppercase; letter-spacing:.08em; }
+    tr:last-child td { border-bottom:0; }
+    .table-scroll { overflow-x:auto; }
+    .tag { display:inline-block; border-radius:6px; padding:2px 7px; font-size:.76rem; font-weight:750; white-space:nowrap; }
+    .ready { background:#dff2e9; color:#1f7552; } .partial { background:#fff0d5; color:#8a5b12; } .absent { background:#fbe6e8; color:#a6353d; } .unknown { background:#e9edf2; color:#566477; }
+    .flow { display:flex; flex-wrap:wrap; gap:9px; align-items:center; font-size:.84rem; font-weight:700; margin:16px 0 10px; }
+    .flow span { background:#eaf3fc; border:1px solid #d1e4f5; border-radius:9px; padding:7px 10px; }
+    .flow i { color:#8092a7; font-style:normal; }
+    ol { padding-left:22px; } li { margin-bottom:10px; }
+    code { background:#eaf0f6; border-radius:4px; padding:1px 5px; overflow-wrap:anywhere; }
+    .foot { color:var(--muted); font-size:.85rem; border-top:1px solid var(--line); padding-top:18px; }
+    @media(max-width:900px) { .grid.two,.grid.three { grid-template-columns:1fr; } .summary { grid-template-columns:1fr; } }
+    @media(max-width:600px) { .wrap { padding:22px 14px 60px; } .card { padding:20px; border-radius:16px; } .mini-stats { grid-template-columns:1fr 1fr; } }
+    @media print { body { background:#fff; font-size:11px; } .wrap { max-width:none; padding:0; } section { break-inside:avoid; margin:25px 0; } .card { box-shadow:none; } a { color:inherit; } .contents { display:none; } }
+  </style>
+</head>
+<body>
+<main class="wrap">
+  <header class="hero">
+    <div class="eyebrow">Code and product scan · 26 October 2026</div>
+    <h1>AsaanKhata production readiness</h1>
+    <p class="muted">A static assessment of the current Expo frontend, compared with the capabilities and controls expected of a reliable small-shop POS and ledger app.</p>
+    <div class="meta">
+      <span class="pill">Scope: frontend repository and documented sync contract</span>
+      <span class="pill">173 JS/JSX source files parsed</span>
+      <span class="pill">2 multi-shop sync tests passed</span>
+      <span class="pill">No device or release build tested</span>
+    </div>
+    <nav class="contents" aria-label="Report sections">
+      <a href="#summary">Summary</a><a href="#features">Features</a><a href="#architecture">Architecture</a><a href="#findings">Findings</a><a href="#roadmap">Release plan</a><a href="#method">Method</a>
+    </nav>
+  </header>
+
+  <section id="summary">
+    <h2>1. Executive summary</h2>
+    <div class="grid two">
+      <div class="card">
+        <div class="summary">
+          <div><div class="score">5.6<span>/10</span></div><span class="verdict">Not release ready</span></div>
+          <div><h3>Strong foundation; financial controls need a release gate.</h3><p class="muted">The app has a coherent offline-first architecture, secure session storage, multilingual UI, multi-shop sync, and usable bill and stock flows. The biggest gaps are bill settlement consistency between app and server, stock overselling behavior, account-level data isolation, and the absence of broad automated validation.</p></div>
+        </div>
+        <div class="mini-stats">
+          <div><strong>2</strong><span>Critical findings</span></div>
+          <div><strong>4</strong><span>High findings</span></div>
+          <div><strong>514</strong><span>Translation keys matched</span></div>
+        </div>
+      </div>
+      <div class="card" aria-label="Category scores out of ten">
+        <p class="small muted">Current snapshot only. Scores are evidence-based judgments, not automated quality measurements or a comparison with the screenshot's v1/v2.</p>
+        <div class="bar-row"><div class="bar-label"><span>Feature coverage</span><strong>6.0</strong></div><div class="track"><div class="fill" style="--value:60%" role="progressbar" aria-valuenow="6" aria-valuemin="0" aria-valuemax="10" aria-label="Feature coverage"></div></div></div>
+        <div class="bar-row"><div class="bar-label"><span>Project structure</span><strong>7.0</strong></div><div class="track"><div class="fill green" style="--value:70%" role="progressbar" aria-valuenow="7" aria-valuemin="0" aria-valuemax="10" aria-label="Project structure"></div></div></div>
+        <div class="bar-row"><div class="bar-label"><span>State management</span><strong>7.0</strong></div><div class="track"><div class="fill green" style="--value:70%" role="progressbar" aria-valuenow="7" aria-valuemin="0" aria-valuemax="10" aria-label="State management"></div></div></div>
+        <div class="bar-row"><div class="bar-label"><span>Navigation</span><strong>7.0</strong></div><div class="track"><div class="fill green" style="--value:70%" role="progressbar" aria-valuenow="7" aria-valuemin="0" aria-valuemax="10" aria-label="Navigation"></div></div></div>
+        <div class="bar-row"><div class="bar-label"><span>Networking and API</span><strong>6.5</strong></div><div class="track"><div class="fill" style="--value:65%" role="progressbar" aria-valuenow="6.5" aria-valuemin="0" aria-valuemax="10" aria-label="Networking and API"></div></div></div>
+        <div class="bar-row"><div class="bar-label"><span>Financial and stock integrity</span><strong>4.0</strong></div><div class="track"><div class="fill red" style="--value:40%" role="progressbar" aria-valuenow="4" aria-valuemin="0" aria-valuemax="10" aria-label="Financial and stock integrity"></div></div></div>
+        <div class="bar-row"><div class="bar-label"><span>Security and privacy</span><strong>5.0</strong></div><div class="track"><div class="fill amber" style="--value:50%" role="progressbar" aria-valuenow="5" aria-valuemin="0" aria-valuemax="10" aria-label="Security and privacy"></div></div></div>
+        <div class="bar-row"><div class="bar-label"><span>Performance</span><strong>6.0</strong></div><div class="track"><div class="fill" style="--value:60%" role="progressbar" aria-valuenow="6" aria-valuemin="0" aria-valuemax="10" aria-label="Performance"></div></div></div>
+        <div class="bar-row"><div class="bar-label"><span>POS and scanner UX</span><strong>5.0</strong></div><div class="track"><div class="fill amber" style="--value:50%" role="progressbar" aria-valuenow="5" aria-valuemin="0" aria-valuemax="10" aria-label="POS and scanner UX"></div></div></div>
+        <div class="bar-row"><div class="bar-label"><span>Testing and release tooling</span><strong>2.5</strong></div><div class="track"><div class="fill red" style="--value:25%" role="progressbar" aria-valuenow="2.5" aria-valuemin="0" aria-valuemax="10" aria-label="Testing and release tooling"></div></div></div>
+        <div class="bar-row"><div class="bar-label"><span>Observability</span><strong>5.5</strong></div><div class="track"><div class="fill amber" style="--value:55%" role="progressbar" aria-valuenow="5.5" aria-valuemin="0" aria-valuemax="10" aria-label="Observability"></div></div></div>
+      </div>
+    </div>
+    <p class="notice red-notice" style="margin-top:20px"><strong>Release recommendation:</strong> complete the two critical financial/stock fixes, establish account data isolation, and run a real-device regression suite against a deployed backend before accepting payments or stock records in production.</p>
+  </section>
+
+  <section id="features">
+    <h2>2. Product capability scan</h2>
+    <div class="card table-scroll">
+      <table>
+        <thead><tr><th>Capability</th><th>Current state</th><th>Production expectation / evidence</th></tr></thead>
+        <tbody>
+          <tr><td>Multi-shop and offline records</td><td><span class="tag partial">Mostly present</span></td><td>Shop-scoped SQLite and reconciliation exist. Verify multi-account isolation and concurrent-device conflicts. <a href="./src/sync/syncEngine.js">sync engine</a></td></tr>
+          <tr><td>Catalog and inventory</td><td><span class="tag partial">Mostly present</span></td><td>Quantity, area, length and pack modes, thresholds and stock ledger exist; sale stock is clamped when insufficient. <a href="./src/db/repositories/billRepository.js">bill repository</a></td></tr>
+          <tr><td>POS checkout</td><td><span class="tag partial">Partial</span></td><td>Cart, discount and several recorded payment methods exist. New Bill uses a product picker rather than a browsable grid or per-mode configuration sheet; area and length default amounts are fixed. <a href="./src/screens/billing/NewBill.jsx">New Bill</a></td></tr>
+          <tr><td>Credit and later payments</td><td><span class="tag partial">Partial</span></td><td>Records shows bill payment history and recalculated due; server Bill status does not receive the later settlement. Standalone customer payments are not allocated to bills. <a href="./src/db/repositories/billSettlementRepository.js">settlement</a></td></tr>
+          <tr><td>Receipt sharing and printing</td><td><span class="tag ready">Present</span></td><td>PDF generation, native share sheet and system print dialog exist. Thermal-printer integration and device certification remain unverified. <a href="./src/screens/billing/BillDetail.jsx">Bill Detail</a></td></tr>
+          <tr><td>Reports and expenses</td><td><span class="tag partial">Partial</span></td><td>Local reports, expense ledger and exports exist. Historic margin uses current purchase cost, and server reports can show stale bill dues. <a href="./src/db/repositories/analyticsRepository.js">analytics</a></td></tr>
+          <tr><td>Staff roles and permissions</td><td><span class="tag absent">Missing</span></td><td>The screen explicitly states staff accounts are unavailable. Owner-only use is the current model. <a href="./src/screens/settings/StaffManagement.jsx">Staff Management</a></td></tr>
+          <tr><td>Barcode scanner / SKU lookup</td><td><span class="tag absent">Not found</span></td><td>No camera/scanner dependency or scanner route was found in this frontend. Treat as optional by target shop type, not a generic blocker.</td></tr>
+          <tr><td>Returns, refunds and voids</td><td><span class="tag absent">Not found</span></td><td>No dedicated route or domain operation was identified. Define reversal rules before adding UI so stock, payment and audit trails stay consistent.</td></tr>
+          <tr><td>Subscriptions, ads and push</td><td><span class="tag partial">Implemented, unverified</span></td><td>SDK adapters and entitlement cache exist; billing, ad rewards and FCM need store-sandbox and release-device certification. <a href="./src/services/revenueCat.js">RevenueCat adapter</a></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="architecture">
+    <h2>3. Code structure and state ownership</h2>
+    <div class="grid two">
+      <div class="card">
+        <h3>Request and data flow</h3>
+        <div class="flow"><span>Screens</span><i>→</i><span>Hooks</span><i>→</i><span>SQLite repositories</span><i>→</i><span>Sync engine</span><i>→</i><span>API/backend</span></div>
+        <p>React Navigation owns routes; screens and reusable UI are separate. Hooks coordinate repositories and invalidate TanStack Query. Sync reconciles all owned shops. This is a clear foundation for a larger app.</p>
+        <p class="evidence"><a href="./src/navigation/AppDrawer.jsx">routes</a><a href="./src/hooks/useBills.js">hook</a><a href="./src/db/repositories/billRepository.js">repository</a><a href="./src/sync/syncEngine.js">sync</a></p>
+      </div>
+      <div class="card">
+        <h3>Who owns which state?</h3>
+        <table><tbody>
+          <tr><td>Auth secrets</td><td>SecureStore + in-memory Zustand; centralized Axios refresh.</td></tr>
+          <tr><td>Business records</td><td>SQLite/Drizzle; local first writes and queued sync.</td></tr>
+          <tr><td>Read cache</td><td>TanStack Query, keyed by shop for core lists.</td></tr>
+          <tr><td>Preferences</td><td>Persisted Zustand via AsyncStorage; theme/language/shop/coins.</td></tr>
+          <tr><td>Checkout cart</td><td>Ephemeral Zustand; clears on successful bill.</td></tr>
+        </tbody></table>
+        <p class="evidence"><a href="./src/services/secureSession.js">secure session</a><a href="./src/services/queryClient.js">query client</a><a href="./src/store/cartStore.js">cart store</a></p>
+      </div>
+      <div class="card"><h3>Architecture strengths</h3><p>Separate domain folders; explicit database migrations; UUID-to-server ID mapping; shop-scoped indexes; shared theme, translation and UI primitives; bounded sync batches; a single shared query client. Existing lists reuse FlashList where appropriate.</p><p class="evidence"><a href="./src/db/schema.js">schema</a><a href="./src/db/migrations/migrations.js">migrations</a><a href="./src/components/motion/StaggeredList.jsx">virtualized list</a></p></div>
+      <div class="card"><h3>Architecture pressure points</h3><p>Some domain rules live in screen-local calculations; the customer picker renders all matched customers into a sheet; the New Bill cart uses a ScrollView; and later bill payments are encoded in free-text notes because the backend has no bill-payment relation. The app also lacks a recovery path when SQLite migration fails.</p><p class="evidence"><a href="./src/screens/billing/NewBill.jsx">New Bill</a><a href="./src/screens/billing/Payment.jsx">Payment</a><a href="./App.jsx">startup</a></p></div>
+    </div>
+  </section>
+
+  <section id="findings">
+    <h2>4. Prioritized findings</h2>
+    <div class="card">
+      <article class="finding"><div class="finding-head"><span class="severity critical">Critical</span><h3>F1. Later bill payments do not settle the backend Bill row</h3></div><p>The frontend links a customer-payment ledger entry to a bill through a note and derives the displayed due. The sync contract only pushes the customer payment; backend Bill <code>remainingDue</code>, <code>totalReceived</code> and <code>status</code> can stay at checkout values. Server reports and any backend consumer can disagree with the app.</p><p><strong>Remedy:</strong> add a first-class bill-payment relation and idempotent payment operation on the backend, then migrate the client, sync and reporting paths together.</p><p class="evidence"><a href="./src/db/repositories/billSettlementRepository.js">settlement repository</a><a href="./src/sync/push.js">sync push</a><a href="./CODEX.md">documented contract</a></p></article>
+      <article class="finding"><div class="finding-head"><span class="severity critical">Critical</span><h3>F2. A sale can record more stock out than existed</h3></div><p>Sale stock deductions use <code>Math.max(0, available − sold)</code>. A bill can therefore log the full sold quantity while inventory silently stops at zero. This hides shortages and makes the stock audit trail disagree with available stock.</p><p><strong>Remedy:</strong> choose an explicit oversell policy, validate every line inside the sale transaction, and reject or clearly record approved negative stock. Test all four stock modes and concurrent sale attempts.</p><p class="evidence"><a href="./src/db/repositories/billRepository.js">stockPatchForSale</a></p></article>
+      <article class="finding"><div class="finding-head"><span class="severity high">High</span><h3>F3. Shared device data is not fully isolated by account</h3></div><p>The app uses one local SQLite database and retains records when the session clears. Cached shops and coin snapshots have account guards, but the documented architecture says full SQLite/device isolation remains unfinished. A production handoff between different shop owners needs a tested data boundary.</p><p><strong>Remedy:</strong> scope local records to the authenticated owner or use separate databases per account; exercise logout, login, offline and shop-switch scenarios.</p><p class="evidence"><a href="./src/db/client.js">database client</a><a href="./src/store/authStore.js">session store</a><a href="./CODEX.md">known limitation</a></p></article>
+      <article class="finding"><div class="finding-head"><span class="severity high">High</span><h3>F4. Financial and sync regressions have little automated coverage</h3></div><p>There are no package lint, typecheck or test scripts and no CI workflow in this repository. Two focused multi-shop sync tests pass, but bill settlement, inventory modes, migrations and offline-to-online reconciliation do not have a release gate.</p><p><strong>Remedy:</strong> add focused repository/contract tests, static checks and CI before release; include migrated-install and two-device acceptance runs.</p><p class="evidence"><a href="./package.json">scripts</a><a href="./scripts/multiShopSync.test.cjs">existing tests</a></p></article>
+      <article class="finding"><div class="finding-head"><span class="severity high">High</span><h3>F5. General customer payments can diverge from bill status</h3></div><p>The standalone customer-payment hook subtracts a parsed amount from account balance without allocating it to an invoice or guarding against overpayment. Records continues to show that invoice pending because it only recognizes bill-linked payments.</p><p><strong>Remedy:</strong> define allocation rules (selected bill or oldest due), validate against account balance, and maintain one payment ledger that drives both customer and bill summaries.</p><p class="evidence"><a href="./src/hooks/useCustomers.js">standalone payment hook</a><a href="./src/db/repositories/billSettlementRepository.js">bill allocation</a></p></article>
+      <article class="finding"><div class="finding-head"><span class="severity high">High</span><h3>F6. A migration failure has no customer recovery screen</h3></div><p>Startup waits for migrations and throws the error if they fail. That protects consistency but can leave the user outside the app without a safe retry/export/support path.</p><p><strong>Remedy:</strong> provide a non-destructive recovery screen and a tested restore procedure; never auto-delete the local database.</p><p class="evidence"><a href="./App.jsx">startup error path</a><a href="./src/db/migrator.js">migration hook</a></p></article>
+      <article class="finding"><div class="finding-head"><span class="severity medium">Medium</span><h3>F7. POS product selection and measurement are limited</h3></div><p>New Bill opens a searchable list in a sheet. Area defaults to one sheet and length to 100 cm; the cart only provides steppers for quantity and packs. There is no scanner, volume unit or mode-specific edit sheet in the reviewed UI.</p><p><strong>Remedy:</strong> use a virtualized catalog grid, per-mode entry sheet, and editable checkout lines. Add volume/barcode only for target shops that need them.</p><p class="evidence"><a href="./src/screens/billing/NewBill.jsx">New Bill</a><a href="./src/screens/catalog/AddProduct.jsx">product modes</a></p></article>
+      <article class="finding"><div class="finding-head"><span class="severity medium">Medium</span><h3>F8. Production telemetry and endpoint controls need hardening</h3></div><p>Sentry initializes, but no explicit event or breadcrumb scrubbing policy is visible. The API URL falls back to an emulator HTTP address if production configuration is missing. These are configuration risks; this scan does not prove that a token has leaked.</p><p><strong>Remedy:</strong> reject missing/HTTP release endpoints, review telemetry payloads, and configure redaction for auth headers and customer data before enabling release builds.</p><p class="evidence"><a href="./index.js">Sentry initialization</a><a href="./app.config.js">API configuration</a><a href="./src/services/apiClient.js">auth header</a></p></article>
+      <article class="finding"><div class="finding-head"><span class="severity medium">Medium</span><h3>F9. Documentation and release verification need alignment</h3></div><p><code>CODEX.md</code> describes an Expo slug that differs from the value in <code>app.config.js</code>. The app's actual Android/iOS identifiers are consistent with one another, so this is a documentation drift finding. Store purchase, FCM, PDF sharing, dark/Urdu layouts and low-memory catalog performance remain untested in this scan.</p><p><strong>Remedy:</strong> reconcile the maintained map with config and keep a signed release checklist with evidence from physical devices.</p><p class="evidence"><a href="./CODEX.md">architecture map</a><a href="./app.config.js">Expo config</a></p></article>
+    </div>
+  </section>
+
+  <section id="roadmap">
+    <h2>5. Production release plan</h2>
+    <div class="grid three">
+      <div class="card"><div class="eyebrow">Gate 1 · correctness</div><h3>Make money and stock authoritative</h3><ol><li>Introduce a backend bill-payment operation with idempotent client IDs, ledger history and server status updates.</li><li>Specify and enforce oversell policy for quantity, area, length and packs.</li><li>Unify standalone and bill-linked customer payment allocation.</li><li>Test pending → partial → paid, overpayment, refunds/void decisions, offline replay and two-device conflicts.</li></ol></div>
+      <div class="card"><div class="eyebrow">Gate 2 · protection</div><h3>Protect shops and release builds</h3><ol><li>Prove per-account local data isolation after logout/login and offline switch.</li><li>Add migration recovery without deleting records.</li><li>Require a valid HTTPS API endpoint and review telemetry data handling.</li><li>Certify purchases, rewarded ads, push and receipts on release-mode devices.</li></ol></div>
+      <div class="card"><div class="eyebrow">Gate 3 · quality and growth</div><h3>Make releases repeatable</h3><ol><li>Ship lint, tests and CI around repositories and sync contracts.</li><li>Profile a 1,000-product shop, long histories and memory use on a low-end Android device.</li><li>Improve POS browsing, quantity sheets and accessible target sizes.</li><li>Add staff roles, barcode/volume and printer hardware only against verified shop requirements.</li></ol></div>
+    </div>
+    <p class="notice" style="margin-top:20px"><strong>Minimum acceptance:</strong> no bill or stock write can silently disagree with its audit trail; cross-device balances and status converge; different accounts cannot read each other's offline records; release builds have passing automated and device checks.</p>
+  </section>
+
+  <section id="method">
+    <h2>6. Scan method and limits</h2>
+    <div class="card">
+      <p><strong>Read-only inspection:</strong> route tree, screens, hooks, Zustand stores, SQLite repositories and migrations, sync engine, API client, Expo/EAS configuration, translations, package scripts and project architecture map. The source scan included current uncommitted Records/payment work; no existing code was changed to prepare this report.</p>
+      <p><strong>Checks completed:</strong> Babel parsed 173 source JS/JSX files with zero syntax errors; Urdu and Hindi each contained all 514 English translation keys; <code>node --test scripts/multiShopSync.test.cjs</code> passed 2 of 2 tests; <code>git diff --check</code> passed.</p>
+      <p><strong>Not verified:</strong> app startup on Android/iOS, visual/accessibility behavior, actual network and backend deployment, data migration on an installed device, security penetration testing, payment-store sandbox behavior, backend report correctness, and load performance. Scores should be updated after those checks.</p>
+      <p class="small muted">Scoring uses an equal-weight mean of 11 category judgments, rounded to one decimal place (5.6/10). Severity reflects likely user and data impact, not measured exploitability. “Not found” means absent from the frontend paths reviewed; it is not proof that no external integration exists.</p>
+    </div>
+  </section>
+
+  <footer class="foot">AsaanKhata frontend · Static production readiness scan · 26 October 2026 · Prepared from repository evidence</footer>
+</main>
+</body>
+</html>

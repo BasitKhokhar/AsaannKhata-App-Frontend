@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import NetInfo from '@react-native-community/netinfo';
 import { billRepository } from '../db/repositories/billRepository';
+import { listSettledBills, recordBillPayment, settledBill } from '../db/repositories/billSettlementRepository';
 import { coinUsageLogRepository } from '../db/repositories/coinUsageLogRepository';
 import { useShopStore } from '../store/shopStore';
 import { useCoinsStore } from '../store/coinsStore';
@@ -33,7 +34,10 @@ export function useBills({ status } = {}) {
   const activeShopId = useShopStore((s) => s.activeShopId);
   return useQuery({
     queryKey: ['bills', activeShopId, status],
-    queryFn: () => billRepository.listByShop(activeShopId, { status }),
+    queryFn: () => {
+      const rows = listSettledBills(activeShopId);
+      return status && status !== 'all' ? rows.filter((bill) => bill.status === status.toUpperCase()) : rows;
+    },
     enabled: !!activeShopId,
   });
 }
@@ -44,10 +48,30 @@ export function useBill(billId) {
     queryKey: ['bill', activeShopId, billId],
     queryFn: () => {
       const bill = billRepository.getWithItems(billId);
-      return bill?.shopId === activeShopId ? bill : null;
+      return bill?.shopId === activeShopId ? settledBill(bill) : null;
     },
     enabled: !!billId && !!activeShopId,
   });
+}
+
+export function useRecordBillPayment() {
+  const queryClient = useQueryClient();
+  const activeShopId = useShopStore((s) => s.activeShopId);
+  return {
+    mutate: ({ billId, amount }, options) => {
+      try {
+        const payment = recordBillPayment({ billId, shopId: activeShopId, amount });
+        queryClient.invalidateQueries({ queryKey: ['bills', activeShopId] });
+        queryClient.invalidateQueries({ queryKey: ['bill', activeShopId, billId] });
+        queryClient.invalidateQueries({ queryKey: ['customers', activeShopId] });
+        queryClient.invalidateQueries({ queryKey: ['customer', activeShopId] });
+        queryClient.invalidateQueries({ queryKey: ['dashboardStats', activeShopId] });
+        options?.onSuccess?.(payment);
+      } catch (err) {
+        options?.onError?.(err);
+      }
+    },
+  };
 }
 
 export function useCreateBill() {

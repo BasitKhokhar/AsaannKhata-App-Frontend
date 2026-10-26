@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, FlatList, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { Search, Plus, Minus, Trash2, PackagePlus } from 'lucide-react-native';
+import { Search, Plus, Minus, Trash2, PackagePlus, ReceiptText } from 'lucide-react-native';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { Button } from '../../components/ui/Button';
 import { SubscriptionBanner } from '../../components/ui/SubscriptionBanner';
@@ -98,8 +98,12 @@ export default function NewBill() {
   return (
     <AnimatedScreen>
       <SafeAreaView style={{ flex: 1 }}>
-        <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.xs }}>
+        <View style={{ flexDirection: rowDirection, alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.xs }}>
           <Text style={[typography.h3, { color: colors.ink.primary, textAlign }]}>{t('billing.newBill')}</Text>
+          <Pressable onPress={() => navigation.navigate('Records')} accessibilityRole="button" style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.xs, padding: spacing.xs }}>
+            <ReceiptText size={17} color={colors.brand.primary} />
+            <Text style={[typography.label, { color: colors.brand.primary }]}>{t('nav.records')}</Text>
+          </Pressable>
         </View>
         <SubscriptionBanner />
 

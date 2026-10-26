@@ -89,8 +89,9 @@ export default function Dashboard() {
 
   return (
     <AnimatedScreen style={{ backgroundColor: colors.surface.bg }}>
-      <View style={{ backgroundColor: colors.surface.bg }}>
-        <SafeAreaView edges={['top']}>
+      <View style={{ flex: 1 }}>
+        <View style={{ backgroundColor: colors.surface.bg }}>
+          <SafeAreaView edges={['top']}>
           <View style={{ flexDirection: rowDirection, alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingVertical: spacing.md }}>
             <Pressable
               onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
@@ -125,13 +126,14 @@ export default function Dashboard() {
               </Text>
             </Pressable>
           ) : null}
-        </SafeAreaView>
-      </View>
+          </SafeAreaView>
+        </View>
 
-      <ScrollView
-        contentContainerStyle={{ padding: spacing.md, gap: spacing.md }}
-        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={handleRefresh} tintColor={colors.brand.primary} />}
-      >
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{ padding: spacing.md, paddingBottom: 96, gap: spacing.md }}
+          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={handleRefresh} tintColor={colors.brand.primary} />}
+        >
         <View style={{ flexDirection: rowDirection, gap: spacing.sm }}>
           <StatCard value={formatCurrency(summary.totalSales)} label={t('dashboard.salesToday')} />
           <StatCard value={formatCurrency(summary.profitToday)} label={t('dashboard.profitToday')} tone="accent" />
@@ -280,13 +282,14 @@ export default function Dashboard() {
             ))
           )}
         </Card>
-      </ScrollView>
+        </ScrollView>
 
-      <View style={{ position: 'absolute', bottom: 84, right: spacing.lg }}>
-        <PulseFab
-          onPress={() => navigation.navigate('BillingStack', { screen: 'NewBill' })}
-          icon={<Plus size={22} color={colors.ink.primary} strokeWidth={1.8} />}
-        />
+        <View style={{ position: 'absolute', bottom: 16, right: spacing.lg }}>
+          <PulseFab
+            onPress={() => navigation.navigate('BillingStack', { screen: 'NewBill' })}
+            icon={<Plus size={22} color={colors.ink.primary} strokeWidth={1.8} />}
+          />
+        </View>
       </View>
       <BottomNav active="home" />
     </AnimatedScreen>

@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   LayoutDashboard,
   Receipt,
+  ReceiptText,
   Package,
   Warehouse,
   Users,
@@ -27,6 +28,7 @@ import { useT, useIsUrdu } from '../../store/languageStore';
 const NAV_ITEMS = [
   { route: 'HomeStack', labelKey: 'nav.dashboard', icon: LayoutDashboard },
   { route: 'BillingStack', screen: 'NewBill', labelKey: 'nav.billing', icon: Receipt },
+  { route: 'Records', labelKey: 'nav.records', icon: ReceiptText },
   { route: 'CatalogStack', labelKey: 'nav.products', icon: Package },
   { route: 'StockStack', labelKey: 'nav.stock', icon: Warehouse },
   { route: 'BillingStack', screen: 'CreditCustomers', labelKey: 'nav.creditCustomers', icon: Users },

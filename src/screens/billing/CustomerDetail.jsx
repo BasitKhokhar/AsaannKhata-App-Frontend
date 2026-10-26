@@ -13,7 +13,7 @@ import { Header } from '../../components/ui/Header';
 import { Sheet } from '../../components/ui/Sheet';
 import { useTheme } from '../../theme';
 import { useCustomer, useRecordCustomerPayment } from '../../hooks/useCustomers';
-import { billRepository } from '../../db/repositories/billRepository';
+import { listSettledBills, paymentTime } from '../../db/repositories/billSettlementRepository';
 import { customerPaymentRepository } from '../../db/repositories/customerPaymentRepository';
 import { formatCurrency } from '../../utils/money';
 import { formatRelativeTime } from '../../utils/dates';
@@ -36,11 +36,11 @@ export default function CustomerDetail() {
 
   if (!customer) return null;
 
-  const bills = billRepository.listByCustomer(customerId);
+  const bills = listSettledBills(customer.shopId).filter((bill) => bill.customerId === customerId);
   const payments = customerPaymentRepository.listByShop(customer.shopId).filter((p) => p.customerId === customerId);
   const history = [
     ...bills.map((b) => ({ kind: 'bill', at: b.createdAt, ...b })),
-    ...payments.map((p) => ({ kind: 'payment', at: p.createdAt, ...p })),
+    ...payments.map((p) => ({ kind: 'payment', ...p, at: paymentTime(p) })),
   ].sort((a, b) => new Date(b.at) - new Date(a.at));
 
   function handleRecordPayment() {
