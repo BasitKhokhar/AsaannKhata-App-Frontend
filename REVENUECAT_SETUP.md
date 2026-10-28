@@ -12,6 +12,7 @@ Expo app, `app.config.js` extras, or a committed `.env` file.
 | Frontend / EAS build environment | `REVENUECAT_IOS_SDK_KEY` | RevenueCat iOS **public SDK** key (`appl_...`), needed when building iOS |
 | Backend server only | `REVENUECAT_API_KEY` | RevenueCat **secret** REST API key for `GET /v1/subscribers/{app_user_id}` |
 | Backend server only | `REVENUECAT_WEBHOOK_SECRET` | Long random secret; set RevenueCat webhook Authorization header to `Bearer <same secret>` |
+| Backend server only | `REVENUECAT_LIFETIME_PRODUCT_ID`, `REVENUECAT_CLOUD_SYNC_MONTHLY_PRODUCT_ID`, `REVENUECAT_CLOUD_SYNC_SEMIANNUAL_PRODUCT_ID`, `REVENUECAT_CLOUD_SYNC_YEARLY_PRODUCT_ID` | Exact RevenueCat product identifiers; Google Play subscriptions use `subscriptionId:basePlanId` |
 | Backend server only (recommended) | `REVENUECAT_APP_IDS` | Comma-separated RevenueCat app IDs from webhook `event.app_id` (Android and iOS if both ship); rejects events from another app |
 
 Use `.env.example` as a local frontend template. Put real values in an ignored
@@ -28,21 +29,30 @@ iOS public SDK keys may be in a distributed app; they are not server secrets.
    intended recurring Cloud Sync plans.
 2. Import those products into the corresponding RevenueCat apps. Attach each
    product to an entitlement and add purchasable packages to the current
-   offering. The app searches that offering by exact product identifier.
+   offering. Set that offering as current/default for the Android app. Importing
+   products alone does not register them in an offering. The app searches that
+   offering by exact product identifier. For three base plans under one Play
+   subscription, add one package per base plan.
    Review RevenueCat's restore/transfer behavior for different app accounts
    sharing one store account before enabling production restore.
 3. Set the backend `SubscriptionPlan.revenueCatProductId` for `LIFETIME`,
    `CLOUD_SYNC_MONTHLY`, `CLOUD_SYNC_SEMIANNUAL`, and `CLOUD_SYNC_YEARLY` to
-   the matching store/RevenueCat product IDs. Seeded plans have **null IDs and
-   zero prices**; until these are configured, paid checkout is unavailable.
+   the matching store/RevenueCat product IDs. Set the four backend product ID
+   environment variables above and run `npm run seed` in the backend; this
+   fills missing plan descriptions/features and syncs configured product IDs
+   onto existing plan rows. Seeded plans have **null IDs and zero prices**
+   without these variables; until IDs and offering packages are configured,
+   paid checkout is unavailable.
    Keep product identifiers aligned across Android and iOS or introduce an
    explicit per-store mapping before publishing both stores.
    Do not deactivate a plan already owned by customers without deciding the
    revocation policy: the current reconciler excludes inactive plans, so a
    later verification can remove their access.
-4. Set real plan prices/currency in the backend plan catalog. Checkout displays
-   the localized store price when the offering loads; a zero seed price is
-   never shown as a free paid plan.
+4. The Plans screen displays localized prices returned by RevenueCat for the
+   store products. Backend catalog prices are not shown as checkout prices.
+   Plan descriptions and feature lists come from backend database rows and can
+   be edited through the superadmin plan API. Payment records use verified
+   RevenueCat webhook prices, not the catalog price or a client-sent amount.
 5. Add a RevenueCat webhook pointing at the backend's
    `/webhooks/revenuecat` endpoint and set the Authorization header described
    above. Enable production events; use a separate sandbox configuration for
