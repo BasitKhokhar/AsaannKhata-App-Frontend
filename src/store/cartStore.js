@@ -5,6 +5,8 @@ import { create } from 'zustand';
 export const useCartStore = create((set, get) => ({
   lines: [], // [{ productId, productName, stockType, quantity/area/length/pack fields, pricePerUnit, total, discount }]
   overallDiscount: 0,
+  discountType: 'fixed',
+  taxPercent: 0,
   customerId: null,
   customerName: '',
   customerPhone: '',
@@ -18,8 +20,10 @@ export const useCartStore = create((set, get) => ({
     set({ customerId: customerId ?? null, customerName: customerName ?? '', customerPhone: customerPhone ?? '' }),
 
   setOverallDiscount: (overallDiscount) => set({ overallDiscount }),
+  setDiscountType: (discountType) => set({ discountType }),
+  setTaxPercent: (taxPercent) => set({ taxPercent }),
 
   subtotal: () => get().lines.reduce((sum, l) => sum + (l.total || 0), 0),
 
-  reset: () => set({ lines: [], overallDiscount: 0, customerId: null, customerName: '', customerPhone: '' }),
+  reset: () => set({ lines: [], overallDiscount: 0, discountType: 'fixed', taxPercent: 0, customerId: null, customerName: '', customerPhone: '' }),
 }));

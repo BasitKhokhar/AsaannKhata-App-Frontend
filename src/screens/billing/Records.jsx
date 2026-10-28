@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { ReceiptText, Search, Eye, Pencil, Wallet } from 'lucide-react-native';
+import { CalendarDays, Download, ReceiptText, Search, Eye, Pencil, Wallet } from 'lucide-react-native';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { StaggeredList } from '../../components/motion/StaggeredList';
 import { Sheet } from '../../components/ui/Sheet';
@@ -12,8 +12,11 @@ import { Button } from '../../components/ui/Button';
 import { TextField } from '../../components/ui/TextField';
 import { useTheme } from '../../theme';
 import { useBill, useBills, useRecordBillPayment } from '../../hooks/useBills';
+import { useShops } from '../../hooks/useShops';
+import { useShopStore } from '../../store/shopStore';
 import { paymentTime } from '../../db/repositories/billSettlementRepository';
 import { formatCurrency } from '../../utils/money';
+import { shareRecordsReport } from '../../utils/recordsReport';
 import { showToast } from '../../store/toastStore';
 import { useT, useIsUrdu } from '../../store/languageStore';
 
@@ -26,6 +29,9 @@ export default function Records() {
   const direction = isUrdu ? 'row-reverse' : 'row';
   const align = isUrdu ? 'right' : 'left';
   const { data: bills = [], isRefetching, refetch } = useBills();
+  const { data: shops = [] } = useShops();
+  const activeShopId = useShopStore((state) => state.activeShopId);
+  const activeShop = shops.find((shop) => String(shop.id) === String(activeShopId));
   const recordPayment = useRecordBillPayment();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('all');
@@ -34,6 +40,7 @@ export default function Records() {
   const [sheet, setSheet] = useState(null);
   const [amount, setAmount] = useState('');
   const [error, setError] = useState('');
+  const [exporting, setExporting] = useState(false);
   const savingRef = useRef(false);
   const selected = bills.find((bill) => bill.id === selectedId);
   const { data: selectedDetail } = useBill(selectedId);
@@ -53,6 +60,7 @@ export default function Records() {
         const start = new Date();
         start.setHours(0, 0, 0, 0);
         if (period === 'week') start.setDate(start.getDate() - 6);
+        if (period === 'month') start.setDate(start.getDate() - 29);
         if (new Date(bill.createdAt) < start) return false;
       }
       return !query || `${bill.customerName} ${bill.customerPhone || ''} ${bill.serverId || ''} ${bill.id}`.toLocaleLowerCase().includes(query);
@@ -90,6 +98,18 @@ export default function Records() {
     });
   }
 
+  async function exportReport() {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      await shareRecordsReport({ bills: visible, shopName: activeShop?.name, periodLabel: t(`records.period.${period}`) });
+    } catch (cause) {
+      showToast(cause?.message || t('records.exportFailed'), 'error');
+    } finally {
+      setExporting(false);
+    }
+  }
+
   const summary = (label, value, accent) => (
     <View style={{ flexDirection: direction, justifyContent: 'space-between', gap: spacing.md }}>
       <Text style={[typography.body, { color: colors.ink.secondary, flex: 1, textAlign: align }]}>{label}</Text>
@@ -113,9 +133,14 @@ export default function Records() {
           ))}
         </View>
         <View style={{ flexDirection: direction, gap: spacing.sm, paddingHorizontal: spacing.lg, paddingBottom: spacing.md }}>
-          {['all', 'today', 'week'].map((value) => (
-            <Chip key={value} label={t(`records.period.${value}`)} selected={period === value} onPress={() => setPeriod(value)} />
-          ))}
+          <Pressable onPress={() => setSheet('filter')} style={{ flex: 1, flexDirection: direction, alignItems: 'center', justifyContent: 'center', gap: spacing.xs, padding: spacing.md, borderWidth: 1, borderColor: colors.surface.border, borderRadius: radii.md, backgroundColor: colors.surface.raised }}>
+            <CalendarDays size={17} color={colors.brand.primary} />
+            <Text numberOfLines={1} style={[typography.label, { color: colors.ink.primary }]}>{t(`records.period.${period}`)}</Text>
+          </Pressable>
+          <Pressable onPress={exportReport} disabled={exporting} style={{ flex: 1, flexDirection: direction, alignItems: 'center', justifyContent: 'center', gap: spacing.xs, padding: spacing.md, borderRadius: radii.md, backgroundColor: colors.brand.primary, opacity: exporting ? 0.65 : 1 }}>
+            <Download size={17} color={colors.ink.onBrand} />
+            <Text style={[typography.label, { color: colors.ink.onBrand }]}>{exporting ? t('records.exporting') : t('records.exportPdf')}</Text>
+          </Pressable>
         </View>
         <StaggeredList
           data={visible}
@@ -203,6 +228,19 @@ export default function Records() {
           {error ? <Text style={[typography.caption, { color: colors.semantic.danger, textAlign: align }]}>{error}</Text> : null}
         </> : null}
       </Sheet>
+
+      <Sheet visible={sheet === 'filter'} onClose={closeSheet} title={t('records.dateFilter')}>
+        {['all', 'today', 'week', 'month'].map((value) => (
+          <Pressable key={value} onPress={() => { setPeriod(value); setSheet(null); }} style={{ flexDirection: direction, alignItems: 'center', justifyContent: 'space-between', paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.surface.border }}>
+            <Text style={[typography.bodyMedium, { color: colors.ink.primary, textAlign: align }]}>{t(`records.period.${value}`)}</Text>
+            {period === value ? <CheckMark colors={colors} /> : null}
+          </Pressable>
+        ))}
+      </Sheet>
     </AnimatedScreen>
   );
+}
+
+function CheckMark({ colors }) {
+  return <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: colors.brand.primary }} />;
 }

@@ -104,17 +104,25 @@ function createBillWithItems({ shopId, customerId, customerName, customerPhone, 
 
 function stockPatchForSale(product, item) {
   switch (item.stockType) {
-    case 'AREA':
+    case 'AREA': {
+      if ((item.totalArea || 0) > (product.stockAreaCm2 || 0)) throw new Error(`Insufficient stock for ${product.name}`);
       return { stockAreaCm2: Math.max(0, (product.stockAreaCm2 || 0) - (item.totalArea || 0)) };
-    case 'LENGTH':
+    }
+    case 'LENGTH': {
+      if ((item.lengthCm || 0) > (product.stockLengthCm || 0)) throw new Error(`Insufficient stock for ${product.name}`);
       return { stockLengthCm: Math.max(0, (product.stockLengthCm || 0) - (item.lengthCm || 0)) };
-    case 'PACK':
+    }
+    case 'PACK': {
+      if ((item.packQuantity || 0) > (product.stockPacks || 0) || (item.looseQuantity || 0) > (product.stockLooseUnits || 0)) throw new Error(`Insufficient stock for ${product.name}`);
       return {
         stockPacks: Math.max(0, (product.stockPacks || 0) - (item.packQuantity || 0)),
         stockLooseUnits: Math.max(0, (product.stockLooseUnits || 0) - (item.looseQuantity || 0)),
       };
-    default:
+    }
+    default: {
+      if ((item.quantity || 0) > (product.stockQuantity || 0)) throw new Error(`Insufficient stock for ${product.name}`);
       return { stockQuantity: Math.max(0, (product.stockQuantity || 0) - (item.quantity || 0)) };
+    }
   }
 }
 

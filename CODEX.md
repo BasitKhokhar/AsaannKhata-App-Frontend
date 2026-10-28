@@ -120,6 +120,8 @@ Syncable rows use these conventions:
 4. Increase the selected customer's balance by the unpaid remainder.
 5. Invalidate bills/products/customers/dashboard queries.
 
+The transaction rejects a bill when its combined lines exceed the latest local stock snapshot, preventing duplicate cart lines or stale checkout screens from silently overselling inventory.
+
 For a free-tier bill created while offline, it also appends `coin_usage_log` and optimistically decrements the persisted coin balance. The server later applies its authoritative cost.
 
 ### Products and stock

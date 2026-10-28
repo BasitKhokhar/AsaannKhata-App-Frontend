@@ -9,6 +9,7 @@ import { paymentMethodLabelKey } from './paymentMethod';
 // utils/dates.js's formatRelativeTime — otherwise a shop owner using the app
 // in Urdu/Hindi would still get an English-only printed/shared receipt.
 export function buildReceiptHtml({ shopName, bill }) {
+  const taxAmount = Math.max(0, Number(bill.totalAmount) - (Number(bill.subtotal) - Number(bill.discount)));
   const itemsHtml = (bill.items || [])
     .map((item) => {
       const qty = item.quantity ?? item.totalArea ?? item.lengthCm ?? item.packQuantity ?? '';
@@ -31,6 +32,7 @@ export function buildReceiptHtml({ shopName, bill }) {
         <table style="width:100%;font-size:14px;">
           <tr><td>${t('billing.subtotal')}</td><td style="text-align:right">${formatCurrency(bill.subtotal)}</td></tr>
           <tr><td>${t('billing.billDetail.discount')}</td><td style="text-align:right">-${formatCurrency(bill.discount)}</td></tr>
+          ${taxAmount > 0.005 ? `<tr><td>${t('billing.tax')}</td><td style="text-align:right">+${formatCurrency(taxAmount)}</td></tr>` : ''}
           <tr style="font-weight:bold;font-size:16px;"><td>${t('billing.total')}</td><td style="text-align:right">${formatCurrency(bill.totalAmount)}</td></tr>
           <tr><td>${t('records.paidAmount')}</td><td style="text-align:right">${formatCurrency(Math.min(bill.totalAmount, bill.totalReceived))}</td></tr>
           <tr><td>${t('billing.remainingDue')}</td><td style="text-align:right">${formatCurrency(bill.remainingDue)}</td></tr>

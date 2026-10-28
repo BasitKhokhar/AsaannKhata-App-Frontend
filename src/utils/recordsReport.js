@@ -1,0 +1,17 @@
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
+import { formatCurrency } from './money';
+import { t } from '../store/languageStore';
+
+const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
+
+export async function shareRecordsReport({ bills, shopName, periodLabel }) {
+  const total = bills.reduce((sum, bill) => sum + Number(bill.totalAmount || 0), 0);
+  const paid = bills.reduce((sum, bill) => sum + Math.min(Number(bill.totalAmount || 0), Number(bill.totalReceived || 0)), 0);
+  const due = bills.reduce((sum, bill) => sum + Number(bill.remainingDue || 0), 0);
+  const rows = bills.map((bill) => `<tr><td>#${escapeHtml(bill.serverId || String(bill.id).slice(0, 8))}</td><td>${escapeHtml(bill.customerName)}</td><td>${escapeHtml(new Date(bill.createdAt).toLocaleDateString())}</td><td class="number">${escapeHtml(formatCurrency(bill.totalAmount))}</td><td class="number">${escapeHtml(formatCurrency(Math.min(bill.totalAmount, bill.totalReceived)))}</td><td class="number">${escapeHtml(formatCurrency(bill.remainingDue))}</td><td>${escapeHtml(t(`records.${bill.status.toLowerCase()}`))}</td></tr>`).join('');
+  const html = `<!doctype html><html><head><meta charset="utf-8"><style>body{font-family:-apple-system,Arial,sans-serif;color:#10252A;padding:28px}h1{margin:0}.muted{color:#61727A}.summary{display:flex;gap:10px;margin:20px 0}.card{border:1px solid #E1E9E6;border-radius:10px;padding:12px;flex:1}.label{font-size:10px;color:#61727A;text-transform:uppercase}.value{font-size:18px;font-weight:700;margin-top:4px}table{width:100%;border-collapse:collapse;font-size:11px}th{background:#064B42;color:white;text-align:left;padding:8px}td{padding:8px;border-bottom:1px solid #E1E9E6}.number{text-align:right}footer{text-align:center;color:#61727A;margin-top:24px;font-size:10px}</style></head><body><h1>${escapeHtml(shopName || 'AsaanKhata')}</h1><div class="muted">${escapeHtml(t('records.salesReport'))} · ${escapeHtml(periodLabel)}</div><div class="summary"><div class="card"><div class="label">${escapeHtml(t('records.reportBills'))}</div><div class="value">${bills.length}</div></div><div class="card"><div class="label">${escapeHtml(t('records.reportSales'))}</div><div class="value">${escapeHtml(formatCurrency(total))}</div></div><div class="card"><div class="label">${escapeHtml(t('records.reportPaid'))}</div><div class="value">${escapeHtml(formatCurrency(paid))}</div></div><div class="card"><div class="label">${escapeHtml(t('records.reportDue'))}</div><div class="value">${escapeHtml(formatCurrency(due))}</div></div></div><table><thead><tr><th>${escapeHtml(t('records.invoice'))}</th><th>${escapeHtml(t('records.customer'))}</th><th>${escapeHtml(t('records.date'))}</th><th>${escapeHtml(t('billing.total'))}</th><th>${escapeHtml(t('records.paidAmount'))}</th><th>${escapeHtml(t('billing.remainingDue'))}</th><th>${escapeHtml(t('records.status'))}</th></tr></thead><tbody>${rows}</tbody></table><footer>${escapeHtml(t('records.generatedOn'))}: ${escapeHtml(new Date().toLocaleString())}</footer></body></html>`;
+  const { uri } = await Print.printToFileAsync({ html });
+  if (!(await Sharing.isAvailableAsync())) throw new Error('Sharing is not available on this device');
+  await Sharing.shareAsync(uri, { mimeType: 'application/pdf', UTI: '.pdf', dialogTitle: t('records.exportPdf') });
+}

@@ -1,293 +1,180 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, FlatList, Dimensions } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { FlatList, Pressable, Text, TextInput, View } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { Search, Plus, Minus, Trash2, PackagePlus, ReceiptText } from 'lucide-react-native';
+import { Minus, PackageOpen, Plus, ReceiptText, Search, ShoppingCart } from 'lucide-react-native';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { Button } from '../../components/ui/Button';
-import { SubscriptionBanner } from '../../components/ui/SubscriptionBanner';
 import { Sheet } from '../../components/ui/Sheet';
-import { IconButton } from '../../components/ui/IconButton';
+import { SubscriptionBanner } from '../../components/ui/SubscriptionBanner';
 import { useTheme } from '../../theme';
 import { useProducts } from '../../hooks/useProducts';
 import { useCartStore } from '../../store/cartStore';
 import { formatCurrency } from '../../utils/money';
+import { formatStockLabel, isOutOfStock } from '../../utils/stock';
 import { useT, useIsUrdu } from '../../store/languageStore';
 
-function defaultLineFor(product) {
-  switch (product.stockType) {
-    case 'AREA': {
-      const totalArea = product.sheetAreaCm2 || 0;
-      return {
-        productId: product.id,
-        productName: product.name,
-        stockType: 'AREA',
-        quantity: 1,
-        unitArea: product.sheetAreaCm2,
-        totalArea,
-        pricePerUnit: product.salePrice,
-        total: round2(totalArea * product.salePrice),
-      };
-    }
-    case 'LENGTH': {
-      const lengthCm = 100;
-      return { productId: product.id, productName: product.name, stockType: 'LENGTH', lengthCm, pricePerUnit: product.salePrice, total: round2(lengthCm * product.salePrice) };
-    }
-    case 'PACK': {
-      const pricePerUnit = product.packSalePrice ?? product.salePrice * (product.packSize || 1);
-      return { productId: product.id, productName: product.name, stockType: 'PACK', packQuantity: 1, looseQuantity: 0, pricePerUnit, total: round2(pricePerUnit) };
-    }
-    default:
-      return { productId: product.id, productName: product.name, stockType: 'QUANTITY', quantity: 1, pricePerUnit: product.salePrice, total: round2(product.salePrice) };
+const round2 = (value) => Math.round(value * 100) / 100;
+
+function lineFor(product, amount) {
+  const quantity = Math.max(1, Number(amount) || 1);
+  if (product.stockType === 'AREA') {
+    const totalArea = (product.sheetAreaCm2 || 0) * quantity;
+    return { productId: product.id, productName: product.name, stockType: 'AREA', quantity, unitArea: product.sheetAreaCm2, totalArea, pricePerUnit: product.salePrice, total: round2(totalArea * product.salePrice) };
   }
+  if (product.stockType === 'LENGTH') {
+    const lengthCm = quantity * 100;
+    return { productId: product.id, productName: product.name, stockType: 'LENGTH', quantity, lengthCm, pricePerUnit: product.salePrice, total: round2(lengthCm * product.salePrice) };
+  }
+  if (product.stockType === 'PACK') {
+    const pricePerUnit = product.packSalePrice ?? product.salePrice * (product.packSize || 1);
+    return { productId: product.id, productName: product.name, stockType: 'PACK', quantity, packQuantity: quantity, looseQuantity: 0, pricePerUnit, total: round2(quantity * pricePerUnit) };
+  }
+  return { productId: product.id, productName: product.name, stockType: 'QUANTITY', quantity, pricePerUnit: product.salePrice, total: round2(quantity * product.salePrice) };
 }
 
-function round2(n) {
-  return Math.round(n * 100) / 100;
+function availableUnits(product) {
+  if (product.stockType === 'AREA') return Math.floor((product.stockAreaCm2 || 0) / Math.max(1, product.sheetAreaCm2 || 1));
+  if (product.stockType === 'LENGTH') return Math.floor((product.stockLengthCm || 0) / 100);
+  if (product.stockType === 'PACK') return Math.floor(product.stockPacks || 0);
+  return Math.floor(product.stockQuantity || 0);
 }
-
-// Sheet renders a plain (non-scrolling) body when scrollable={false}, which
-// is what we want here so the FlatList owns scrolling itself rather than
-// nesting inside Sheet's ScrollView. FlatList still needs a bounded height
-// to know when to start scrolling, so we cap it explicitly instead of
-// relying on flex propagation through the non-flex ancestors in Sheet.
-const PICKER_LIST_MAX_HEIGHT = Dimensions.get('window').height * 0.55;
 
 export default function NewBill() {
   const navigation = useNavigation();
   const { colors, radii, typography, spacing, elevation } = useTheme();
-  const [search, setSearch] = useState('');
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const [error, setError] = useState(null);
-
-  const { data: searchResults = [] } = useProducts({ search });
-  const cart = useCartStore();
   const t = useT();
   const isUrdu = useIsUrdu();
-  const rowDirection = isUrdu ? 'row-reverse' : 'row';
-  const textAlign = isUrdu ? 'right' : 'left';
+  const direction = isUrdu ? 'row-reverse' : 'row';
+  const align = isUrdu ? 'right' : 'left';
+  const { data: products = [] } = useProducts();
+  const cart = useCartStore();
+  const [search, setSearch] = useState('');
+  const [selected, setSelected] = useState(null);
+  const [quantity, setQuantity] = useState(1);
+  const [error, setError] = useState('');
 
-  const subtotal = cart.subtotal();
-  const total = Math.max(0, subtotal - (parseFloat(cart.overallDiscount) || 0));
+  const groups = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase();
+    const filtered = products.filter((product) => !query || product.name.toLocaleLowerCase().includes(query));
+    const map = new Map();
+    filtered.sort((a, b) => a.name.localeCompare(b.name)).forEach((product) => {
+      const letter = product.name.trim().charAt(0).toLocaleUpperCase() || '#';
+      if (!map.has(letter)) map.set(letter, []);
+      map.get(letter).push(product);
+    });
+    return [...map].map(([letter, items]) => ({ letter, items }));
+  }, [products, search]);
 
-  function addProduct(product) {
-    cart.addLine(defaultLineFor(product));
-    setPickerOpen(false);
-    setSearch('');
+  const cartCount = cart.lines.reduce((sum, line) => sum + (Number(line.quantity) || 1), 0);
+
+  function openProduct(product) {
+    if (isOutOfStock(product)) return;
+    setSelected(product);
+    setQuantity(1);
+    setError('');
   }
 
-  function updateQty(index, line, delta) {
-    if (line.stockType === 'QUANTITY') {
-      const quantity = Math.max(1, (line.quantity || 1) + delta);
-      cart.updateLine(index, { quantity, total: round2(quantity * line.pricePerUnit) });
-    } else if (line.stockType === 'PACK') {
-      const packQuantity = Math.max(1, (line.packQuantity || 1) + delta);
-      cart.updateLine(index, { packQuantity, total: round2(packQuantity * line.pricePerUnit) });
+  function addToCart() {
+    if (!selected) return;
+    if (quantity > availableUnits(selected)) {
+      setError(t('billing.quantityExceedsStock'));
+      return;
     }
+    cart.addLine(lineFor(selected, quantity));
+    setSelected(null);
+    setError('');
   }
 
-  function handleContinue() {
-    if (cart.lines.length === 0) {
+  function checkout() {
+    if (!cart.lines.length) {
       setError(t('billing.addAtLeastOneProduct'));
       return;
     }
-    setError(null);
     navigation.navigate('Payment');
   }
 
   return (
     <AnimatedScreen>
       <SafeAreaView style={{ flex: 1 }}>
-        <View style={{ flexDirection: rowDirection, alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.xs }}>
-          <Text style={[typography.h3, { color: colors.ink.primary, textAlign }]}>{t('billing.newBill')}</Text>
-          <Pressable onPress={() => navigation.navigate('Records')} accessibilityRole="button" style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.xs, padding: spacing.xs }}>
-            <ReceiptText size={17} color={colors.brand.primary} />
+        <View style={{ flexDirection: direction, alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.xs }}>
+          <View>
+            <Text style={[typography.h2, { color: colors.ink.primary, textAlign: align }]}>{t('billing.newBill')}</Text>
+            <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: align }]}>{t('billing.catalogSubtitle')}</Text>
+          </View>
+          <Pressable onPress={() => navigation.navigate('Records')} accessibilityRole="button" style={{ flexDirection: direction, alignItems: 'center', gap: spacing.xs, padding: spacing.sm }}>
+            <ReceiptText size={18} color={colors.brand.primary} />
             <Text style={[typography.label, { color: colors.brand.primary }]}>{t('nav.records')}</Text>
           </Pressable>
         </View>
         <SubscriptionBanner />
-
-        <Pressable
-          onPress={() => setPickerOpen(true)}
-          style={[
-            {
-              marginHorizontal: spacing.lg,
-              marginTop: spacing.sm,
-              marginBottom: spacing.sm,
-              height: 44,
-              borderRadius: radii.md,
-              backgroundColor: colors.surface.card,
-              borderWidth: 1,
-              borderColor: colors.surface.border,
-              flexDirection: rowDirection,
-              alignItems: 'center',
-              paddingHorizontal: spacing.md,
-              gap: spacing.sm,
-            },
-            elevation.xs,
-          ]}
-        >
-          <Search size={16} color={colors.ink.secondary} strokeWidth={1.8} />
-          <Text style={[typography.body, { color: colors.ink.secondary }]}>{t('billing.addProductToCart')}</Text>
-        </Pressable>
-
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.lg, gap: spacing.sm }}>
-          {cart.lines.map((line, index) => (
-            <View
-              key={`${line.productId}-${index}`}
-              style={[
-                { backgroundColor: colors.surface.card, borderWidth: 1, borderColor: colors.surface.border, borderRadius: radii.md, padding: spacing.md },
-                elevation.xs,
-              ]}
-            >
-              <View style={{ flexDirection: rowDirection, justifyContent: 'space-between' }}>
-                <Text style={[typography.bodyMedium, { color: colors.ink.primary, flex: 1 }]} numberOfLines={1}>{line.productName}</Text>
-                <Text style={[typography.bodyMedium, { color: colors.ink.primary }]}>{formatCurrency(line.total)}</Text>
-              </View>
-              <View style={{ flexDirection: rowDirection, justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.sm }}>
-                {line.stockType === 'QUANTITY' || line.stockType === 'PACK' ? (
-                  <View style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.sm }}>
-                    <Stepper onPress={() => updateQty(index, line, -1)} icon={Minus} colors={colors} radii={radii} />
-                    <Text style={[typography.bodyMedium, { color: colors.ink.primary, minWidth: 20, textAlign: 'center' }]}>
-                      {line.stockType === 'PACK' ? line.packQuantity : line.quantity}
-                    </Text>
-                    <Stepper onPress={() => updateQty(index, line, 1)} icon={Plus} colors={colors} radii={radii} />
-                  </View>
-                ) : (
-                  <Text style={[typography.caption, { color: colors.ink.secondary }]}>
-                    {line.stockType === 'AREA' ? `${(line.totalArea / 929.03).toFixed(1)} ft²` : `${(line.lengthCm / 100).toFixed(1)} m`} @ {formatCurrency(line.pricePerUnit)}
-                  </Text>
-                )}
-                <IconButton icon={Trash2} onPress={() => cart.removeLine(index)} size={16} tone="danger" style={{ width: 32, height: 32 }} />
-              </View>
-            </View>
-          ))}
-
-          {cart.lines.length > 0 && (
-            <View
-              style={[
-                {
-                  marginTop: spacing.sm,
-                  backgroundColor: colors.surface.card,
-                  borderWidth: 1,
-                  borderColor: colors.surface.border,
-                  borderRadius: radii.md,
-                  padding: spacing.md,
-                  gap: spacing.xs,
-                },
-                elevation.xs,
-              ]}
-            >
-              <Row label={t('billing.subtotal')} value={formatCurrency(subtotal)} colors={colors} typography={typography} rowDirection={rowDirection} />
-              <View style={{ flexDirection: rowDirection, alignItems: 'center', justifyContent: 'space-between' }}>
-                <Text style={[typography.body, { color: colors.ink.secondary }]}>{t('billing.overallDiscount')}</Text>
-                <TextInput
-                  value={String(cart.overallDiscount || '')}
-                  onChangeText={(v) => cart.setOverallDiscount(parseFloat(v) || 0)}
-                  keyboardType="numeric"
-                  placeholder="0"
-                  placeholderTextColor={colors.ink.secondary}
-                  style={[typography.body, { color: colors.ink.primary, width: 80, textAlign: 'right' }]}
-                />
-              </View>
-              <View style={{ height: 1, backgroundColor: colors.surface.border, marginVertical: spacing.xs }} />
-              <Row label={t('billing.total')} value={formatCurrency(total)} colors={colors} typography={typography} bold rowDirection={rowDirection} />
-
+        <View style={{ marginHorizontal: spacing.lg, marginVertical: spacing.sm, height: 46, borderRadius: radii.md, backgroundColor: colors.surface.raised, borderWidth: 1, borderColor: colors.surface.border, flexDirection: direction, alignItems: 'center', paddingHorizontal: spacing.md, gap: spacing.sm }}>
+          <Search size={17} color={colors.ink.secondary} />
+          <TextInput value={search} onChangeText={setSearch} placeholder={t('billing.searchProducts')} placeholderTextColor={colors.ink.secondary} style={[typography.body, { flex: 1, color: colors.ink.primary, textAlign: align }]} />
+        </View>
+        <FlashList
+          data={groups}
+          keyExtractor={(group) => group.letter}
+          estimatedItemSize={174}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingBottom: spacing.xl }}
+          ListEmptyComponent={<View style={{ alignItems: 'center', padding: spacing.xxl, gap: spacing.sm }}><PackageOpen size={34} color={colors.ink.secondary} /><Text style={[typography.body, { color: colors.ink.secondary }]}>{t('billing.noProductsFound')}</Text></View>}
+          renderItem={({ item: group }) => (
+            <View style={{ marginBottom: spacing.md }}>
+              <Text style={[typography.h3, { color: colors.ink.primary, paddingHorizontal: spacing.lg, marginBottom: spacing.sm, textAlign: align }]}>{group.letter}</Text>
+              <FlatList
+                horizontal
+                inverted={isUrdu}
+                showsHorizontalScrollIndicator={false}
+                data={group.items}
+                keyExtractor={(product) => product.id}
+                contentContainerStyle={{ paddingHorizontal: spacing.lg, gap: spacing.sm }}
+                initialNumToRender={5}
+                windowSize={5}
+                renderItem={({ item: product }) => {
+                  const unavailable = isOutOfStock(product);
+                  const inCart = cart.lines.filter((line) => line.productId === product.id).reduce((sum, line) => sum + (Number(line.quantity) || 1), 0);
+                  return (
+                    <Pressable onPress={() => openProduct(product)} disabled={unavailable} style={[{ width: 116, minHeight: 126, borderRadius: radii.lg, backgroundColor: colors.surface.raised, borderWidth: 1, borderColor: inCart ? colors.brand.primary : colors.surface.border, padding: spacing.md, justifyContent: 'space-between', opacity: unavailable ? 0.52 : 1 }, elevation.xs]}>
+                      <View style={{ flexDirection: direction, justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <View style={{ width: 38, height: 38, borderRadius: radii.md, backgroundColor: colors.brand.accentLight, alignItems: 'center', justifyContent: 'center' }}><Text style={[typography.h3, { color: colors.brand.primary }]}>{product.name.trim().charAt(0).toLocaleUpperCase()}</Text></View>
+                        {inCart ? <View style={{ minWidth: 22, height: 22, paddingHorizontal: 6, borderRadius: 11, backgroundColor: colors.brand.primary, alignItems: 'center', justifyContent: 'center' }}><Text style={[typography.caption, { color: colors.ink.onBrand }]}>{inCart}</Text></View> : null}
+                      </View>
+                      <Text numberOfLines={2} style={[typography.bodyMedium, { color: colors.ink.primary, fontSize: 13, textAlign: align }]}>{product.name}</Text>
+                      <Text style={[typography.caption, { color: colors.brand.primary, textAlign: align }]}>{formatCurrency(product.stockType === 'PACK' ? (product.packSalePrice ?? product.salePrice) : product.salePrice)}</Text>
+                    </Pressable>
+                  );
+                }}
+              />
             </View>
           )}
-
-          {error ? <Text style={[typography.caption, { color: colors.semantic.danger, marginTop: spacing.sm, textAlign }]}>{error}</Text> : null}
-        </ScrollView>
-
-        <View style={{ padding: spacing.lg }}>
-          <Button title={t('billing.paymentContinue')} onPress={handleContinue} />
+        />
+        <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.md, borderTopWidth: 1, borderTopColor: colors.surface.border, backgroundColor: colors.surface.bg }}>
+          {error && !selected ? <Text style={[typography.caption, { color: colors.semantic.danger, marginBottom: spacing.xs, textAlign: align }]}>{error}</Text> : null}
+          <Button title={`${t('billing.goToCheckout')} · ${cartCount}`} onPress={checkout} icon={<ShoppingCart size={18} color={colors.ink.onBrand} />} />
         </View>
       </SafeAreaView>
-
-      <Sheet visible={pickerOpen} onClose={() => setPickerOpen(false)} title={t('billing.addProduct')} scrollable={false}>
-        <View style={{ padding: spacing.lg, paddingBottom: spacing.sm, gap: spacing.md }}>
-          <View
-            style={{
-              height: 44,
-              borderRadius: radii.md,
-              borderWidth: 1,
-              borderColor: colors.surface.border,
-              backgroundColor: colors.surface.bg,
-              flexDirection: rowDirection,
-              alignItems: 'center',
-              paddingHorizontal: spacing.md,
-              gap: spacing.sm,
-            }}
-          >
-            <Search size={16} color={colors.ink.secondary} strokeWidth={1.8} />
-            <TextInput
-              autoFocus
-              value={search}
-              onChangeText={setSearch}
-              placeholder={t('billing.searchProducts')}
-              placeholderTextColor={colors.ink.secondary}
-              style={[typography.body, { flex: 1, color: colors.ink.primary, textAlign }]}
-            />
+      <Sheet visible={!!selected} onClose={() => setSelected(null)} title={selected?.name} footer={<Button title={t('billing.addToCart')} onPress={addToCart} />}>
+        {selected ? <>
+          <View style={{ alignItems: 'center', gap: spacing.sm }}>
+            <View style={{ width: 72, height: 72, borderRadius: radii.xl, backgroundColor: colors.brand.accentLight, alignItems: 'center', justifyContent: 'center' }}><Text style={[typography.h1, { color: colors.brand.primary }]}>{selected.name.trim().charAt(0).toLocaleUpperCase()}</Text></View>
+            <Text style={[typography.numericLarge, { color: colors.ink.primary }]}>{formatCurrency(selected.stockType === 'PACK' ? (selected.packSalePrice ?? selected.salePrice) : selected.salePrice)}</Text>
+            <Text style={[typography.caption, { color: colors.ink.secondary }]}>{formatStockLabel(selected)}</Text>
           </View>
-          <FlatList
-            data={searchResults}
-            keyExtractor={(item) => item.id}
-            style={{ maxHeight: PICKER_LIST_MAX_HEIGHT }}
-            contentContainerStyle={{ gap: spacing.xs, paddingBottom: spacing.lg }}
-            ListEmptyComponent={
-              <View style={{ alignItems: 'center', paddingVertical: spacing.xxl, gap: spacing.sm }}>
-                <PackagePlus size={28} color={colors.ink.secondary} strokeWidth={1.6} />
-                <Text style={[typography.caption, { color: colors.ink.secondary }]}>{t('billing.noProductsFound')}</Text>
-              </View>
-            }
-            renderItem={({ item }) => (
-              <Pressable
-                onPress={() => addProduct(item)}
-                style={{
-                  flexDirection: rowDirection,
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  paddingVertical: spacing.sm,
-                  paddingHorizontal: spacing.md,
-                  borderRadius: radii.md,
-                  backgroundColor: colors.surface.card,
-                }}
-              >
-                <Text style={[typography.body, { color: colors.ink.primary, flex: 1 }]} numberOfLines={1}>{item.name}</Text>
-                <Text style={[typography.caption, { color: colors.ink.secondary }]}>{formatCurrency(item.salePrice)}</Text>
-              </Pressable>
-            )}
-          />
-        </View>
+          <View style={{ flexDirection: direction, alignItems: 'center', justifyContent: 'center', gap: spacing.lg }}>
+            <QuantityButton icon={Minus} onPress={() => setQuantity((value) => Math.max(1, value - 1))} colors={colors} radii={radii} />
+            <View style={{ minWidth: 72, alignItems: 'center' }}><Text style={[typography.h1, { color: colors.ink.primary }]}>{quantity}</Text><Text style={[typography.caption, { color: colors.ink.secondary }]}>{selected.stockType === 'LENGTH' ? t('billing.meters') : t('billing.quantity')}</Text></View>
+            <QuantityButton icon={Plus} onPress={() => setQuantity((value) => Math.min(availableUnits(selected), value + 1))} colors={colors} radii={radii} />
+          </View>
+          <View style={{ flexDirection: direction, justifyContent: 'space-between' }}><Text style={[typography.body, { color: colors.ink.secondary }]}>{t('billing.lineTotal')}</Text><Text style={[typography.h3, { color: colors.ink.primary }]}>{formatCurrency(lineFor(selected, quantity).total)}</Text></View>
+          {error ? <Text style={[typography.caption, { color: colors.semantic.danger, textAlign: align }]}>{error}</Text> : null}
+        </> : null}
       </Sheet>
     </AnimatedScreen>
   );
 }
 
-function Stepper({ onPress, icon: Icon, colors, radii }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={{
-        width: 26,
-        height: 26,
-        borderRadius: radii.sm,
-        borderWidth: 1,
-        borderColor: colors.surface.border,
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <Icon size={13} color={colors.ink.primary} strokeWidth={2} />
-    </Pressable>
-  );
-}
-
-function Row({ label, value, colors, typography, bold, rowDirection }) {
-  return (
-    <View style={{ flexDirection: rowDirection || 'row', justifyContent: 'space-between' }}>
-      <Text style={[bold ? typography.h3 : typography.body, { color: bold ? colors.ink.primary : colors.ink.secondary }]}>{label}</Text>
-      <Text style={[bold ? typography.h3 : typography.body, { color: colors.ink.primary }]}>{value}</Text>
-    </View>
-  );
+function QuantityButton({ icon: Icon, onPress, colors, radii }) {
+  return <Pressable onPress={onPress} style={{ width: 44, height: 44, borderRadius: radii.md, borderWidth: 1, borderColor: colors.surface.border, backgroundColor: colors.surface.raised, alignItems: 'center', justifyContent: 'center' }}><Icon size={19} color={colors.ink.primary} /></Pressable>;
 }

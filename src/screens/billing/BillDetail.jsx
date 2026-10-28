@@ -31,6 +31,7 @@ export default function BillDetail() {
   const rowDirection = isUrdu ? 'row-reverse' : 'row';
 
   if (!bill) return null;
+  const taxAmount = Math.max(0, Number(bill.totalAmount) - (Number(bill.subtotal) - Number(bill.discount)));
 
   async function handlePrint() {
     await Print.printAsync({ html: buildReceiptHtml({ shopName, bill }) });
@@ -90,6 +91,8 @@ export default function BillDetail() {
                 <Text style={[typography.caption, { color: colors.ink.onBrand, opacity: 0.7 }]}>{t('billing.subtotal')}</Text>
                 <Text style={[typography.caption, { color: colors.ink.onBrand, opacity: 0.7 }]}>{formatCurrency(bill.subtotal)}</Text>
               </View>
+              {bill.discount > 0 ? <View style={{ flexDirection: rowDirection, justifyContent: 'space-between' }}><Text style={[typography.caption, { color: colors.ink.onBrand, opacity: 0.7 }]}>{t('billing.discount')}</Text><Text style={[typography.caption, { color: colors.ink.onBrand }]}>- {formatCurrency(bill.discount)}</Text></View> : null}
+              {taxAmount > 0.005 ? <View style={{ flexDirection: rowDirection, justifyContent: 'space-between' }}><Text style={[typography.caption, { color: colors.ink.onBrand, opacity: 0.7 }]}>{t('billing.tax')}</Text><Text style={[typography.caption, { color: colors.ink.onBrand }]}>+ {formatCurrency(taxAmount)}</Text></View> : null}
               <View style={{ flexDirection: rowDirection, justifyContent: 'space-between', marginTop: spacing.xs }}>
                 <Text style={[typography.h3, { color: colors.ink.onBrand }]}>{t('billing.total')}</Text>
                 <Text style={[typography.h3, { color: colors.ink.onBrand }]}>{formatCurrency(bill.totalAmount)}</Text>

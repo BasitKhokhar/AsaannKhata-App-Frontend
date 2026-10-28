@@ -1,15 +1,13 @@
 import React, { useCallback } from 'react';
 import { View, Text, Pressable, ScrollView, RefreshControl } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect, DrawerActions } from '@react-navigation/native';
 import { BarChart } from 'react-native-gifted-charts';
-import { ChevronDown, Menu, Boxes, Plus, Cloud, Coins, ShoppingCart, PackagePlus, Users, ReceiptText, Bell, AlertTriangle, Wallet } from 'lucide-react-native';
+import { ChevronDown, Menu, Boxes, Plus, Cloud, Coins, Users, Bell, AlertTriangle, Wallet, BadgeDollarSign, TrendingUp, PlayCircle } from 'lucide-react-native';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { PulseFab } from '../../components/motion/PulseFab';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
-import { StatCard } from '../../components/ui/StatCard';
 import { SectionHeader } from '../../components/ui/SectionHeader';
 import { ListRow } from '../../components/ui/ListRow';
 import { AdBanner } from '../../components/ui/AdBanner';
@@ -44,7 +42,7 @@ export default function Dashboard() {
     : t('dashboard.mainBranch');
   const { data: products = [] } = useProducts();
   const { data: customers = [] } = useCustomers();
-  const { data: stats, isLoading, isRefetching, refetch } = useDashboardStats();
+  const { data: stats, isRefetching, refetch } = useDashboardStats();
   const { data: topProducts, isError: topProductsError, refetch: refetchTopProducts } = useSalesByProduct({ limit: 5 });
 
   function handleRefresh() {
@@ -57,6 +55,7 @@ export default function Dashboard() {
   const syncStatusAlertsEnabled = useNotificationPrefsStore((s) => s.syncStatusAlerts);
 
   const billsUsedToday = useCoinsStore((s) => s.billsUsedToday);
+  const adCoins = useCoinsStore((s) => s.adCoins);
   const freeDailyRecordLimit = useCoinsStore((s) => s.freeDailyRecordLimit);
   const adsWatchedToday = useCoinsStore((s) => s.adsWatchedToday);
   const maxRewardAdsPerDay = useCoinsStore((s) => s.maxRewardAdsPerDay);
@@ -80,11 +79,13 @@ export default function Dashboard() {
   }));
   const pendingDues = customers.reduce((sum, customer) => sum + Math.max(0, Number(customer.balance) || 0), 0);
   const lowStockCount = products.filter((product) => isLowStock(product) || isOutOfStock(product)).length;
-  const quickActions = [
-    { key: 'newSale', label: t('dashboard.quickNewSale'), icon: ShoppingCart, color: colors.brand.primary, route: 'BillingStack', screen: 'NewBill' },
-    { key: 'addItem', label: t('dashboard.quickAddItem'), icon: PackagePlus, color: colors.semantic.success, route: 'CatalogStack', screen: 'AddProduct' },
-    { key: 'customers', label: t('dashboard.quickCustomers'), icon: Users, color: colors.brand.accent, route: 'BillingStack', screen: 'CreditCustomers' },
-    { key: 'expenses', label: t('nav.expenses'), icon: ReceiptText, color: colors.semantic.danger, route: 'Expenses' },
+  const metrics = [
+    { key: 'sales', label: t('dashboard.salesToday'), value: formatCurrency(summary.totalSales), icon: BadgeDollarSign, color: colors.brand.primary },
+    { key: 'profit', label: t('dashboard.profitToday'), value: formatCurrency(summary.profitToday), icon: TrendingUp, color: colors.semantic.success },
+    { key: 'items', label: t('dashboard.itemsCount'), value: String(products.length), icon: Boxes, color: colors.brand.accent },
+    { key: 'customers', label: t('dashboard.customersCount'), value: String(customers.length), icon: Users, color: colors.semantic.success },
+    { key: 'lowStock', label: t('dashboard.lowStockCount'), value: String(lowStockCount), icon: AlertTriangle, color: colors.semantic.danger },
+    { key: 'dues', label: t('dashboard.pendingDues'), value: formatCurrency(pendingDues), icon: Wallet, color: colors.semantic.warning },
   ];
 
   return (
@@ -134,68 +135,54 @@ export default function Dashboard() {
           contentContainerStyle={{ padding: spacing.md, paddingBottom: 96, gap: spacing.md }}
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={handleRefresh} tintColor={colors.brand.primary} />}
         >
-        <View style={{ flexDirection: rowDirection, gap: spacing.sm }}>
-          <StatCard value={formatCurrency(summary.totalSales)} label={t('dashboard.salesToday')} />
-          <StatCard value={formatCurrency(summary.profitToday)} label={t('dashboard.profitToday')} tone="accent" />
-        </View>
-
-        <View style={{ flexDirection: rowDirection, gap: spacing.sm }}>
-          <StatCard icon={<Boxes size={18} color={colors.brand.primary} />} value={String(products.length)} label={t('dashboard.itemsCount')} />
-          <StatCard icon={<Users size={18} color={colors.semantic.success} />} value={String(customers.length)} label={t('dashboard.customersCount')} tone="success" />
-        </View>
-        <View style={{ flexDirection: rowDirection, gap: spacing.sm }}>
-          <StatCard icon={<AlertTriangle size={18} color={colors.semantic.danger} />} value={String(lowStockCount)} label={t('dashboard.lowStockCount')} tone="danger" />
-          <StatCard icon={<Wallet size={18} color={colors.brand.primary} />} value={formatCurrency(pendingDues)} label={t('dashboard.pendingDues')} />
-        </View>
-
-        <Text style={[typography.h3, { color: colors.ink.primary, textAlign, marginTop: spacing.sm }]}>{t('dashboard.quickActions')}</Text>
-        <View style={{ flexDirection: rowDirection, gap: spacing.sm }}>
-          {quickActions.map((action) => (
-            <Pressable key={action.key} onPress={() => navigation.navigate(action.route, action.screen ? { screen: action.screen } : undefined)} style={{ flex: 1, alignItems: 'center', gap: spacing.xs }}>
-              <View style={{ width: 52, height: 52, borderRadius: radii.md, backgroundColor: action.color + '16', alignItems: 'center', justifyContent: 'center' }}>
-                <action.icon size={22} color={action.color} strokeWidth={1.9} />
-              </View>
-              <Text numberOfLines={1} style={[typography.label, { fontSize: 10, color: colors.ink.primary, textAlign: 'center' }]}>{action.label}</Text>
-            </Pressable>
-          ))}
-        </View>
-
         {!entitlement?.cloudEnabled ? (
-          <Card>
-            <View style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm }}>
-              <SectionHeader title={t('dashboard.dailyUsage')} style={{ marginBottom: 0, flex: 1, flexDirection: rowDirection }} />
-              <Pressable onPress={() => navigation.navigate('EarnCoins')} hitSlop={8}>
-                <Badge label={t('dashboard.earnCoins')} tone="brand" />
-              </Pressable>
+          <Card style={{ padding: spacing.md, gap: spacing.md }} level="sm">
+            <View style={{ flexDirection: rowDirection, alignItems: 'center', justifyContent: 'space-between' }}>
+              <View style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.sm }}>
+                <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: colors.semantic.warningBg, alignItems: 'center', justifyContent: 'center' }}>
+                  <Coins size={17} color={colors.semantic.warning} strokeWidth={2} />
+                </View>
+                <Text style={[typography.h3, { color: colors.ink.primary, fontSize: 16 }]}>{t('dashboard.dailyUsage')}</Text>
+              </View>
+              <View style={{ flexDirection: rowDirection, alignItems: 'center', gap: 5, backgroundColor: colors.semantic.warningBg, paddingHorizontal: 10, paddingVertical: 6, borderRadius: radii.pill }}>
+                <Coins size={15} color={colors.semantic.warning} strokeWidth={2} />
+                <Text style={[typography.label, { color: colors.semantic.warning }]}>{adCoins}</Text>
+              </View>
             </View>
-            <View style={{ gap: spacing.sm }}>
-              <ListRow
-                style={{ paddingHorizontal: 0, flexDirection: rowDirection }}
-                leading={<Coins size={16} color={colors.brand.accentDark} strokeWidth={1.8} />}
-                title={t('dashboard.billsToday')}
-                titleStyle={{ textAlign }}
-                trailing={
-                  <Text style={[typography.bodyMedium, { color: colors.ink.primary }]}>
-                    {billsUsedToday} / {freeDailyRecordLimit}
-                  </Text>
-                }
-              />
-              <ListRow
-                style={{ paddingHorizontal: 0, flexDirection: rowDirection }}
-                leading={<Coins size={16} color={colors.brand.accentDark} strokeWidth={1.8} />}
-                title={t('dashboard.adsWatchedToday')}
-                titleStyle={{ textAlign }}
-                trailing={
-                  <Text style={[typography.bodyMedium, { color: colors.ink.primary }]}>
-                    {adsWatchedToday} / {maxRewardAdsPerDay}
-                  </Text>
-                }
-              />
+            <View style={{ flexDirection: rowDirection, alignItems: 'center' }}>
+              <View style={{ flex: 1, alignItems: 'center', gap: 3 }}>
+                <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: 'center' }]}>{t('dashboard.billsToday')}</Text>
+                <Text style={[typography.h2, { color: colors.ink.primary, fontSize: 20 }]}>{billsUsedToday}/{freeDailyRecordLimit}</Text>
+              </View>
+              <View style={{ width: 1, height: 38, backgroundColor: colors.surface.border }} />
+              <View style={{ flex: 1, alignItems: 'center', gap: 3 }}>
+                <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: 'center' }]}>{t('dashboard.adsWatchedToday')}</Text>
+                <Text style={[typography.h2, { color: colors.ink.primary, fontSize: 20 }]}>{adsWatchedToday}/{maxRewardAdsPerDay}</Text>
+              </View>
             </View>
+            <Pressable
+              onPress={() => navigation.navigate('EarnCoins')}
+              style={({ pressed }) => ({ flexDirection: rowDirection, alignItems: 'center', justifyContent: 'center', gap: spacing.sm, minHeight: 44, borderRadius: radii.md, borderWidth: 1, borderColor: colors.brand.primary + '40', backgroundColor: colors.brand.accentLight, opacity: pressed ? 0.72 : 1 })}
+            >
+              <PlayCircle size={17} color={colors.brand.primary} strokeWidth={2} />
+              <Text style={[typography.label, { color: colors.brand.primary }]}>{t('dashboard.earnCoins')}</Text>
+            </Pressable>
           </Card>
         ) : null}
 
         <AdBanner />
+
+        <View style={{ flexDirection: rowDirection, flexWrap: 'wrap', gap: spacing.sm }}>
+          {metrics.map((metric) => (
+            <Card key={metric.key} style={{ width: '31.5%', minHeight: 112, padding: spacing.md, justifyContent: 'space-between' }} level="xs">
+              <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: metric.color + '16', alignItems: 'center', justifyContent: 'center' }}>
+                <metric.icon size={16} color={metric.color} strokeWidth={2} />
+              </View>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72} style={[typography.h3, { color: colors.ink.primary, fontSize: 15, textAlign }]}>{metric.value}</Text>
+              <Text numberOfLines={2} style={[typography.caption, { color: colors.ink.secondary, fontSize: 9, lineHeight: 12, textTransform: 'uppercase', textAlign }]}>{metric.label}</Text>
+            </Card>
+          ))}
+        </View>
 
         <Card>
           <SectionHeader title={t('dashboard.revenueThisWeek')} style={{ flexDirection: rowDirection }} />
