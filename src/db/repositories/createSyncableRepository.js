@@ -71,12 +71,23 @@ export function createSyncableRepository(table, { appendOnly = false } = {}) {
       .all();
   }
 
-  function markSynced(id, serverId) {
+  function markSynced(id, serverId, expectedUpdatedAt) {
     const current = getById(id);
-    db.update(table).set({ syncStatus: 'synced', serverId: serverId ?? current?.serverId ?? null }).where(eq(table.id, id)).run();
+    if (!current) return;
+    const resolvedServerId = serverId ?? current.serverId ?? null;
+    // A mutable row may be edited while its network request is in flight.
+    // Keep that newer version pending instead of letting an older response
+    // incorrectly acknowledge data that was never sent.
+    if (!appendOnly && expectedUpdatedAt && current.updatedAt !== expectedUpdatedAt) {
+      db.update(table).set({ serverId: resolvedServerId }).where(eq(table.id, id)).run();
+      return;
+    }
+    db.update(table).set({ syncStatus: 'synced', serverId: resolvedServerId }).where(eq(table.id, id)).run();
   }
 
-  function markConflict(id) {
+  function markConflict(id, expectedUpdatedAt) {
+    const current = getById(id);
+    if (!current || (!appendOnly && expectedUpdatedAt && current.updatedAt !== expectedUpdatedAt)) return;
     db.update(table).set({ syncStatus: 'conflict' }).where(eq(table.id, id)).run();
   }
 

@@ -22,7 +22,12 @@ function loadBillItems(billRows) {
   const result = [];
   for (let offset = 0; offset < billRows.length; offset += 500) {
     const ids = billRows.slice(offset, offset + 500).map((bill) => bill.id);
-    result.push(...db.select({ item: billItems, purchasePrice: products.purchasePrice, packSize: products.packSize })
+    result.push(...db.select({
+      item: billItems,
+      purchasePrice: products.purchasePrice,
+      packPurchasePrice: products.packPurchasePrice,
+      packSize: products.packSize,
+    })
       .from(billItems)
       .leftJoin(products, eq(products.id, billItems.productId))
       .where(inArray(billItems.billId, ids))
@@ -31,10 +36,13 @@ function loadBillItems(billRows) {
   return result;
 }
 
-function lineQuantity(item, packSize) {
-  return item.stockType === 'PACK'
-    ? (item.packQuantity || 0) * (packSize || 1) + (item.looseQuantity || 0)
-    : item.quantity ?? item.totalArea ?? item.lengthCm ?? 0;
+function lineCost(item, { purchasePrice, packPurchasePrice, packSize }) {
+  if (purchasePrice == null) return null;
+  if (item.stockType === 'PACK') {
+    const packCost = packPurchasePrice ?? purchasePrice * (packSize || 1);
+    return (item.packQuantity || 0) * packCost + (item.looseQuantity || 0) * purchasePrice;
+  }
+  return purchasePrice * (item.quantity ?? item.totalArea ?? item.lengthCm ?? 0);
 }
 
 // Sales Report screen — period is 'week' | 'month'. Entirely local, since
@@ -52,12 +60,15 @@ export function computeSalesReport(shopId, period = 'week') {
   const productTotals = new Map();
   let grossProfit = 0;
 
-  for (const { item, purchasePrice, packSize } of loadBillItems(periodBills)) {
+  for (const row of loadBillItems(periodBills)) {
+    const { item } = row;
     productTotals.set(item.productName, (productTotals.get(item.productName) || 0) + item.total);
-    if (purchasePrice != null) {
-      grossProfit += (item.total || 0) - purchasePrice * lineQuantity(item, packSize);
+    const cost = lineCost(item, row);
+    if (cost != null) {
+      grossProfit += (item.total || 0) - cost;
     }
   }
+  grossProfit -= periodBills.reduce((sum, bill) => sum + (bill.discount || 0), 0);
 
   const topProducts = [...productTotals.entries()]
     .sort((a, b) => b[1] - a[1])
@@ -69,12 +80,9 @@ export function computeSalesReport(shopId, period = 'week') {
   return { grossProfit, expenseTotal, netProfit: grossProfit - expenseTotal, revenue, billCount: periodBills.length, topProducts };
 }
 
-// Best-effort offline fallback for the Dashboard when GET /dashboard/stats
-// can't be reached. "Profit" isn't returned by that endpoint at all, so it's
-// always computed locally, from purchase/sale price on each sold line —
-// approximate for AREA/LENGTH modes (salePrice/purchasePrice are treated as
-// per-base-unit for this estimate) since true per-unit cost conversion
-// mirrors backend logic (utils/unitConverter.js) not ported client-side.
+// The dashboard always uses local rows so unsynced sales are included. Its
+// profit card is gross sales profit: sold-line revenue minus current product
+// cost. Expenses remain separate and are subtracted only in Sales Reports.
 export function computeLocalDashboardStats(shopId) {
   const since = startOfTodayIso();
 
@@ -87,12 +95,12 @@ export function computeLocalDashboardStats(shopId) {
   const salesToday = todaysBills.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
 
   let profitToday = 0;
-  for (const { item, purchasePrice, packSize } of loadBillItems(todaysBills)) {
-    if (purchasePrice == null) continue;
-    profitToday += (item.total || 0) - purchasePrice * lineQuantity(item, packSize);
+  for (const row of loadBillItems(todaysBills)) {
+    const cost = lineCost(row.item, row);
+    if (cost == null) continue;
+    profitToday += (row.item.total || 0) - cost;
   }
-  const todayExpenses = db.select().from(expenses).where(and(eq(expenses.shopId, shopId), eq(expenses.isDeleted, false), gte(expenses.occurredAt, since))).all();
-  profitToday -= todayExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+  profitToday -= todaysBills.reduce((sum, bill) => sum + (bill.discount || 0), 0);
 
   const allProducts = db.select().from(products).where(and(eq(products.shopId, shopId), eq(products.isDeleted, false))).all();
   const totalInventoryValue = allProducts.reduce((sum, p) => {
@@ -134,7 +142,7 @@ export function computeLocalDashboardStats(shopId) {
     .orderBy(sql`${bills.createdAt} desc`)
     .limit(5)
     .all()
-    .map((b) => ({ id: b.id, customer: b.customerName, amount: b.totalAmount, date: b.createdAt, status: b.status }));
+    .map((b) => ({ id: b.id, serverId: b.serverId, customer: b.customerName, amount: b.totalAmount, date: b.createdAt, status: b.status }));
 
   return {
     summary: {

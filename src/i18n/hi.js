@@ -398,6 +398,8 @@ export const hi = {
   'records.generatedOn': 'बनाया गया',
   'records.empty': 'कोई रिकॉर्ड नहीं मिला',
   'records.view': 'विवरण देखें',
+  'records.edit': 'भुगतान जोड़ें',
+  'records.actions': 'कार्रवाइयाँ',
   'records.details': 'बिल का विवरण',
   'records.customer': 'ग्राहक',
   'records.phone': 'फ़ोन',
@@ -476,6 +478,18 @@ export const hi = {
   'catalog.productsList.emptyTitle': 'अभी तक कोई उत्पाद नहीं',
   'catalog.productsList.emptyDescription': 'ग्राहकों को बिल देना और स्टॉक ट्रैक करना शुरू करने के लिए अपना पहला उत्पाद जोड़ें।',
   'catalog.productsList.outOfStock': 'स्टॉक समाप्त',
+  'catalog.productDetail.title': 'उत्पाद विवरण',
+  'catalog.productDetail.inStock': 'स्टॉक में',
+  'catalog.productDetail.currentStock': 'मौजूदा स्टॉक',
+  'catalog.productDetail.uncategorized': 'बिना श्रेणी',
+  'catalog.productDetail.adjustStock': 'स्टॉक समायोजित करें',
+  'catalog.productDetail.mode.quantity': 'मात्रा',
+  'catalog.productDetail.mode.area': 'क्षेत्रफल',
+  'catalog.productDetail.mode.length': 'लंबाई',
+  'catalog.productDetail.mode.pack': 'पैक',
+  'catalog.editProduct.title': 'उत्पाद संपादित करें',
+  'catalog.editProduct.save': 'बदलाव सहेजें',
+  'catalog.editProduct.stockHint': 'इन्वेंट्री बदलने के लिए स्टॉक समायोजित करें का उपयोग करें। इससे स्टॉक इतिहास सही रहता है और सिंक के दौरान डुप्लिकेट गतिविधि नहीं बनती।',
 
   // ---------------------------------------------------------------------
   // Stock / Overview

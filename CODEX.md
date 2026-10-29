@@ -55,11 +55,11 @@ Firebase Analytics screen views are emitted on navigation route changes.
 - Drawer routes:
   - `HomeStack`: `Dashboard`
   - `BillingStack`: `NewBill`, `Payment`, `BillDetail`, `CreditCustomers`, `CustomerDetail`, `AddProduct`
-  - `CatalogStack`: `ProductsList`, `AddProduct`, `StockAdjustment`
+  - `CatalogStack`: `ProductsList`, `ProductDetail`, `EditProduct`, `AddProduct`, `StockAdjustment`
   - `StockStack`: `StockOverview`, `StockAdjustment`
   - `ShopsStack`: `ShopsList`, `AddShop`
   - Direct drawer screens: `SalesReport`, `Expenses`, `Notifications`, `SubscriptionPlans`, `EarnCoins`
-  - Direct drawer screen: `Records` (shop-scoped bill list, payment detail and Add Payment sheets)
+  - `RecordsStack`: `RecordsList`, `RecordDetail`, `RecordPayment` (shop-scoped invoice table with full-screen bill detail and later-payment entry)
   - `SettingsStack`: `Settings`, `SyncStatus`, `Profile`, `StaffManagement`, `Notifications`, `HelpSupport`, `About`
 - `AddProduct` exists in both Billing and Catalog stacks so a product created during billing returns to `NewBill`; `StockAdjustment` deliberately exists in both Catalog and Stock stacks so each stack can navigate locally.
 - Cross-drawer navigation usually uses `navigation.navigate('SomeStack', { screen: 'SomeScreen' })`.
@@ -131,6 +131,7 @@ Stock types are `QUANTITY`, `AREA`, `LENGTH`, and `PACK`.
 - AREA and LENGTH are normalized to centimeters/cm² before local insertion.
 - PACK tracks full packs and loose units separately.
 - Product creation also writes an initial `IN` stock transaction when initial stock is positive.
+- Selecting a product opens a shop-scoped detail screen. `AddProduct` is the shared create/edit form: `EditProduct` routes to it with a product ID, preloads the existing values, and updates metadata, category, prices, image and low-stock threshold locally. Inventory fields are visible but locked while editing; quantity changes remain in the dedicated Stock Adjustment flow so every change retains an audit row.
 - Every stock adjustment changes counters on `products` and appends a stock transaction.
 - The Stock History screen pages SQLite transactions by selected shop and type (100 per page); cloud changes arrive through sync rather than a second unbounded history request.
 - Unit-conversion logic in `src/utils/unitConverter.js` must continue matching the backend contract.
@@ -139,11 +140,11 @@ Stock types are `QUANTITY`, `AREA`, `LENGTH`, and `PACK`.
 ### Credit customers
 
 Customer balances live on the customer row. Credit bills increase the balance. Standalone payments append `customer_payments` and decrement the balance.
-The Records screen uses `billSettlementRepository` to associate later customer payments with a bill via a stable `asaankhata:bill:<bill client ID or server ID>|<payment ISO time>` note, using the existing sync payload. A payment and customer-balance adjustment commit in one SQLite transaction. Bill list/detail and customer history derive displayed due/status from the original bill plus its linked payments; no bill items or stock are rewritten when collecting a later payment. The timestamp in the note preserves the actual offline payment time after the backend assigns its receive time. The initial checkout payment is shown as the first history entry when positive.
+The Records stack uses `billSettlementRepository` to associate later customer payments with a bill via a stable `asaankhata:bill:<bill client ID or server ID>|<payment ISO time>` note, using the existing sync payload. A payment and customer-balance adjustment commit in one SQLite transaction. The table, full-screen record detail, and customer history derive displayed due/status from the original bill plus its linked payments; no bill items or stock are rewritten when collecting a later payment. The timestamp in the note preserves the actual offline payment time after the backend assigns its receive time. The initial checkout payment is shown as the first history entry when positive.
 
 ### Expenses
 
-`useExpenseActions` writes shop-scoped expense rows locally through `expenseRepository`; edits and deletes use the same pending/soft-delete sync conventions as products. `Expenses` filters the ledger by date. Local sales reports calculate gross profit from sold lines and cost basis, then subtract expenses for net profit. Report bill items and current product costs are fetched in bounded joined groups instead of one query per bill. Expense records have no attachment or staff attribution yet.
+`useExpenseActions` writes shop-scoped expense rows locally through `expenseRepository`; edits and deletes use the same pending/soft-delete sync conventions as products. `Expenses` filters the ledger by date. Dashboard profit is gross sales profit (sold-line revenue minus current product cost) and excludes expenses. Local sales reports show gross profit, expenses, and net profit separately. Pack cost uses `packPurchasePrice` when configured, otherwise loose-unit purchase price times pack size. Report bill items and current product costs are fetched in bounded joined groups instead of one query per bill. Expense records have no attachment or staff attribution yet.
 
 ## Synchronization contract
 
@@ -156,6 +157,8 @@ Sync sequence:
 3. For each owned shop, send an explicit `X-Shop-Id`, upsert this install's stable device UUID for that shop (server registration is shop-scoped), and pull all pages using the server-issued `nextSince`. Persist the watermark per shop after every page. Pulled rows are checked against the requested shop and pending/conflict local edits are preserved.
 4. Push that shop's pending records in FK-safe order: categories -> products -> stock adjustments -> customers -> bills -> customer payments -> expenses. Push requests are capped at 100 operations. Product stock counters are the snapshot sent to the server; synced adjustment and bill operations record audit rows without applying those stock movements again. Bill sale logs are sent with their parent bill and matched by client ID on the next pull.
 5. Mark successes synced, conflicts conflict, and leave errors pending for retry. A failure in one shop does not stop attempts for the remaining shops; the overall sync reports failure until all shops succeed.
+
+Push acknowledgements are validated against every operation in the sent batch. Mutable rows are marked synced/conflicted only when their `updatedAt` still matches the version sent, so an edit made while a request is in flight stays pending for the next pass. The backend must retain its unique `(shopId, clientId)` constraints; frontend retry safety does not replace server-side idempotency.
 
 Pull ordering is categories -> customers -> products -> bills -> stock transactions -> customer payments -> expenses. Server integer FKs are resolved back to local UUIDs with `idMap.js`.
 

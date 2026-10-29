@@ -402,6 +402,8 @@ export const en = {
   'records.generatedOn': 'Generated on',
   'records.empty': 'No matching records',
   'records.view': 'View details',
+  'records.edit': 'Add payment',
+  'records.actions': 'Actions',
   'records.details': 'Bill details',
   'records.customer': 'Customer',
   'records.phone': 'Phone',
@@ -480,6 +482,18 @@ export const en = {
   'catalog.productsList.emptyTitle': 'No products yet',
   'catalog.productsList.emptyDescription': 'Add your first product to start billing customers and tracking stock.',
   'catalog.productsList.outOfStock': 'Out of stock',
+  'catalog.productDetail.title': 'Product details',
+  'catalog.productDetail.inStock': 'In stock',
+  'catalog.productDetail.currentStock': 'Current stock',
+  'catalog.productDetail.uncategorized': 'Uncategorized',
+  'catalog.productDetail.adjustStock': 'Adjust stock',
+  'catalog.productDetail.mode.quantity': 'Quantity',
+  'catalog.productDetail.mode.area': 'Area',
+  'catalog.productDetail.mode.length': 'Length',
+  'catalog.productDetail.mode.pack': 'Pack',
+  'catalog.editProduct.title': 'Edit product',
+  'catalog.editProduct.save': 'Save changes',
+  'catalog.editProduct.stockHint': 'Use Adjust stock to change inventory. This keeps the stock history accurate and prevents duplicate stock movements during sync.',
 
   // ---------------------------------------------------------------------
   // Stock / Overview

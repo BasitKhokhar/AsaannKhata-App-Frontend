@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, Pressable, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { Camera, Pencil, Package, Ruler, Boxes, ScanLine, ChevronRight } from 'lucide-react-native';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
@@ -12,14 +12,19 @@ import { Button } from '../../components/ui/Button';
 import { KeyboardAwareScrollView, KeyboardAwareView } from '../../components/ui/KeyboardAware';
 import { useTheme } from '../../theme';
 import { useCategories } from '../../hooks/useCategories';
-import { useCreateProduct } from '../../hooks/useProducts';
+import { useCreateProduct, useProduct, useUpdateProduct } from '../../hooks/useProducts';
 import { useT, useIsUrdu } from '../../store/languageStore';
 
 export default function AddProduct() {
   const navigation = useNavigation();
+  const route = useRoute();
   const { colors, radii, typography, spacing, elevation } = useTheme();
   const { data: categories = [] } = useCategories();
   const createProduct = useCreateProduct();
+  const updateProduct = useUpdateProduct();
+  const productId = route.params?.productId;
+  const isEditing = !!productId;
+  const { data: existingProduct } = useProduct(productId);
   const t = useT();
   const isUrdu = useIsUrdu();
   const rowDirection = isUrdu ? 'row-reverse' : 'row';
@@ -41,6 +46,7 @@ export default function AddProduct() {
   const [salePrice, setSalePrice] = useState('');
   const [lowStockThreshold, setLowStockThreshold] = useState('');
   const [error, setError] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   // Mode-specific fields
   const [quantity, setQuantity] = useState('');
@@ -53,6 +59,30 @@ export default function AddProduct() {
   const [packPurchasePrice, setPackPurchasePrice] = useState('');
   const [packSalePrice, setPackSalePrice] = useState('');
 
+  useEffect(() => {
+    if (!isEditing || !existingProduct) return;
+    setName(existingProduct.name || '');
+    setImage(existingProduct.image || null);
+    setCategoryId(existingProduct.categoryId || null);
+    setStockType(existingProduct.stockType);
+    setPurchasePrice(String(existingProduct.purchasePrice ?? ''));
+    setSalePrice(String(existingProduct.salePrice ?? ''));
+    setLowStockThreshold(existingProduct.lowStockThreshold == null ? '' : String(existingProduct.lowStockThreshold));
+    setUnit('cm');
+    setSheetWidth(existingProduct.sheetWidthCm == null ? '' : String(existingProduct.sheetWidthCm));
+    setSheetHeight(existingProduct.sheetHeightCm == null ? '' : String(existingProduct.sheetHeightCm));
+    setQuantity(existingProduct.stockType === 'AREA'
+      ? String(existingProduct.sheetAreaCm2 ? (existingProduct.stockAreaCm2 || 0) / existingProduct.sheetAreaCm2 : 0)
+      : existingProduct.stockType === 'LENGTH'
+        ? String(existingProduct.stockLengthCm || 0)
+        : String(existingProduct.stockQuantity || 0));
+    setPackSize(existingProduct.packSize == null ? '' : String(existingProduct.packSize));
+    setStockPacks(String(existingProduct.stockPacks || 0));
+    setStockLooseUnits(String(existingProduct.stockLooseUnits || 0));
+    setPackPurchasePrice(existingProduct.packPurchasePrice == null ? '' : String(existingProduct.packPurchasePrice));
+    setPackSalePrice(existingProduct.packSalePrice == null ? '' : String(existingProduct.packSalePrice));
+  }, [isEditing, existingProduct?.id]);
+
   async function handlePickImage() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
@@ -64,6 +94,7 @@ export default function AddProduct() {
   }
 
   function handleSave() {
+    if (saving) return;
     if (!name.trim() || purchasePrice.trim() === '' || salePrice.trim() === '') {
       setError(t('catalog.addProduct.errorNameAndPrices'));
       return;
@@ -84,6 +115,31 @@ export default function AddProduct() {
     }
     setError(null);
 
+    if (isEditing) {
+      setSaving(true);
+      updateProduct.mutate(
+        productId,
+        {
+          name: name.trim(),
+          image: image || null,
+          categoryId: categoryId || null,
+          purchasePrice: Number(purchasePrice),
+          salePrice: Number(salePrice),
+          lowStockThreshold: lowStockThreshold === '' ? null : Number(lowStockThreshold),
+          ...(stockType === 'PACK' ? {
+            packPurchasePrice: packPurchasePrice === '' ? null : Number(packPurchasePrice),
+            packSalePrice: packSalePrice === '' ? null : Number(packSalePrice),
+          } : {}),
+        },
+        {
+          onSuccess: () => { setSaving(false); navigation.goBack(); },
+          onError: () => { setSaving(false); setError(t('catalog.addProduct.errorSaveFailed')); },
+        }
+      );
+      return;
+    }
+
+    setSaving(true);
     createProduct.mutate(
       {
         name,
@@ -104,14 +160,17 @@ export default function AddProduct() {
         packPurchasePrice,
         packSalePrice,
       },
-      { onSuccess: () => navigation.goBack(), onError: () => setError(t('catalog.addProduct.errorSaveFailed')) }
+      {
+        onSuccess: () => { setSaving(false); navigation.goBack(); },
+        onError: () => { setSaving(false); setError(t('catalog.addProduct.errorSaveFailed')); },
+      }
     );
   }
 
   return (
     <AnimatedScreen>
       <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1 }}>
-        <Header title={t('catalog.addProduct.title')} onBack={step === 1 ? () => setStep(0) : undefined} />
+        <Header title={isEditing ? t('catalog.editProduct.title') : t('catalog.addProduct.title')} onBack={step === 1 ? () => setStep(0) : undefined} />
         <View style={{ flexDirection: rowDirection, gap: spacing.xs, paddingHorizontal: spacing.lg, paddingBottom: spacing.sm }}>
           {[0, 1].map((index) => <View key={index} style={{ flex: 1, height: 4, borderRadius: 2, backgroundColor: index <= step ? colors.brand.primary : colors.surface.border }} />)}
         </View>
@@ -129,7 +188,7 @@ export default function AddProduct() {
               const Icon = option.icon;
               const selected = stockType === option.key;
               return (
-                <Pressable key={option.key} accessibilityRole="radio" accessibilityState={{ checked: selected }} onPress={() => setStockType(option.key)} style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.md, backgroundColor: colors.surface.raised, borderRadius: radii.md, borderWidth: selected ? 2 : 1, borderColor: selected ? colors.brand.primary : colors.surface.border, padding: spacing.md }}>
+                <Pressable key={option.key} accessibilityRole="radio" accessibilityState={{ checked: selected, disabled: isEditing }} disabled={isEditing} onPress={() => setStockType(option.key)} style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.md, backgroundColor: colors.surface.raised, borderRadius: radii.md, borderWidth: selected ? 2 : 1, borderColor: selected ? colors.brand.primary : colors.surface.border, padding: spacing.md, opacity: isEditing && !selected ? 0.4 : 1 }}>
                   <View style={{ width: 42, height: 42, borderRadius: radii.md, backgroundColor: colors.brand.primary + '16', alignItems: 'center', justifyContent: 'center' }}><Icon size={21} color={colors.brand.primary} strokeWidth={1.8} /></View>
                   <View style={{ flex: 1 }}>
                     <Text style={[typography.bodyMedium, { color: colors.ink.primary, textAlign }]}>{MODES.find((mode) => mode.key === option.key)?.label}</Text>
@@ -218,40 +277,42 @@ export default function AddProduct() {
                   key={m.key}
                   label={m.label}
                   selected={m.key === stockType}
-                  onPress={() => setStockType(m.key)}
+                  onPress={() => { if (!isEditing) setStockType(m.key); }}
                   style={{ flex: 1, alignItems: 'center' }}
                 />
               ))}
             </View>
           </View>
 
+          {isEditing ? <Text style={[typography.caption, { color: colors.ink.secondary, textAlign }]}>{t('catalog.editProduct.stockHint')}</Text> : null}
+
           {stockType === 'AREA' && (
             <View style={{ backgroundColor: colors.brand.accentLight + '1F', borderRadius: radii.md, padding: spacing.md, gap: spacing.sm }}>
               <Text style={[typography.label, { color: colors.brand.accentDark, letterSpacing: 0.5, textAlign }]}>{t('catalog.addProduct.areaFields')}</Text>
               <View style={{ flexDirection: rowDirection, gap: spacing.sm }}>
-                <TextField label={t('catalog.addProduct.width')} value={sheetWidth} onChangeText={setSheetWidth} placeholder="60" keyboardType="numeric" style={{ flex: 1 }} />
-                <TextField label={t('catalog.addProduct.height')} value={sheetHeight} onChangeText={setSheetHeight} placeholder="60" keyboardType="numeric" style={{ flex: 1 }} />
+                <TextField label={t('catalog.addProduct.width')} value={sheetWidth} onChangeText={setSheetWidth} placeholder="60" keyboardType="numeric" editable={!isEditing} style={{ flex: 1 }} />
+                <TextField label={t('catalog.addProduct.height')} value={sheetHeight} onChangeText={setSheetHeight} placeholder="60" keyboardType="numeric" editable={!isEditing} style={{ flex: 1 }} />
               </View>
-              <UnitPicker unit={unit} setUnit={setUnit} options={['cm', 'inch', 'feet', 'meter']} />
-              <TextField label={t('catalog.addProduct.sheetsInStock')} value={quantity} onChangeText={setQuantity} placeholder="e.g. 40" keyboardType="numeric" style={{ textAlign }} />
+              <UnitPicker unit={unit} setUnit={setUnit} options={['cm', 'inch', 'feet', 'meter']} disabled={isEditing} />
+              <TextField label={t('catalog.addProduct.sheetsInStock')} value={quantity} onChangeText={setQuantity} placeholder="e.g. 40" keyboardType="numeric" editable={!isEditing} style={{ textAlign }} />
             </View>
           )}
 
           {stockType === 'LENGTH' && (
             <View style={{ backgroundColor: colors.brand.primary + '14', borderRadius: radii.md, padding: spacing.md, gap: spacing.sm }}>
               <Text style={[typography.label, { color: colors.brand.primary, letterSpacing: 0.5, textAlign }]}>{t('catalog.addProduct.lengthFields')}</Text>
-              <TextField label={t('catalog.addProduct.currentStock')} value={quantity} onChangeText={setQuantity} placeholder="86" keyboardType="numeric" style={{ textAlign }} />
-              <UnitPicker unit={unit} setUnit={setUnit} options={['cm', 'meter', 'feet', 'inch']} />
+              <TextField label={t('catalog.addProduct.currentStock')} value={quantity} onChangeText={setQuantity} placeholder="86" keyboardType="numeric" editable={!isEditing} style={{ textAlign }} />
+              <UnitPicker unit={unit} setUnit={setUnit} options={['cm', 'meter', 'feet', 'inch']} disabled={isEditing} />
             </View>
           )}
 
           {stockType === 'PACK' && (
             <View style={{ backgroundColor: colors.brand.accentLight + '1F', borderRadius: radii.md, padding: spacing.md, gap: spacing.sm }}>
               <Text style={[typography.label, { color: colors.brand.accentDark, letterSpacing: 0.5, textAlign }]}>{t('catalog.addProduct.packFields')}</Text>
-              <TextField label={t('catalog.addProduct.unitsPerPack')} value={packSize} onChangeText={setPackSize} placeholder="6" keyboardType="numeric" style={{ textAlign }} />
+              <TextField label={t('catalog.addProduct.unitsPerPack')} value={packSize} onChangeText={setPackSize} placeholder="6" keyboardType="numeric" editable={!isEditing} style={{ textAlign }} />
               <View style={{ flexDirection: rowDirection, gap: spacing.sm }}>
-                <TextField label={t('catalog.addProduct.fullPacks')} value={stockPacks} onChangeText={setStockPacks} placeholder="3" keyboardType="numeric" style={{ flex: 1 }} />
-                <TextField label={t('catalog.addProduct.looseUnits')} value={stockLooseUnits} onChangeText={setStockLooseUnits} placeholder="8" keyboardType="numeric" style={{ flex: 1 }} />
+                <TextField label={t('catalog.addProduct.fullPacks')} value={stockPacks} onChangeText={setStockPacks} placeholder="3" keyboardType="numeric" editable={!isEditing} style={{ flex: 1 }} />
+                <TextField label={t('catalog.addProduct.looseUnits')} value={stockLooseUnits} onChangeText={setStockLooseUnits} placeholder="8" keyboardType="numeric" editable={!isEditing} style={{ flex: 1 }} />
               </View>
               <View style={{ flexDirection: rowDirection, gap: spacing.sm }}>
                 <TextField label={t('catalog.addProduct.packPurchasePriceOptional')} value={packPurchasePrice} onChangeText={setPackPurchasePrice} keyboardType="numeric" style={{ flex: 1 }} />
@@ -261,7 +322,7 @@ export default function AddProduct() {
           )}
 
           {stockType === 'QUANTITY' && (
-            <TextField label={t('catalog.addProduct.currentStock')} value={quantity} onChangeText={setQuantity} placeholder="e.g. 50" keyboardType="numeric" style={{ textAlign }} />
+            <TextField label={t('catalog.addProduct.currentStock')} value={quantity} onChangeText={setQuantity} placeholder="e.g. 50" keyboardType="numeric" editable={!isEditing} style={{ textAlign }} />
           )}
 
           <View style={{ flexDirection: rowDirection, gap: spacing.sm }}>
@@ -297,7 +358,7 @@ export default function AddProduct() {
           )}
 
           <View style={{ padding: spacing.lg }}>
-            <Button title={step === 0 ? t('common.next') : t('catalog.addProduct.saveProduct')} onPress={step === 0 ? () => setStep(1) : handleSave} />
+            <Button title={step === 0 ? t('common.next') : isEditing ? t('catalog.editProduct.save') : t('catalog.addProduct.saveProduct')} onPress={step === 0 ? () => setStep(1) : handleSave} loading={saving} />
           </View>
         </KeyboardAwareView>
       </SafeAreaView>
@@ -305,7 +366,7 @@ export default function AddProduct() {
   );
 }
 
-function UnitPicker({ unit, setUnit, options }) {
+function UnitPicker({ unit, setUnit, options, disabled = false }) {
   const { colors, radii, typography, spacing } = useTheme();
   const isUrdu = useIsUrdu();
   return (
@@ -315,7 +376,8 @@ function UnitPicker({ unit, setUnit, options }) {
         return (
           <Pressable
             key={opt}
-            onPress={() => setUnit(opt)}
+            onPress={() => { if (!disabled) setUnit(opt); }}
+            disabled={disabled}
             style={{
               paddingHorizontal: spacing.sm,
               paddingVertical: 4,
@@ -323,6 +385,7 @@ function UnitPicker({ unit, setUnit, options }) {
               backgroundColor: selected ? colors.brand.primary : colors.surface.bg,
               borderWidth: 1,
               borderColor: selected ? colors.brand.primary : colors.surface.border,
+              opacity: disabled && !selected ? 0.4 : 1,
             }}
           >
             <Text style={[typography.caption, { color: selected ? colors.ink.onBrand : colors.ink.secondary }]}>{opt}</Text>

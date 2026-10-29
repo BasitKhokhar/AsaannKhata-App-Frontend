@@ -22,14 +22,24 @@ function serverIdOf(table, localId) {
   return db.select({ serverId: table.serverId }).from(table).where(eq(table.id, localId)).get()?.serverId ?? null;
 }
 
-function applyResults(repo, results) {
+function applyResults(repo, results, operations) {
+  const sent = new Map(operations.map((operation) => [operation.clientId, operation]));
+  const received = new Set();
   for (const result of results) {
+    if (!sent.has(result.clientId) || received.has(result.clientId)) {
+      throw new Error('Sync server returned an invalid or duplicate operation result');
+    }
+    received.add(result.clientId);
+    const operation = sent.get(result.clientId);
     if (result.status === 'created' || result.status === 'updated' || result.status === 'deleted') {
-      repo.markSynced(result.clientId, result.serverId);
+      repo.markSynced(result.clientId, result.serverId, operation.baseUpdatedAt);
     } else if (result.status === 'conflict') {
-      repo.markConflict(result.clientId);
+      repo.markConflict(result.clientId, operation.baseUpdatedAt);
     }
     // 'error' rows are left 'pending' for the next sync attempt.
+  }
+  if (received.size !== operations.length) {
+    throw new Error('Sync server did not acknowledge every operation in the batch');
   }
 }
 
@@ -39,7 +49,8 @@ async function pushBatches(shopId, deviceId, operations, send, repo) {
   for (let offset = 0; offset < operations.length; offset += PUSH_BATCH_SIZE) {
     const batch = operations.slice(offset, offset + PUSH_BATCH_SIZE);
     const { results } = await send(shopId, deviceId, batch);
-    applyResults(repo, results);
+    if (!Array.isArray(results)) throw new Error('Sync server returned an invalid batch response');
+    applyResults(repo, results, batch);
     if (results.some((result) => result.status === 'error' || result.status === 'conflict')) {
       throw new Error('Some records could not be synchronized; pending or conflicted records remain on this device');
     }

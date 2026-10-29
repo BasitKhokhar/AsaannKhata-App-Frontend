@@ -11,7 +11,7 @@ import Expenses from '../screens/expenses/Expenses';
 import SubscriptionPlans from '../screens/subscription/SubscriptionPlans';
 import EarnCoins from '../screens/subscription/EarnCoins';
 import Notifications from '../screens/shared/Notifications';
-import Records from '../screens/billing/Records';
+import { RecordsStack } from './stacks/RecordsStack';
 import { SidebarContent } from '../components/drawer/SidebarContent';
 
 const Drawer = createDrawerNavigator();
@@ -27,7 +27,7 @@ export function AppDrawer() {
     >
       <Drawer.Screen name="HomeStack" component={HomeStack} />
       <Drawer.Screen name="BillingStack" component={BillingStack} />
-      <Drawer.Screen name="Records" component={Records} />
+      <Drawer.Screen name="Records" component={RecordsStack} />
       <Drawer.Screen name="CatalogStack" component={CatalogStack} />
       <Drawer.Screen name="StockStack" component={StockStack} />
       <Drawer.Screen name="ShopsStack" component={ShopsStack} />

@@ -400,6 +400,8 @@ export const ur = {
   'records.generatedOn': 'تیار کردہ',
   'records.empty': 'کوئی ریکارڈ نہیں ملا',
   'records.view': 'تفصیل دیکھیں',
+  'records.edit': 'ادائیگی شامل کریں',
+  'records.actions': 'کارروائیاں',
   'records.details': 'بل کی تفصیل',
   'records.customer': 'صارف',
   'records.phone': 'فون',
@@ -478,6 +480,18 @@ export const ur = {
   'catalog.productsList.emptyTitle': 'ابھی تک کوئی پروڈکٹ نہیں',
   'catalog.productsList.emptyDescription': 'گاہکوں کو بل دینے اور اسٹاک ٹریک کرنے کے لیے اپنی پہلی پروڈکٹ شامل کریں۔',
   'catalog.productsList.outOfStock': 'اسٹاک ختم',
+  'catalog.productDetail.title': 'پروڈکٹ کی تفصیلات',
+  'catalog.productDetail.inStock': 'اسٹاک میں',
+  'catalog.productDetail.currentStock': 'موجودہ اسٹاک',
+  'catalog.productDetail.uncategorized': 'بغیر زمرہ',
+  'catalog.productDetail.adjustStock': 'اسٹاک ایڈجسٹ کریں',
+  'catalog.productDetail.mode.quantity': 'تعداد',
+  'catalog.productDetail.mode.area': 'رقبہ',
+  'catalog.productDetail.mode.length': 'لمبائی',
+  'catalog.productDetail.mode.pack': 'پیک',
+  'catalog.editProduct.title': 'پروڈکٹ میں ترمیم',
+  'catalog.editProduct.save': 'تبدیلیاں محفوظ کریں',
+  'catalog.editProduct.stockHint': 'انوینٹری تبدیل کرنے کے لیے اسٹاک ایڈجسٹ کریں استعمال کریں۔ اس سے اسٹاک ہسٹری درست رہتی ہے اور سنک کے دوران نقل سے بچاؤ ہوتا ہے۔',
 
   // ---------------------------------------------------------------------
   // Stock / Overview

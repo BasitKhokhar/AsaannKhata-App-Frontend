@@ -73,10 +73,14 @@ export function useProducts({ search, categoryId } = {}) {
 }
 
 export function useProduct(productId) {
+  const activeShopId = useShopStore((s) => s.activeShopId);
   return useQuery({
-    queryKey: ['product', productId],
-    queryFn: () => productRepository.getById(productId),
-    enabled: !!productId,
+    queryKey: ['product', activeShopId, productId],
+    queryFn: () => {
+      const product = productRepository.getById(productId);
+      return product?.shopId === activeShopId && !product.isDeleted ? product : null;
+    },
+    enabled: !!productId && !!activeShopId,
   });
 }
 
@@ -120,10 +124,12 @@ export function useUpdateProduct() {
   return {
     mutate: (id, fields, options) => {
       try {
+        const existing = productRepository.getById(id);
+        if (!existing || existing.shopId !== activeShopId || existing.isDeleted) throw new Error('Product not found in the active shop');
         const product = productRepository.update(id, fields);
         queryClient.invalidateQueries({ queryKey: ['products', activeShopId] });
         queryClient.invalidateQueries({ queryKey: ['dashboardStats', activeShopId] });
-        queryClient.invalidateQueries({ queryKey: ['product', id] });
+        queryClient.invalidateQueries({ queryKey: ['product', activeShopId, id] });
         options?.onSuccess?.(product);
       } catch (err) {
         options?.onError?.(err);
@@ -157,7 +163,7 @@ export function useAdjustStock() {
 
         queryClient.invalidateQueries({ queryKey: ['products', activeShopId] });
         queryClient.invalidateQueries({ queryKey: ['dashboardStats', activeShopId] });
-        queryClient.invalidateQueries({ queryKey: ['product', productId] });
+        queryClient.invalidateQueries({ queryKey: ['product', activeShopId, productId] });
         options?.onSuccess?.();
       } catch (err) {
         options?.onError?.(err);

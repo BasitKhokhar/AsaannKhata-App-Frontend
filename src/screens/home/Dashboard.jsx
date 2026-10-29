@@ -3,7 +3,7 @@ import { View, Text, Pressable, ScrollView, RefreshControl } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect, DrawerActions } from '@react-navigation/native';
 import { BarChart } from 'react-native-gifted-charts';
-import { ChevronDown, Menu, Boxes, Plus, Cloud, Coins, Users, Bell, AlertTriangle, Wallet, BadgeDollarSign, TrendingUp, PlayCircle } from 'lucide-react-native';
+import { ChevronDown, Menu, Boxes, Plus, Cloud, Coins, Users, Bell, AlertTriangle, Wallet, BadgeDollarSign, TrendingUp, PlayCircle, ReceiptText } from 'lucide-react-native';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { PulseFab } from '../../components/motion/PulseFab';
 import { Card } from '../../components/ui/Card';
@@ -115,15 +115,6 @@ export default function Dashboard() {
               <ChevronDown size={14} color={colors.ink.secondary} strokeWidth={1.8} />
             </Pressable>
             <View style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.sm }}>
-              <Pressable
-                onPress={() => setSyncOpen(true)}
-                accessibilityRole="button"
-                accessibilityLabel={t('dashboard.sync')}
-                style={({ pressed }) => ({ flexDirection: rowDirection, alignItems: 'center', gap: 5, minHeight: 36, paddingHorizontal: spacing.sm, borderRadius: radii.pill, backgroundColor: colors.brand.primary, opacity: pressed ? 0.72 : 1 })}
-              >
-                <Cloud size={15} color={colors.ink.onBrand} strokeWidth={2} />
-                <Text style={[typography.label, { color: colors.ink.onBrand }]}>{t('dashboard.sync')}</Text>
-              </Pressable>
               <Pressable onPress={() => navigation.navigate('Notifications')} hitSlop={8}><Bell size={20} color={colors.ink.primary} strokeWidth={1.8} /></Pressable>
               <Pressable onPress={() => navigation.dispatch(DrawerActions.openDrawer())} hitSlop={8}><Menu size={20} color={colors.ink.primary} strokeWidth={1.8} /></Pressable>
             </View>
@@ -183,6 +174,24 @@ export default function Dashboard() {
         ) : null}
 
         <AdBanner />
+
+        <Pressable
+          onPress={() => setSyncOpen(true)}
+          accessibilityRole="button"
+          accessibilityLabel={t('dashboard.sync')}
+          style={({ pressed }) => ({ flexDirection: rowDirection, alignItems: 'center', gap: spacing.md, padding: spacing.md, borderRadius: radii.lg, borderWidth: 1, borderColor: colors.surface.border, backgroundColor: colors.surface.card, opacity: pressed ? 0.72 : 1 })}
+        >
+          <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.brand.accentLight, alignItems: 'center', justifyContent: 'center' }}>
+            <Cloud size={19} color={colors.brand.primary} strokeWidth={2} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[typography.bodyMedium, { color: colors.ink.primary, textAlign }]}>{t('dashboard.sync')}</Text>
+            <Text style={[typography.caption, { color: colors.ink.secondary, textAlign }]}>
+              {lastSyncAt ? t('dashboard.syncedRelative').replace('{time}', formatRelativeTime(lastSyncAt)) : t('dashboard.notSyncedYet')}
+            </Text>
+          </View>
+          <ChevronDown size={16} color={colors.ink.secondary} style={{ transform: [{ rotate: '-90deg' }] }} />
+        </Pressable>
 
         <View style={{ flexDirection: rowDirection, flexWrap: 'wrap', gap: spacing.sm }}>
           {metrics.map((metric) => (
@@ -270,8 +279,12 @@ export default function Dashboard() {
               <ListRow
                 key={invoice.id}
                 style={{ paddingHorizontal: 0, flexDirection: rowDirection }}
-                title={`#${invoice.id} · ${invoice.customer}`}
+                title={invoice.customer || t('billing.payment.walkIn')}
                 titleStyle={{ textAlign }}
+                subtitle={`#${invoice.serverId || String(invoice.id).slice(0, 8)} · ${new Date(invoice.date).toLocaleDateString()} · ${formatCurrency(invoice.amount)}`}
+                subtitleStyle={{ textAlign }}
+                leading={<ReceiptText size={18} color={colors.brand.primary} strokeWidth={1.8} />}
+                onPress={() => navigation.navigate('Records', { screen: 'RecordDetail', params: { billId: invoice.id } })}
                 trailing={
                   <Text style={[typography.bodyMedium, { color: invoice.status === 'PAID' ? colors.semantic.success : colors.semantic.warning }]}>
                     {invoice.status === 'PAID' ? t('dashboard.paid') : t('dashboard.pending')}
