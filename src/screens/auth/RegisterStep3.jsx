@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Check } from 'lucide-react-native';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { RegisterWizardHeader } from './RegisterWizardHeader';
 import { TextField } from '../../components/ui/TextField';
 import { Button } from '../../components/ui/Button';
+import { KeyboardAwareScrollView, KeyboardAwareView } from '../../components/ui/KeyboardAware';
 import { useTheme } from '../../theme';
 import { useRegisterStore } from '../../store/registerStore';
 import { useRegisterMutation } from '../../hooks/useAuth';
@@ -59,8 +60,8 @@ export default function RegisterStep3() {
     <AnimatedScreen>
       <SafeAreaView style={{ flex: 1 }}>
         <RegisterWizardHeader step={2} />
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }} keyboardShouldPersistTaps="handled">
+        <KeyboardAwareView>
+          <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
             <TextField label={t('auth.register1.fullName')} value={name} onChangeText={setName} placeholder={t('auth.account.namePlaceholder')} />
             <TextField label={t('auth.register1.email')} value={email} onChangeText={setEmail} placeholder={t('auth.account.emailPlaceholder')} autoCapitalize="none" keyboardType="email-address" />
             <TextField label={t('auth.register1.phone')} value={phone} onChangeText={setPhone} placeholder={t('auth.shopDetails.phonePlaceholder')} keyboardType="phone-pad" />
@@ -75,9 +76,9 @@ export default function RegisterStep3() {
               </Text>
             </Pressable>
             {error ? <Text style={[typography.caption, { color: colors.semantic.danger }]}>{error}</Text> : null}
-          </ScrollView>
+          </KeyboardAwareScrollView>
           <View style={{ padding: spacing.lg }}><Button title={t('auth.register3.createAccount')} onPress={submit} loading={register.isPending} /></View>
-        </KeyboardAvoidingView>
+        </KeyboardAwareView>
       </SafeAreaView>
     </AnimatedScreen>
   );

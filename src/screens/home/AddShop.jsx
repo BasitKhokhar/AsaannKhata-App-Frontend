@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, Image, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
@@ -8,6 +8,7 @@ import Svg, { Path } from 'react-native-svg';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { TextField } from '../../components/ui/TextField';
 import { Button } from '../../components/ui/Button';
+import { KeyboardAwareScrollView, KeyboardAwareView } from '../../components/ui/KeyboardAware';
 import { useTheme } from '../../theme';
 import { useCreateShop } from '../../hooks/useShops';
 import { shopTypesApi } from '../../services/shopTypesApi';
@@ -64,7 +65,8 @@ export default function AddShop() {
           <Text style={[typography.h3, { color: colors.ink.primary }]}>{t('home.addShop.title')}</Text>
         </View>
 
-        <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
+        <KeyboardAwareView>
+          <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, paddingBottom: spacing.xl }}>
           <TextField label={t('home.addShop.shopName')} value={name} onChangeText={setName} placeholder="Noor Hardware" style={{ textAlign }} />
           <TextField label={t('home.addShop.addressOptional')} value={address} onChangeText={setAddress} placeholder="Johar Town, Lahore" style={{ textAlign }} />
           <TextField label={t('home.addShop.phoneOptional')} value={phone} onChangeText={setPhone} placeholder="+92 300 1234567" keyboardType="phone-pad" style={{ textAlign }} />
@@ -108,11 +110,12 @@ export default function AddShop() {
           )}
 
           {submitError ? <Text style={[typography.caption, { color: colors.semantic.danger, textAlign }]}>{submitError}</Text> : null}
-        </ScrollView>
+          </KeyboardAwareScrollView>
 
-        <View style={{ padding: spacing.lg }}>
-          <Button title={t('home.addShop.saveShop')} onPress={handleSubmit} loading={createShop.isPending} />
-        </View>
+          <View style={{ padding: spacing.lg }}>
+            <Button title={t('home.addShop.saveShop')} onPress={handleSubmit} loading={createShop.isPending} />
+          </View>
+        </KeyboardAwareView>
       </SafeAreaView>
     </AnimatedScreen>
   );

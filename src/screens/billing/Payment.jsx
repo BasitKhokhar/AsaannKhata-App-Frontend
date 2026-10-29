@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { Banknote, Check, CreditCard, HandCoins, Minus, Plus, Smartphone, Trash2 } from 'lucide-react-native';
+import { Banknote, Check, CreditCard, HandCoins, List, Minus, Plus, Smartphone, Trash2, UserRound } from 'lucide-react-native';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { Header } from '../../components/ui/Header';
 import { Card } from '../../components/ui/Card';
@@ -11,11 +11,13 @@ import { TextField } from '../../components/ui/TextField';
 import { Sheet } from '../../components/ui/Sheet';
 import { Chip } from '../../components/ui/Chip';
 import { IconButton } from '../../components/ui/IconButton';
+import { KeyboardAwareScrollView, KeyboardAwareView } from '../../components/ui/KeyboardAware';
 import { useTheme } from '../../theme';
 import { useCartStore } from '../../store/cartStore';
 import { useCustomers } from '../../hooks/useCustomers';
 import { useCreateBill } from '../../hooks/useBills';
 import { formatCurrency } from '../../utils/money';
+import { joinCustomerName, splitCustomerName } from '../../utils/customerName';
 import { useT, useIsUrdu } from '../../store/languageStore';
 
 const methods = [
@@ -57,6 +59,9 @@ export default function Payment() {
   const [method, setMethod] = useState('CASH');
   const [receivedInput, setReceivedInput] = useState(null);
   const [customerOpen, setCustomerOpen] = useState(false);
+  const initialCustomerName = splitCustomerName(cart.customerName);
+  const [firstName, setFirstName] = useState(initialCustomerName.firstName);
+  const [lastName, setLastName] = useState(initialCustomerName.lastName);
   const [search, setSearch] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -74,6 +79,7 @@ export default function Payment() {
   const changeDue = round2(Math.max(0, safeReceived - total));
   const selectedCustomer = customers.find((customer) => customer.id === cart.customerId);
   const visibleCustomers = customers.filter((customer) => `${customer.name} ${customer.phone || ''}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
+  const enteredCustomerName = joinCustomerName(firstName, lastName);
 
   function updateQuantity(index, line, delta) {
     const quantity = Math.max(1, lineQuantity(line) + delta);
@@ -86,18 +92,37 @@ export default function Payment() {
     setError(null);
   }
 
+  function updateEnteredCustomer(nextFirstName, nextLastName) {
+    setFirstName(nextFirstName);
+    setLastName(nextLastName);
+    cart.setCustomer({
+      customerId: null,
+      customerName: joinCustomerName(nextFirstName, nextLastName),
+      customerPhone: '',
+    });
+  }
+
+  function selectCustomer(customer) {
+    const parts = splitCustomerName(customer.name);
+    setFirstName(parts.firstName);
+    setLastName(parts.lastName);
+    cart.setCustomer({ customerId: customer.id, customerName: customer.name, customerPhone: customer.phone });
+    setCustomerOpen(false);
+  }
+
   function complete() {
     if (busy) return;
     if (!cart.lines.length) return setError(t('billing.addAtLeastOneProduct'));
     if (discount > subtotal) return setError(t('billing.payment.discountTooLarge'));
     if (!Number.isFinite(received) || received < 0) return setError(t('billing.payment.invalidAmount'));
-    if (remainingDue > 0 && !cart.customerId) return setError(t('billing.payment.customerRequired'));
+    if (remainingDue > 0 && !cart.customerId && !enteredCustomerName) return setError(t('billing.payment.customerRequired'));
     setBusy(true);
     setError(null);
     createBill.mutate({
       customerId: cart.customerId,
-      customerName: selectedCustomer?.name || cart.customerName || t('billing.payment.walkIn'),
+      customerName: selectedCustomer?.name || enteredCustomerName || t('billing.payment.walkIn'),
       customerPhone: selectedCustomer?.phone || cart.customerPhone,
+      createCustomer: !cart.customerId && !!enteredCustomerName,
       subtotal,
       discount,
       totalAmount: total,
@@ -126,7 +151,8 @@ export default function Payment() {
     <AnimatedScreen>
       <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1 }}>
         <Header title={t('billing.checkoutTitle')} />
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, paddingBottom: spacing.xl }} keyboardShouldPersistTaps="handled">
+        <KeyboardAwareView>
+          <KeyboardAwareScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, paddingBottom: spacing.xl }}>
           <Text style={[typography.h3, { color: colors.ink.primary, textAlign: align }]}>{t('billing.cartItems')} · {cart.lines.length}</Text>
           <Card style={{ padding: 0, overflow: 'hidden' }} level="none">
             {cart.lines.map((line, index) => (
@@ -154,21 +180,67 @@ export default function Payment() {
             <View style={{ flexDirection: direction, alignItems: 'center', justifyContent: 'space-between' }}><View><Text style={[typography.h3, { color: colors.ink.primary, textAlign: align }]}>{t('billing.grandTotal')}</Text><Text style={[typography.caption, { color: colors.ink.secondary, textAlign: align }]}>{t('billing.itemsCount').replace('{count}', cart.lines.length)}</Text></View><Text style={[typography.numericLarge, { color: colors.brand.primary, fontSize: 28 }]}>{formatCurrency(total)}</Text></View>
           </Card>
 
+          <Card style={{ gap: spacing.md }}>
+            <View style={{ flexDirection: direction, alignItems: 'center', gap: spacing.sm }}>
+              <View style={{ width: 36, height: 36, borderRadius: radii.md, backgroundColor: colors.brand.accentLight, alignItems: 'center', justifyContent: 'center' }}>
+                <UserRound size={18} color={colors.brand.primary} strokeWidth={1.8} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[typography.h3, { color: colors.ink.primary, textAlign: align }]}>{t('billing.payment.customerSection')}</Text>
+                <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: align }]}>{t('billing.payment.customerSectionDescription')}</Text>
+              </View>
+              {selectedCustomer ? <Check size={18} color={colors.semantic.success} /> : null}
+            </View>
+            <View style={{ flexDirection: direction, gap: spacing.sm }}>
+              <TextField
+                style={{ flex: 1 }}
+                label={t('billing.payment.firstName')}
+                value={firstName}
+                onChangeText={(value) => updateEnteredCustomer(value, lastName)}
+                placeholder={t('billing.payment.firstNamePlaceholder')}
+                textAlign={align}
+              />
+              <TextField
+                style={{ flex: 1 }}
+                label={t('billing.payment.lastName')}
+                value={lastName}
+                onChangeText={(value) => updateEnteredCustomer(firstName, value)}
+                placeholder={t('billing.payment.lastNamePlaceholder')}
+                textAlign={align}
+              />
+            </View>
+            <Button
+              title={t('billing.payment.customerList')}
+              variant="outline"
+              icon={<List size={17} color={colors.brand.primary} strokeWidth={1.8} />}
+              onPress={() => setCustomerOpen(true)}
+            />
+            {selectedCustomer ? (
+              <Text style={[typography.caption, { color: colors.semantic.success, textAlign: align }]}>
+                {t('billing.payment.selectedCustomer').replace('{name}', selectedCustomer.name)}
+              </Text>
+            ) : enteredCustomerName ? (
+              <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: align }]}>
+                {t('billing.payment.newCustomerHint')}
+              </Text>
+            ) : null}
+          </Card>
+
           <Text style={[typography.h3, { color: colors.ink.primary, textAlign: align }]}>{t('billing.payment.methodLabel')}</Text>
           <View style={{ flexDirection: direction, flexWrap: 'wrap', gap: spacing.sm }}>
             {methods.map((option) => { const Icon = option.icon; const active = method === option.key; return <Pressable key={option.key} onPress={() => selectMethod(option.key)} style={{ width: '48%', minHeight: 70, backgroundColor: active ? colors.semantic.successBg : colors.surface.raised, borderWidth: active ? 1.5 : 1, borderColor: active ? colors.brand.primary : colors.surface.border, borderRadius: radii.md, alignItems: 'center', justifyContent: 'center', gap: spacing.xs }}><Icon size={20} color={active ? colors.brand.primary : colors.ink.secondary} /><Text style={[typography.label, { color: active ? colors.brand.primary : colors.ink.primary }]}>{t(option.label)}</Text></Pressable>; })}
           </View>
-          <Pressable onPress={() => setCustomerOpen(true)} style={{ backgroundColor: colors.surface.raised, borderWidth: 1, borderColor: colors.surface.border, borderRadius: radii.md, padding: spacing.md, flexDirection: direction, alignItems: 'center', justifyContent: 'space-between' }}><Text style={[typography.body, { color: colors.ink.primary }]}>{selectedCustomer?.name || t('billing.payment.selectCustomer')}</Text>{selectedCustomer ? <Check size={17} color={colors.brand.primary} /> : null}</Pressable>
           <TextField label={t('billing.amountReceived')} value={method === 'CREDIT' ? '0' : String(receivedInput == null ? total : receivedInput)} onChangeText={setReceivedInput} keyboardType="decimal-pad" editable={method !== 'CREDIT'} />
           {changeDue > 0 ? summaryRow(t('billing.payment.change'), formatCurrency(changeDue), colors.semantic.success) : null}
           {remainingDue > 0 ? summaryRow(t('billing.remainingDue'), formatCurrency(remainingDue), colors.semantic.warning) : null}
           {error ? <Text style={[typography.caption, { color: colors.semantic.danger, textAlign: align }]}>{error}</Text> : null}
-        </ScrollView>
-        <View style={{ padding: spacing.lg, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.surface.border }}><Button title={t('billing.completeBill')} onPress={complete} loading={busy} /></View>
+          </KeyboardAwareScrollView>
+          <View style={{ padding: spacing.lg, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.surface.border }}><Button title={t('billing.completeBill')} onPress={complete} loading={busy} /></View>
+        </KeyboardAwareView>
       </SafeAreaView>
       <Sheet visible={customerOpen} onClose={() => setCustomerOpen(false)} title={t('billing.payment.selectCustomer')}>
         <TextField value={search} onChangeText={setSearch} placeholder={t('billing.creditCustomers.searchPlaceholder')} />
-        {visibleCustomers.map((customer) => <Pressable key={customer.id} onPress={() => { cart.setCustomer({ customerId: customer.id, customerName: customer.name, customerPhone: customer.phone }); setCustomerOpen(false); }} style={{ paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.surface.border }}><Text style={[typography.bodyMedium, { color: colors.ink.primary, textAlign: align }]}>{customer.name}</Text>{customer.phone ? <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: align }]}>{customer.phone}</Text> : null}</Pressable>)}
+        {visibleCustomers.length ? visibleCustomers.map((customer) => <Pressable key={customer.id} onPress={() => selectCustomer(customer)} style={{ paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.surface.border, flexDirection: direction, alignItems: 'center', gap: spacing.sm }}><View style={{ flex: 1 }}><Text style={[typography.bodyMedium, { color: colors.ink.primary, textAlign: align }]}>{customer.name}</Text>{customer.phone ? <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: align }]}>{customer.phone}</Text> : null}</View>{customer.id === cart.customerId ? <Check size={17} color={colors.semantic.success} /> : null}</Pressable>) : <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: align }]}>{t('billing.payment.noCustomers')}</Text>}
         <Button title={t('billing.creditCustomers.addCustomer')} variant="outline" onPress={() => { setCustomerOpen(false); navigation.navigate('CreditCustomers'); }} style={{ marginTop: spacing.md }} />
       </Sheet>
     </AnimatedScreen>

@@ -9,6 +9,7 @@ import { Header } from '../../components/ui/Header';
 import { Chip } from '../../components/ui/Chip';
 import { TextField } from '../../components/ui/TextField';
 import { Button } from '../../components/ui/Button';
+import { KeyboardAwareScrollView, KeyboardAwareView } from '../../components/ui/KeyboardAware';
 import { useTheme } from '../../theme';
 import { useCategories } from '../../hooks/useCategories';
 import { useCreateProduct } from '../../hooks/useProducts';
@@ -115,8 +116,9 @@ export default function AddProduct() {
           {[0, 1].map((index) => <View key={index} style={{ flex: 1, height: 4, borderRadius: 2, backgroundColor: index <= step ? colors.brand.primary : colors.surface.border }} />)}
         </View>
 
-        {step === 0 ? (
-          <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.sm }}>
+        <KeyboardAwareView>
+          {step === 0 ? (
+            <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.sm }}>
             <Text style={[typography.body, { color: colors.ink.secondary, marginBottom: spacing.sm, textAlign }]}>{t('catalog.addProduct.chooseUnitDescription')}</Text>
             {[
               { key: 'QUANTITY', icon: Package, detail: 'catalog.addProduct.modeQtyDetail' },
@@ -137,9 +139,9 @@ export default function AddProduct() {
                 </Pressable>
               );
             })}
-          </ScrollView>
-        ) : (
-        <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
+            </KeyboardAwareScrollView>
+          ) : (
+          <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, paddingBottom: spacing.xl }}>
           <Pressable
             onPress={handlePickImage}
             style={{ alignItems: 'center', marginBottom: spacing.sm }}
@@ -291,12 +293,13 @@ export default function AddProduct() {
           />
 
           {error ? <Text style={[typography.caption, { color: colors.semantic.danger, textAlign }]}>{error}</Text> : null}
-        </ScrollView>
-        )}
+          </KeyboardAwareScrollView>
+          )}
 
-        <View style={{ padding: spacing.lg }}>
-          <Button title={step === 0 ? t('common.next') : t('catalog.addProduct.saveProduct')} onPress={step === 0 ? () => setStep(1) : handleSave} />
-        </View>
+          <View style={{ padding: spacing.lg }}>
+            <Button title={step === 0 ? t('common.next') : t('catalog.addProduct.saveProduct')} onPress={step === 0 ? () => setStep(1) : handleSave} />
+          </View>
+        </KeyboardAwareView>
       </SafeAreaView>
     </AnimatedScreen>
   );

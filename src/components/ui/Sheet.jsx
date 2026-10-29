@@ -18,6 +18,8 @@ export function Sheet({ visible, onClose, title, children, footer, scrollable = 
     ? {
         contentContainerStyle: { padding: spacing.lg, gap: spacing.md },
         keyboardShouldPersistTaps: 'handled',
+        keyboardDismissMode: Platform.OS === 'ios' ? 'interactive' : 'on-drag',
+        automaticallyAdjustKeyboardInsets: Platform.OS === 'ios',
       }
     : { style: { padding: spacing.lg, gap: spacing.md } };
 
@@ -25,7 +27,7 @@ export function Sheet({ visible, onClose, title, children, footer, scrollable = 
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={{ flex: 1, backgroundColor: colors.surface.overlay }} onPress={onClose} />
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ position: 'absolute', left: 0, right: 0, bottom: 0, maxHeight: '88%' }}
       >
         <View

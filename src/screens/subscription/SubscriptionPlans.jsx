@@ -18,8 +18,19 @@ import { useT, useIsUrdu, useLanguageStore } from '../../store/languageStore';
 
 const CYCLE_ORDER = { MONTHLY: 0, SEMIANNUAL: 1, YEARLY: 2 };
 
+function suppliedFeatures(plan) {
+  if (Array.isArray(plan.features)) return plan.features;
+  if (typeof plan.features !== 'string') return [];
+  try {
+    const parsed = JSON.parse(plan.features);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 function planFeatures(plan, t, lang) {
-  const supplied = Array.isArray(plan.features) ? plan.features : [];
+  const supplied = suppliedFeatures(plan);
   const features = supplied.map((item) => typeof item === 'string' ? item
     : item?.[lang] || item?.en || item?.text || item?.label || item?.title).filter((item) => typeof item === 'string' && item.trim());
   if (features.length) return features;
@@ -27,6 +38,31 @@ function planFeatures(plan, t, lang) {
     plan.cloudEnabled ? t('subscription.plans.cloudSyncFeature') : t('subscription.plans.offlineFeature'),
     t('subscription.plans.maxDevices').replace('{count}', plan.maxDevices),
   ];
+}
+
+function planFamily(plan) {
+  return String(plan.code || plan.revenueCatProductId || plan.name)
+    .replace(/_(MONTHLY|SEMIANNUAL|YEARLY)$/i, '')
+    .replace(/:(monthly|six-month|semiannual|yearly)$/i, '');
+}
+
+function buildPlanCards(plans) {
+  const cards = plans.filter((plan) => plan.tier !== 'CLOUD_SYNC').map((plan) => ({ kind: 'single', key: plan.code, plan }));
+  const groups = new Map();
+  plans.filter((plan) => plan.tier === 'CLOUD_SYNC').forEach((plan) => {
+    const key = planFamily(plan);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(plan);
+  });
+  groups.forEach((groupPlans, key) => {
+    groupPlans.sort((a, b) => (CYCLE_ORDER[a.billingCycle] ?? 99) - (CYCLE_ORDER[b.billingCycle] ?? 99));
+    cards.push({ kind: 'cloud', key, plans: groupPlans });
+  });
+  return cards.sort((a, b) => {
+    const firstA = a.plan || a.plans[0];
+    const firstB = b.plan || b.plans[0];
+    return (firstA.sortOrder ?? 0) - (firstB.sortOrder ?? 0);
+  });
 }
 
 function packageFor(offering, plan) {
@@ -47,7 +83,7 @@ export default function SubscriptionPlans() {
   const queryClient = useQueryClient();
   const adminId = useAuthStore((s) => s.adminId);
   const { data: entitlement } = useEntitlement();
-  const [selectedCode, setSelectedCode] = useState(null);
+  const [selectedCodes, setSelectedCodes] = useState({});
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(null);
   const [now, setNow] = useState(Date.now());
@@ -76,12 +112,9 @@ export default function SubscriptionPlans() {
   }, []);
 
   const plans = (Array.isArray(plansData) ? plansData : plansData?.plans || []).filter((p) => p.isActive !== false);
-  const cloudPlans = plans.filter((p) => p.tier === 'CLOUD_SYNC').sort((a, b) => (CYCLE_ORDER[a.billingCycle] ?? 99) - (CYCLE_ORDER[b.billingCycle] ?? 99));
-  const cards = [...plans.filter((p) => p.tier !== 'CLOUD_SYNC').map((plan) => ({ kind: 'single', plan })),
-    ...(cloudPlans.length ? [{ kind: 'cloud', plans: cloudPlans }] : [])];
+  const cards = buildPlanCards(plans);
   const currentPlanCode = entitlement?.planCode;
   const selectedTint = colors.brand.accentLight + (mode === 'dark' ? '29' : '1A');
-  const selectedPlan = plans.find((p) => p.code === selectedCode);
 
   async function handlePurchase(plan) {
     if (!plan || plan.tier === 'FREE_TRIAL') return;
@@ -172,38 +205,62 @@ export default function SubscriptionPlans() {
       {cards.map((card) => {
         const plan = card.plan || card.plans[0];
         const isCloud = card.kind === 'cloud';
+        const selectedVariant = isCloud
+          ? card.plans.find((p) => p.code === selectedCodes[card.key]) || card.plans.find((p) => p.code === currentPlanCode) || card.plans[0]
+          : plan;
         const isCurrent = isCloud ? card.plans.some((p) => p.code === currentPlanCode) : plan.code === currentPlanCode;
-        const selected = isCloud ? card.plans.some((p) => p.code === selectedCode) : plan.code === selectedCode;
-        return <Card key={isCloud ? 'cloud' : plan.code} level={selected ? 'md' : 'sm'}
-          onPress={isCloud ? undefined : () => setSelectedCode(plan.code)}
-          style={{ borderWidth: selected ? 2 : 1, borderColor: selected ? colors.brand.accentDark : colors.surface.border,
-            backgroundColor: selected ? selectedTint : colors.surface.raised }}>
-          <View style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.sm }}>
-            {plan.cloudEnabled ? <Crown size={20} color={colors.brand.accentDark} /> : null}
-            <Text style={[typography.h3, { color: colors.ink.primary, flex: 1, textAlign }]}>{isCloud ? t('subscription.plans.cloudTitle') : plan.name}</Text>
-            {isCurrent ? <Badge label={t('subscription.plans.currentPlan')} tone="success" /> : null}
+        const recommended = isCloud && /(^|_)PRO($|_)/i.test(card.key);
+        const purchasable = selectedVariant.tier !== 'FREE_TRIAL' && !!packageFor(offering, selectedVariant);
+        return <Card key={card.key} level={recommended ? 'md' : 'sm'} style={{ padding: 0, overflow: 'hidden', borderWidth: isCurrent ? 2 : 1,
+          borderColor: isCurrent ? colors.semantic.success : recommended ? colors.brand.accentDark : colors.surface.border }}>
+          <View style={{ backgroundColor: recommended ? colors.brand.accentLight : colors.surface.card, padding: spacing.lg }}>
+            <View style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.sm }}>
+              {plan.cloudEnabled ? <Crown size={21} color={colors.brand.accentDark} /> : null}
+              <Text style={[typography.h2, { color: colors.ink.primary, flex: 1, textAlign }]}>{plan.name}</Text>
+              {recommended ? <Badge label={t('subscription.plans.recommended')} tone="warning" /> : null}
+              {isCurrent ? <Badge label={t('subscription.plans.currentPlan')} tone="success" /> : null}
+            </View>
+            {plan.description ? <Text style={[typography.body, { color: colors.ink.secondary, marginTop: spacing.xs, lineHeight: 20, textAlign }]}>{plan.description}</Text> : null}
           </View>
-          {plan.description ? <Text style={[typography.body, { color: colors.ink.secondary, marginTop: spacing.xs, textAlign }]}>{plan.description}</Text> : null}
-          {featureRows(plan)}
-          {isCloud ? <View style={{ marginTop: spacing.md, gap: spacing.sm }}>
-            {card.plans.map((variant) => {
-              const variantSelected = selectedCode === variant.code;
-              const variantCurrent = currentPlanCode === variant.code;
-              return <Pressable key={variant.code} onPress={() => setSelectedCode(variant.code)}
-                style={{ padding: spacing.md, borderRadius: radii.md, borderWidth: variantSelected ? 2 : 1,
-                  borderColor: variantSelected ? colors.brand.accentDark : colors.surface.border,
-                  backgroundColor: variantSelected ? selectedTint : colors.surface.card }}>
-                <View style={{ flexDirection: rowDirection, justifyContent: 'space-between', alignItems: 'center', gap: spacing.sm }}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[typography.label, { color: colors.ink.primary, textAlign }]}>{t(`subscription.plans.cycle.${variant.billingCycle}`)}</Text>
-                    {variantCurrent ? <Text style={[typography.caption, { color: colors.semantic.success, textAlign }]}>{t('subscription.plans.currentPlan')}</Text> : null}
-                  </View>
-                  <Text style={[typography.h3, { color: colors.brand.accentDark }]}>{priceFor(variant)}</Text>
-                </View>
-                {Array.isArray(variant.features) && JSON.stringify(variant.features) !== JSON.stringify(plan.features) ? featureRows(variant) : null}
-              </Pressable>;
-            })}
-          </View> : <Text style={[typography.h2, { color: colors.brand.accentDark, marginTop: spacing.md, textAlign }]}>{priceFor(plan)}</Text>}
+
+          <View style={{ padding: spacing.lg }}>
+            {isCloud ? <View>
+              <Text style={[typography.label, { color: colors.ink.secondary, marginBottom: spacing.sm, textAlign }]}>{t('subscription.plans.chooseBillingPeriod')}</Text>
+              <View style={{ flexDirection: rowDirection, gap: spacing.xs }}>
+                {card.plans.map((variant) => {
+                  const active = selectedVariant.code === variant.code;
+                  return <Pressable key={variant.code} onPress={() => setSelectedCodes((value) => ({ ...value, [card.key]: variant.code }))} accessibilityRole="radio"
+                    accessibilityState={{ checked: active }} style={{ flex: 1, minHeight: 48, alignItems: 'center', justifyContent: 'center',
+                      paddingHorizontal: spacing.xs, borderRadius: radii.md, borderWidth: active ? 2 : 1,
+                      borderColor: active ? colors.brand.primary : colors.surface.border,
+                      backgroundColor: active ? selectedTint : colors.surface.card }}>
+                    <Text numberOfLines={2} style={[typography.label, { color: active ? colors.brand.primary : colors.ink.secondary, textAlign: 'center' }]}>
+                      {t(`subscription.plans.cycle.${variant.billingCycle}`)}
+                    </Text>
+                  </Pressable>;
+                })}
+              </View>
+            </View> : null}
+
+            <View style={{ flexDirection: rowDirection, alignItems: 'baseline', gap: spacing.xs, marginTop: isCloud ? spacing.lg : 0 }}>
+              <Text style={[typography.numericLarge, { color: colors.brand.primary, fontSize: 30 }]}>{priceFor(selectedVariant)}</Text>
+              {selectedVariant.billingCycle ? <Text style={[typography.caption, { color: colors.ink.secondary }]}>
+                {t('subscription.plans.billedCycle').replace('{cycle}', t(`subscription.plans.cycle.${selectedVariant.billingCycle}`).toLocaleLowerCase())}
+              </Text> : null}
+            </View>
+
+            <View style={{ height: 1, backgroundColor: colors.surface.border, marginVertical: spacing.lg }} />
+            {featureRows(selectedVariant)}
+
+            <Button
+              title={isCurrent && selectedVariant.code === currentPlanCode ? t('subscription.plans.currentPlan') : t('subscription.plans.subscribeNow')}
+              onPress={() => handlePurchase(selectedVariant)}
+              loading={busy}
+              disabled={!purchasable || selectedVariant.code === currentPlanCode}
+              variant={recommended ? 'accent' : 'primary'}
+              style={{ marginTop: spacing.lg }}
+            />
+          </View>
         </Card>;
       })}
       {!offeringLoading && (offeringError || !offering?.availablePackages?.length) ?
@@ -224,9 +281,5 @@ export default function SubscriptionPlans() {
         <Text style={[typography.caption, { color: message.tone === 'danger' ? colors.semantic.danger : colors.semantic.warning, flex: 1, textAlign }]}>{message.text}</Text>
       </View> : null}
     </ScrollView>
-    <View style={{ padding: spacing.lg }}>
-      <Button title={t('subscription.plans.continueButton')} loading={busy} onPress={() => handlePurchase(selectedPlan)}
-        disabled={!selectedPlan || selectedPlan.code === currentPlanCode || selectedPlan.tier === 'FREE_TRIAL' || !packageFor(offering, selectedPlan)} />
-    </View>
   </SafeAreaView></AnimatedScreen>;
 }

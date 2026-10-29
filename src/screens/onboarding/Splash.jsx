@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Boxes, ShoppingBag, Users, ChartNoAxesCombined, TrendingUp } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { GradientShiftBackground } from '../../components/motion/GradientShiftBackground';
 import { FloatingIconCluster } from '../../components/motion/FloatingIconCluster';
@@ -29,70 +28,83 @@ export default function Splash() {
 
   return (
     <GradientShiftBackground colors={colors.gradient.header}>
-      <View style={styles.center}>
-        <View style={styles.glowWrap}>
-          <AmbientGlow color={colors.brand.accent} size={130} />
-          <FloatingIconCluster>
-            <View style={[styles.badgeShadow, { shadowColor: colors.brand.accent }]}>
-              <View style={[styles.badge, { borderRadius: radii.xl, backgroundColor: 'rgba(255,255,255,0.1)' }]}>
-                <Logo size={60} color={colors.ink.onBrand} accentColor={colors.brand.accent} />
-                <Shimmer parentWidth={96} />
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.center}>
+          <View style={styles.glowWrap}>
+            <AmbientGlow color={colors.brand.accent} size={190} />
+            <View style={[styles.outerRing, { borderColor: onBrandAlpha(0.12) }]} />
+            <View style={[styles.innerRing, { borderColor: onBrandAlpha(0.2) }]} />
+            <FloatingIconCluster distance={7}>
+              <View style={[styles.badgeShadow, { shadowColor: colors.brand.accent }]}>
+                <View
+                  style={[
+                    styles.badge,
+                    {
+                      borderRadius: radii.xl,
+                      backgroundColor: onBrandAlpha(0.12),
+                      borderColor: onBrandAlpha(0.22),
+                    },
+                  ]}
+                >
+                  <Logo size={66} color={colors.ink.onBrand} accentColor={colors.brand.accent} />
+                  <Shimmer parentWidth={108} />
+                </View>
               </View>
-            </View>
-          </FloatingIconCluster>
+            </FloatingIconCluster>
+          </View>
+
+          <Text style={[typography.display, styles.wordmark, { color: colors.ink.onBrand, marginTop: spacing.xl }]}>AsaanKhata</Text>
+          <View style={[styles.wordmarkRule, { marginTop: spacing.sm }]}>
+            <View style={[styles.rule, { backgroundColor: onBrandAlpha(0.24) }]} />
+            <View style={[styles.ruleDot, { backgroundColor: colors.brand.accent }]} />
+            <View style={[styles.rule, { backgroundColor: onBrandAlpha(0.24) }]} />
+          </View>
+          <Text
+            style={[
+              typography.label,
+              styles.tagline,
+              {
+                color: onBrandAlpha(0.72),
+                marginTop: spacing.sm,
+              },
+            ]}
+          >
+            {t('onboarding.splashTagline')}
+          </Text>
         </View>
 
-        <Text style={[typography.h1, { color: colors.ink.onBrand, marginTop: spacing.lg }]}>AsaanKhata</Text>
-        <Text
-          style={[
-            typography.label,
-            {
-              color: onBrandAlpha(0.6),
-              marginTop: spacing.xs,
-              letterSpacing: 2,
-              textTransform: 'uppercase',
-            },
-          ]}
-        >
-          {t('onboarding.splashTagline')}
-        </Text>
-      </View>
-
-      <SafeAreaView edges={['bottom']} style={{ alignItems: 'center', gap: spacing.xl, paddingHorizontal: spacing.lg }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-around', width: '100%' }}>
-          {[
-            { icon: Boxes, label: t('onboarding.splashInventory') },
-            { icon: ShoppingBag, label: t('nav.sales') },
-            { icon: Users, label: t('dashboard.customersCount') },
-            { icon: ChartNoAxesCombined, label: t('nav.reports') },
-            { icon: TrendingUp, label: t('onboarding.splashGrow') },
-          ].map((item) => (
-            <View key={item.label} style={{ alignItems: 'center', gap: spacing.xs }}>
-              <item.icon size={17} color={colors.ink.onBrand} strokeWidth={1.5} />
-              <Text style={[typography.label, { color: onBrandAlpha(0.85), fontSize: 10 }]}>{item.label}</Text>
-            </View>
-          ))}
+        <View style={[styles.loader, { paddingBottom: spacing.lg }]}>
+          <DotGlowLoader color={colors.brand.accent} size={7} />
         </View>
-        <DotGlowLoader color={colors.brand.accent} />
       </SafeAreaView>
     </GradientShiftBackground>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  glowWrap: { width: 140, height: 140, alignItems: 'center', justifyContent: 'center' },
+  glowWrap: { width: 190, height: 190, alignItems: 'center', justifyContent: 'center' },
+  outerRing: { position: 'absolute', width: 176, height: 176, borderRadius: 88, borderWidth: 1 },
+  innerRing: { position: 'absolute', width: 146, height: 146, borderRadius: 73, borderWidth: 1 },
   badgeShadow: {
-    shadowOpacity: 0.3,
-    shadowRadius: 30,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
+    shadowOpacity: 0.36,
+    shadowRadius: 32,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 10,
   },
   badge: {
-    width: 96,
-    height: 96,
+    width: 108,
+    height: 108,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
+    borderWidth: 1,
   },
+  wordmark: { letterSpacing: -0.8 },
+  wordmarkRule: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  rule: { width: 30, height: 1 },
+  ruleDot: { width: 5, height: 5, borderRadius: 3 },
+  tagline: { letterSpacing: 2.2, textTransform: 'uppercase', textAlign: 'center' },
+  loader: { alignItems: 'center' },
 });

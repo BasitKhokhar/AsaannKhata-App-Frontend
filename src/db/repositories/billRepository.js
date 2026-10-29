@@ -15,24 +15,33 @@ const base = createSyncableRepository(bills);
 // — for khata sales — adds the unpaid remainder to the customer's balance.
 // All local writes succeed regardless of subscription/network state; only
 // the *push* of these rows to the server depends on entitlement/connectivity.
-function createBillWithItems({ shopId, customerId, customerName, customerPhone, subtotal, discount, totalAmount, totalReceived, changeDue, remainingDue, paymentMethod, status, items }) {
+function createBillWithItems({ shopId, customerId, customerName, customerPhone, createCustomer, subtotal, discount, totalAmount, totalReceived, changeDue, remainingDue, paymentMethod, status, items }) {
   const timestamp = new Date().toISOString();
   const billId = randomUUID();
   let createdBill;
   expoDb.withTransactionSync(() => {
+  let resolvedCustomerId = customerId || null;
 
-  if (customerId) {
-    const customer = customerRepository.getById(customerId);
+  if (resolvedCustomerId) {
+    const customer = customerRepository.getById(resolvedCustomerId);
     if (!customer || customer.shopId !== shopId || customer.isDeleted) {
       throw new Error('Customer is not available in this shop');
     }
+  } else if (createCustomer && customerName?.trim()) {
+    const customer = customerRepository.create({
+      shopId,
+      name: customerName.trim(),
+      phone: customerPhone?.trim() || null,
+      balance: 0,
+    });
+    resolvedCustomerId = customer.id;
   }
 
   db.insert(bills)
     .values({
       id: billId,
       shopId,
-      customerId: customerId || null,
+      customerId: resolvedCustomerId,
       customerName,
       customerPhone: customerPhone || null,
       subtotal,
@@ -93,8 +102,8 @@ function createBillWithItems({ shopId, customerId, customerName, customerPhone, 
     });
   }
 
-  if (customerId && remainingDue > 0) {
-    customerRepository.adjustBalance(customerId, remainingDue);
+  if (resolvedCustomerId && remainingDue > 0) {
+    customerRepository.adjustBalance(resolvedCustomerId, remainingDue);
   }
 
     createdBill = getWithItems(billId);

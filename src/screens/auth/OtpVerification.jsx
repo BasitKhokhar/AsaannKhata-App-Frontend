@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { GradientShiftBackground } from '../../components/motion/GradientShiftBackground';
 import { Header } from '../../components/ui/Header';
 import { Button } from '../../components/ui/Button';
 import { TextField } from '../../components/ui/TextField';
+import { KeyboardAwareScrollView, KeyboardAwareView } from '../../components/ui/KeyboardAware';
 import { useTheme } from '../../theme';
 import { useT, useIsUrdu } from '../../store/languageStore';
 import { authApi } from '../../services/authApi';
@@ -66,8 +67,8 @@ export default function OtpVerification() {
     <GradientShiftBackground colors={[colors.surface.bg, colors.brand.accentLight + '33']}>
       <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1 }}>
         <Header showBack transparent title="" />
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <ScrollView contentContainerStyle={{ flexGrow: 1, padding: spacing.xl, paddingTop: spacing.md }} keyboardShouldPersistTaps="handled">
+        <KeyboardAwareView>
+          <KeyboardAwareScrollView contentContainerStyle={{ flexGrow: 1, padding: spacing.xl, paddingTop: spacing.md }}>
             <Text style={[typography.h1, { color: colors.ink.primary, textAlign }]}>{t('auth.otp.title')}</Text>
             <Text style={[typography.caption, { color: colors.ink.secondary, marginTop: spacing.xs, textAlign }]}>{t('auth.otp.subtitle')}</Text>
             <Text style={[typography.caption, { color: colors.ink.secondary, marginTop: spacing.xs, textAlign }]}>{email}</Text>
@@ -82,8 +83,8 @@ export default function OtpVerification() {
             </Pressable>
             <View style={{ flex: 1, minHeight: spacing.xl }} />
             <Button title={t('auth.otp.verify')} onPress={resetPassword} loading={loading} disabled={!email || code.length !== 6 || !newPassword || !confirmPassword} />
-          </ScrollView>
-        </KeyboardAvoidingView>
+          </KeyboardAwareScrollView>
+        </KeyboardAwareView>
       </SafeAreaView>
     </GradientShiftBackground>
   );

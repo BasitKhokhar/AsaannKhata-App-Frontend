@@ -109,9 +109,20 @@ export default function NewBill() {
           </Pressable>
         </View>
         <SubscriptionBanner />
-        <View style={{ marginHorizontal: spacing.lg, marginVertical: spacing.sm, height: 46, borderRadius: radii.md, backgroundColor: colors.surface.raised, borderWidth: 1, borderColor: colors.surface.border, flexDirection: direction, alignItems: 'center', paddingHorizontal: spacing.md, gap: spacing.sm }}>
-          <Search size={17} color={colors.ink.secondary} />
-          <TextInput value={search} onChangeText={setSearch} placeholder={t('billing.searchProducts')} placeholderTextColor={colors.ink.secondary} style={[typography.body, { flex: 1, color: colors.ink.primary, textAlign: align }]} />
+        <View style={{ marginHorizontal: spacing.lg, marginVertical: spacing.sm, flexDirection: direction, alignItems: 'center', gap: spacing.sm }}>
+          <View style={{ flex: 1, height: 46, borderRadius: radii.md, backgroundColor: colors.surface.raised, borderWidth: 1, borderColor: colors.surface.border, flexDirection: direction, alignItems: 'center', paddingHorizontal: spacing.md, gap: spacing.sm }}>
+            <Search size={17} color={colors.ink.secondary} />
+            <TextInput value={search} onChangeText={setSearch} placeholder={t('billing.searchProducts')} placeholderTextColor={colors.ink.secondary} style={[typography.body, { flex: 1, color: colors.ink.primary, textAlign: align }]} />
+          </View>
+          <Pressable
+            onPress={() => navigation.navigate('AddProduct')}
+            accessibilityRole="button"
+            accessibilityLabel={t('billing.addProduct')}
+            style={{ height: 46, borderRadius: radii.md, borderWidth: 1.5, borderColor: colors.brand.primary, backgroundColor: colors.brand.primary, flexDirection: direction, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.md, gap: spacing.xs }}
+          >
+            <Plus size={17} color={colors.ink.onBrand} />
+            <Text style={[typography.label, { color: colors.ink.onBrand }]}>{t('billing.addProduct')}</Text>
+          </Pressable>
         </View>
         <FlashList
           data={groups}
@@ -138,7 +149,7 @@ export default function NewBill() {
                   return (
                     <Pressable onPress={() => openProduct(product)} disabled={unavailable} style={[{ width: 116, minHeight: 126, borderRadius: radii.lg, backgroundColor: colors.surface.raised, borderWidth: 1, borderColor: inCart ? colors.brand.primary : colors.surface.border, padding: spacing.md, justifyContent: 'space-between', opacity: unavailable ? 0.52 : 1 }, elevation.xs]}>
                       <View style={{ flexDirection: direction, justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <View style={{ width: 38, height: 38, borderRadius: radii.md, backgroundColor: colors.brand.accentLight, alignItems: 'center', justifyContent: 'center' }}><Text style={[typography.h3, { color: colors.brand.primary }]}>{product.name.trim().charAt(0).toLocaleUpperCase()}</Text></View>
+                        <View style={{ width: 38, height: 38, borderRadius: radii.md, backgroundColor: colors.brand.primary, alignItems: 'center', justifyContent: 'center' }}><Text style={[typography.h3, { color: colors.ink.onBrand }]}>{product.name.trim().charAt(0).toLocaleUpperCase()}</Text></View>
                         {inCart ? <View style={{ minWidth: 22, height: 22, paddingHorizontal: 6, borderRadius: 11, backgroundColor: colors.brand.primary, alignItems: 'center', justifyContent: 'center' }}><Text style={[typography.caption, { color: colors.ink.onBrand }]}>{inCart}</Text></View> : null}
                       </View>
                       <Text numberOfLines={2} style={[typography.bodyMedium, { color: colors.ink.primary, fontSize: 13, textAlign: align }]}>{product.name}</Text>
@@ -158,7 +169,7 @@ export default function NewBill() {
       <Sheet visible={!!selected} onClose={() => setSelected(null)} title={selected?.name} footer={<Button title={t('billing.addToCart')} onPress={addToCart} />}>
         {selected ? <>
           <View style={{ alignItems: 'center', gap: spacing.sm }}>
-            <View style={{ width: 72, height: 72, borderRadius: radii.xl, backgroundColor: colors.brand.accentLight, alignItems: 'center', justifyContent: 'center' }}><Text style={[typography.h1, { color: colors.brand.primary }]}>{selected.name.trim().charAt(0).toLocaleUpperCase()}</Text></View>
+            <View style={{ width: 72, height: 72, borderRadius: radii.xl, backgroundColor: colors.brand.primary, alignItems: 'center', justifyContent: 'center' }}><Text style={[typography.h1, { color: colors.ink.onBrand }]}>{selected.name.trim().charAt(0).toLocaleUpperCase()}</Text></View>
             <Text style={[typography.numericLarge, { color: colors.ink.primary }]}>{formatCurrency(selected.stockType === 'PACK' ? (selected.packSalePrice ?? selected.salePrice) : selected.salePrice)}</Text>
             <Text style={[typography.caption, { color: colors.ink.secondary }]}>{formatStockLabel(selected)}</Text>
           </View>

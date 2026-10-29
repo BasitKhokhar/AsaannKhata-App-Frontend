@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView } from 'react-native';
+import { View, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useMutation } from '@tanstack/react-query';
@@ -11,6 +11,7 @@ import { ListRow } from '../../components/ui/ListRow';
 import { SectionHeader } from '../../components/ui/SectionHeader';
 import { TextField } from '../../components/ui/TextField';
 import { Button } from '../../components/ui/Button';
+import { KeyboardAwareScrollView, KeyboardAwareView } from '../../components/ui/KeyboardAware';
 import { useTheme } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
 import { authApi } from '../../services/authApi';
@@ -74,7 +75,8 @@ export default function Profile() {
     <AnimatedScreen>
       <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1 }}>
         <Header title={t('settings.profile')} subtitle={t('settings.profileDesc')} />
-        <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingTop: spacing.xs, gap: spacing.lg }}>
+        <KeyboardAwareView>
+          <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.lg, paddingTop: spacing.xs, paddingBottom: spacing.xl, gap: spacing.lg }}>
           <Card style={{ alignItems: 'center', gap: spacing.sm }}>
             <View
               style={{
@@ -170,7 +172,8 @@ export default function Profile() {
               <Button title={t('settings.profile.updatePassword')} onPress={handleUpdatePassword} loading={updatePassword.isPending} variant="outline" />
             </Card>
           </View>
-        </ScrollView>
+          </KeyboardAwareScrollView>
+        </KeyboardAwareView>
       </SafeAreaView>
     </AnimatedScreen>
   );

@@ -9,6 +9,7 @@ import { StaggeredList } from '../../components/motion/StaggeredList';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { TextField } from '../../components/ui/TextField';
 import { Button } from '../../components/ui/Button';
+import { Header } from '../../components/ui/Header';
 import { StatCard } from '../../components/ui/StatCard';
 import { ListRow } from '../../components/ui/ListRow';
 import { Sheet } from '../../components/ui/Sheet';
@@ -19,6 +20,7 @@ import { customerRepository } from '../../db/repositories/customerRepository';
 import { useShopStore } from '../../store/shopStore';
 import { formatCurrency } from '../../utils/money';
 import { formatRelativeTime } from '../../utils/dates';
+import { joinCustomerName } from '../../utils/customerName';
 import { showToast } from '../../store/toastStore';
 import { useT, useIsUrdu } from '../../store/languageStore';
 
@@ -30,23 +32,27 @@ export default function CreditCustomers() {
   const createCustomer = useCreateCustomer();
   const [addOpen, setAddOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
   const t = useT();
   const isUrdu = useIsUrdu();
+  const rowDirection = isUrdu ? 'row-reverse' : 'row';
   const textAlign = isUrdu ? 'right' : 'left';
 
   const totalOutstanding = activeShopId ? customerRepository.totalOutstanding(activeShopId) : 0;
   const visible = customers.filter((customer) => `${customer.name} ${customer.phone || ''}`.toLowerCase().includes(search.trim().toLowerCase()));
 
   function handleAdd() {
+    const name = joinCustomerName(firstName, lastName);
     if (!name) return;
     createCustomer.mutate(
       { name, phone },
       {
         onSuccess: () => {
           setAddOpen(false);
-          setName('');
+          setFirstName('');
+          setLastName('');
           setPhone('');
           showToast(t('billing.creditCustomers.customerAdded'), 'success');
         },
@@ -56,10 +62,10 @@ export default function CreditCustomers() {
 
   return (
     <AnimatedScreen>
-      <SafeAreaView style={{ flex: 1 }}>
-        <Text style={[typography.h1, { color: colors.ink.primary, padding: spacing.lg, paddingBottom: spacing.sm, textAlign }]}>{t('nav.creditCustomers')}</Text>
+      <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1 }}>
+        <Header title={t('nav.creditCustomers')} />
 
-        <View style={{ marginHorizontal: spacing.lg, marginBottom: spacing.sm }}>
+        <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.sm }}>
           <StatCard
             icon={<Users size={18} color={colors.semantic.danger} strokeWidth={1.8} />}
             value={formatCurrency(totalOutstanding)}
@@ -68,7 +74,7 @@ export default function CreditCustomers() {
           />
         </View>
 
-        <View style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.sm }}>
+        <View style={{ paddingHorizontal: spacing.lg, paddingVertical: spacing.sm }}>
           <TextField value={search} onChangeText={setSearch} placeholder={t('billing.creditCustomers.searchPlaceholder')} right={<Search size={16} color={colors.ink.secondary} />} />
         </View>
 
@@ -86,11 +92,13 @@ export default function CreditCustomers() {
             estimatedItemSize={68}
             refreshing={isRefetching}
             onRefresh={refetch}
+            style={{ flex: 1 }}
             contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: 96 }}
+            ListEmptyComponent={<Text style={[typography.caption, { color: colors.ink.secondary, textAlign, paddingVertical: spacing.xl }]}>{t('billing.payment.noCustomers')}</Text>}
             renderItem={({ item }) => (
               <ListRow
                 onPress={() => navigation.navigate('CustomerDetail', { customerId: item.id })}
-                style={{ backgroundColor: colors.surface.card, marginBottom: spacing.sm, borderWidth: 1, borderColor: colors.surface.border }}
+                style={{ backgroundColor: colors.surface.card, marginBottom: spacing.sm, borderWidth: 1, borderColor: colors.surface.border, flexDirection: rowDirection }}
                 leading={
                   <LinearGradient
                     colors={colors.gradient.primary}
@@ -100,7 +108,9 @@ export default function CreditCustomers() {
                   </LinearGradient>
                 }
                 title={item.name}
+                titleStyle={{ textAlign }}
                 subtitle={t('billing.creditCustomers.lastActivity').replace('{time}', formatRelativeTime(item.updatedAt))}
+                subtitleStyle={{ textAlign }}
                 trailing={
                   <Text style={[typography.bodyMedium, { color: item.balance > 0 ? colors.semantic.danger : colors.semantic.success }]}>
                     {formatCurrency(item.balance)}
@@ -111,14 +121,17 @@ export default function CreditCustomers() {
           />
         )}
 
-        <View style={{ position: 'absolute', bottom: spacing.xl, right: spacing.lg }}>
-          <PulseFab onPress={() => setAddOpen(true)} icon={<Plus size={22} color={colors.ink.primary} strokeWidth={2} />} />
+        <View style={{ position: 'absolute', bottom: spacing.lg, ...(isUrdu ? { left: spacing.lg } : { right: spacing.lg }) }}>
+          <PulseFab onPress={() => setAddOpen(true)} icon={<Plus size={22} color={colors.ink.onBrand} strokeWidth={2} />} />
         </View>
       </SafeAreaView>
 
       <Sheet visible={addOpen} onClose={() => setAddOpen(false)} title={t('billing.creditCustomers.addCustomer')}>
-        <TextField label={t('billing.creditCustomers.name')} value={name} onChangeText={setName} placeholder="Sana K." style={{ textAlign }} />
-        <TextField label={t('billing.creditCustomers.phoneOptional')} value={phone} onChangeText={setPhone} placeholder="+92 300 1234567" keyboardType="phone-pad" style={{ textAlign }} />
+        <View style={{ flexDirection: rowDirection, gap: spacing.sm }}>
+          <TextField style={{ flex: 1 }} label={t('billing.payment.firstName')} value={firstName} onChangeText={setFirstName} placeholder={t('billing.payment.firstNamePlaceholder')} textAlign={textAlign} />
+          <TextField style={{ flex: 1 }} label={t('billing.payment.lastName')} value={lastName} onChangeText={setLastName} placeholder={t('billing.payment.lastNamePlaceholder')} textAlign={textAlign} />
+        </View>
+        <TextField label={t('billing.creditCustomers.phoneOptional')} value={phone} onChangeText={setPhone} placeholder="+92 300 1234567" keyboardType="phone-pad" textAlign={textAlign} />
         <Button title={t('billing.creditCustomers.saveCustomer')} onPress={handleAdd} loading={createCustomer.isPending} />
         <Button title={t('common.cancel')} variant="ghost" onPress={() => setAddOpen(false)} />
       </Sheet>

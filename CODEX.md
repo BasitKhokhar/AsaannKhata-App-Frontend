@@ -1,6 +1,6 @@
 # AsaanKhata frontend project context
 
-Last repository review: 2026-10-24
+Last repository review: 2026-10-29
 
 This is the durable project map for coding agents. Read this before scanning the repository. Inspect only the files relevant to the current task after reading it, and update this document whenever an architectural change makes it inaccurate.
 
@@ -54,14 +54,14 @@ Firebase Analytics screen views are emitted on navigation route changes.
 - Auth: `Login`, three registration steps (business type, shop details, account), `ForgotPassword`, `OtpVerification`. Registration still creates the account and first shop in one backend call, with a free trial; paid plan selection is available after sign-in. ForgotPassword requests a 6-digit email code; OtpVerification confirms the code and sets a new password through backend auth endpoints.
 - Drawer routes:
   - `HomeStack`: `Dashboard`
-  - `BillingStack`: `NewBill`, `Payment`, `BillDetail`, `CreditCustomers`, `CustomerDetail`
+  - `BillingStack`: `NewBill`, `Payment`, `BillDetail`, `CreditCustomers`, `CustomerDetail`, `AddProduct`
   - `CatalogStack`: `ProductsList`, `AddProduct`, `StockAdjustment`
   - `StockStack`: `StockOverview`, `StockAdjustment`
   - `ShopsStack`: `ShopsList`, `AddShop`
   - Direct drawer screens: `SalesReport`, `Expenses`, `Notifications`, `SubscriptionPlans`, `EarnCoins`
   - Direct drawer screen: `Records` (shop-scoped bill list, payment detail and Add Payment sheets)
   - `SettingsStack`: `Settings`, `SyncStatus`, `Profile`, `StaffManagement`, `Notifications`, `HelpSupport`, `About`
-- `StockAdjustment` deliberately exists in both Catalog and Stock stacks so each stack can navigate locally.
+- `AddProduct` exists in both Billing and Catalog stacks so a product created during billing returns to `NewBill`; `StockAdjustment` deliberately exists in both Catalog and Stock stacks so each stack can navigate locally.
 - Cross-drawer navigation usually uses `navigation.navigate('SomeStack', { screen: 'SomeScreen' })`.
 - Dashboard, Products, Reports, and Settings also render a shared five-destination bottom navigation (Home, Sales, Products, Reports, More). Sales opens `NewBill`; secondary routes remain in the drawer/stacks.
 
@@ -112,7 +112,7 @@ Syncable rows use these conventions:
 
 ### Bills
 
-`NewBill` builds the cart, and `Payment` records cash/card/mobile-wallet/credit settlement through `useCreateBill` -> `billRepository.createBillWithItems`. Card and wallet are records of external payments; the app does not process those payments. The local operation immediately:
+`NewBill` builds the cart, and `Payment` records cash/card/mobile-wallet/credit settlement through `useCreateBill` -> `billRepository.createBillWithItems`. Checkout accepts separate first/last-name fields backed by the existing combined customer `name`; choosing a saved customer links it, while completing a bill with a new entered name creates and links the customer in the same local transaction. Card and wallet are records of external payments; the app does not process those payments. The local operation immediately:
 
 1. Insert bill and items.
 2. Decrement product stock using the product's stock mode.
@@ -147,7 +147,7 @@ The Records screen uses `billSettlementRepository` to associate later customer p
 
 ## Synchronization contract
 
-All triggers call `runSync()` in `src/sync/syncEngine.js`. Triggers are app startup, foreground, offline-to-online transition, every five minutes while foregrounded, and the manual Sync Now action.
+All triggers call `runSync()` in `src/sync/syncEngine.js`. Triggers are app startup, foreground, offline-to-online transition, every five minutes while foregrounded, and manual Sync Now actions. Dashboard exposes Sync for every plan: cloud-enabled plans sync directly, while offline/free plans use the existing server-authoritative coin unlock before running the same engine.
 
 Sync sequence:
 
@@ -191,8 +191,8 @@ Most core domain reads/writes use repositories. Notable online/server paths incl
 - RevenueCat `app_user_id` must equal backend `adminId`; login occurs after successful app auth.
 - RevenueCat platform SDK keys are read from `app.config.js` extra values supplied by `REVENUECAT_ANDROID_SDK_KEY` and `REVENUECAT_IOS_SDK_KEY`; purchases require those build environment values and matching store products.
 - `REVENUECAT_SETUP.md` is the current billing setup contract: native checkout uses the backend Admin ID, purchase/restore calls `/subscriptions/verify`, and the backend reconciles RevenueCat subscriber snapshots for webhooks. SDK keys are public; REST API and webhook secrets are backend-only. A store sandbox/release build is still required to certify the flow.
-- The Plans screen fetches active backend `SubscriptionPlan` rows and the RevenueCat current offering on focus. It groups Cloud Sync monthly, semiannual, and yearly rows in one card, displays `features`/`description` from the backend, and shows only store `priceString` values for paid plans. Missing offering packages leave checkout disabled. The current subscription and remaining days/hours/minutes come from `/subscriptions/me` (or its offline entitlement cache).
-- Backend seed can populate missing plan descriptions/features and map RevenueCat product IDs from `REVENUECAT_*_PRODUCT_ID` server environment variables. Run the backend seed after setting them; matching Play base plans use `subscriptionId:basePlanId` identifiers. The backend subscriber reconciler resolves the base plan before selecting the plan row.
+- The Plans screen fetches active backend `SubscriptionPlan` rows and the RevenueCat current offering on focus. It groups Cloud Sync billing variants into separate family cards by the plan-code prefix before `_MONTHLY`/`_SEMIANNUAL`/`_YEARLY` (for example, Basic and Pro). Each family card contains billing-period tabs, one selected RevenueCat `priceString`, backend-provided description/features, and its own purchase button; Pro-family cards receive the recommended treatment. `features` may arrive as parsed JSON or a JSON string. Missing offering packages leave the matching purchase button disabled. The current subscription and remaining days/hours/minutes come from `/subscriptions/me` (or its offline entitlement cache).
+- Backend seed upserts the nine-row Free/Lifetime/Basic/Pro catalog with localized feature arrays and RevenueCat product IDs (overrideable through `REVENUECAT_*_PRODUCT_ID` server environment variables). It migrates the legacy generic Lifetime and Cloud Sync codes to equivalent non-downgrading plans. Matching Play base plans use `subscriptionId:basePlanId` identifiers, and the backend subscriber reconciler resolves the base plan before selecting the plan row.
 - Paid/cloud users do not see ads.
 - Development builds use Google's test ad unit IDs.
 - Reward coins are granted only after the SDK emits `EARNED_REWARD` and the backend accepts `/ads/reward`.
@@ -207,6 +207,7 @@ Most core domain reads/writes use repositories. Notable online/server paths incl
 - Use `useTheme()` and tokens from `src/theme`; do not add raw hex colors outside `src/theme/colors.js`. `colors.js` provides Emerald, Ocean, Indigo, Amber, Rose, Slate, and Classic presets in light/dark modes. The app's default is Emerald, while existing navy/gold remains available as Classic.
 - Brand headings use Outfit; body text uses IBM Plex Sans. Font keys must match `App.jsx` loading keys.
 - Use components from `src/components/ui` and motion primitives before duplicating patterns.
+- Full-page forms use `KeyboardAwareView` with `KeyboardAwareScrollView`; input sheets inherit the same keyboard-safe behavior from the shared `Sheet`. Android is explicitly configured with `softwareKeyboardLayoutMode: resize`.
 - Use `showToast()` for transient feedback and `await showConfirm()` for confirmation prompts.
 - English is the i18n source of truth. Add every new key to `en.js`, `ur.js`, and `hi.js`; missing translations fall back to English.
 - Urdu RTL is implemented manually per screen with flex direction/text alignment. Do not enable global `I18nManager.forceRTL()` without redesigning that behavior.
@@ -218,7 +219,7 @@ Most core domain reads/writes use repositories. Notable online/server paths incl
 
 - Expo project slug `asaankhataapp`, matching the EAS project referenced by `EXPO_ID`
 - Android/iOS identity `com.asaandukaan.app`
-- portrait orientation, automatic system UI style, icons/splash
+- portrait orientation, automatic system UI style, icons/splash, and Android keyboard resize mode
 - SQLite, SecureStore, fonts, image picker, sharing/file system
 - Firebase app, Sentry, Google Mobile Ads
 - Android `allowBackup: false`

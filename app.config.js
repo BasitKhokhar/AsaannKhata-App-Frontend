@@ -34,6 +34,9 @@ module.exports = ({ config }) => ({
     android: {
       package: "com.asaandukaan.app",
       googleServicesFile: "./google-services.json",
+      // Keep the visible app window above the software keyboard. Individual
+      // form screens also use KeyboardAvoidingView + scrollable content.
+      softwareKeyboardLayoutMode: "resize",
       // Play Data Safety hardening — this app's own backup story is the
       // server (cloud sync), not Android's auto-backup of local SQLite/
       // AsyncStorage, which could otherwise leak business data to a Google

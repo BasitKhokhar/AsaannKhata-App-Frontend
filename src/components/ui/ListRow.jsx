@@ -7,7 +7,7 @@ import { useTheme } from '../../theme';
 // content or a chevron. Replaces the Settings hub's hand-rolled rows and is
 // the base row shape for the Stock ledger, SyncStatus per-shop rows, and
 // the new Linked Devices section.
-export function ListRow({ leading, title, subtitle, trailing, onPress, showChevron, style, titleStyle }) {
+export function ListRow({ leading, title, subtitle, trailing, onPress, showChevron, style, titleStyle, subtitleStyle }) {
   const { colors, radii, typography, spacing } = useTheme();
   const Wrapper = onPress ? Pressable : View;
 
@@ -32,7 +32,7 @@ export function ListRow({ leading, title, subtitle, trailing, onPress, showChevr
           {title}
         </Text>
         {subtitle ? (
-          <Text style={[typography.caption, { color: colors.ink.secondary }]} numberOfLines={1}>
+          <Text style={[typography.caption, { color: colors.ink.secondary }, subtitleStyle]} numberOfLines={1}>
             {subtitle}
           </Text>
         ) : null}

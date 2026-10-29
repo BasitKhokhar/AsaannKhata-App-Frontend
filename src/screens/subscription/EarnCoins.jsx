@@ -14,25 +14,9 @@ import { useShopStore } from '../../store/shopStore';
 import { adsService, rewardedAdAvailability } from '../../services/adsService';
 import { adsApi } from '../../services/adsApi';
 import { showToast } from '../../store/toastStore';
-import { categoryRepository } from '../../db/repositories/categoryRepository';
-import { productRepository } from '../../db/repositories/productRepository';
-import { customerRepository } from '../../db/repositories/customerRepository';
-import { billRepository } from '../../db/repositories/billRepository';
-import { stockRepository } from '../../db/repositories/stockRepository';
-import { customerPaymentRepository } from '../../db/repositories/customerPaymentRepository';
 import { useT, useIsUrdu } from '../../store/languageStore';
 import { runSync } from '../../sync/syncEngine';
-
-// Any row this device still owes the server — used to decide whether
-// "Unlock sync now" is worth showing. A cheap local count, not a network
-// call, so it reads instantly even offline.
-function countPendingSyncRows(shopId) {
-  if (!shopId) return 0;
-  return [categoryRepository, productRepository, customerRepository, billRepository, stockRepository, customerPaymentRepository].reduce(
-    (total, repo) => total + repo.listPending(shopId).length,
-    0
-  );
-}
+import { countPendingSyncRows } from '../../sync/pending';
 
 export default function EarnCoins() {
   const { colors, radii, typography, spacing } = useTheme();

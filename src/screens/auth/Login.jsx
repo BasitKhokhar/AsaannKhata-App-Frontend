@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { Logo } from '../../components/ui/Logo';
 import { TextField } from '../../components/ui/TextField';
 import { Button } from '../../components/ui/Button';
+import { KeyboardAwareScrollView, KeyboardAwareView } from '../../components/ui/KeyboardAware';
 import { useTheme } from '../../theme';
 import { useLoginMutation } from '../../hooks/useAuth';
 import { useT, useIsUrdu } from '../../store/languageStore';
@@ -30,8 +31,8 @@ export default function Login() {
   return (
     <AnimatedScreen>
       <SafeAreaView style={{ flex: 1 }}>
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <ScrollView contentContainerStyle={{ flexGrow: 1, padding: spacing.xl }} keyboardShouldPersistTaps="handled">
+        <KeyboardAwareView>
+          <KeyboardAwareScrollView contentContainerStyle={{ flexGrow: 1, padding: spacing.xl }}>
             <View style={{ alignItems: 'center', marginTop: spacing.xl }}>
               <Logo size={68} color={colors.brand.primary} accentColor={colors.brand.accentLight} />
               <Text style={[typography.h2, { color: colors.ink.primary, marginTop: spacing.sm }]}>AsaanKhata</Text>
@@ -83,8 +84,8 @@ export default function Login() {
                 <Text style={{ color: colors.brand.accentDark, fontFamily: typography.bodyMedium.fontFamily }}>{t('auth.login.register')}</Text>
               </Text>
             </Pressable>
-          </ScrollView>
-        </KeyboardAvoidingView>
+          </KeyboardAwareScrollView>
+        </KeyboardAwareView>
       </SafeAreaView>
     </AnimatedScreen>
   );

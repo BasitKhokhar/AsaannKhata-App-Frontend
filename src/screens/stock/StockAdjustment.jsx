@@ -6,6 +6,7 @@ import Svg, { Path } from 'react-native-svg';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { TextField } from '../../components/ui/TextField';
 import { Button } from '../../components/ui/Button';
+import { KeyboardAwareScrollView, KeyboardAwareView } from '../../components/ui/KeyboardAware';
 import { useTheme } from '../../theme';
 import { useProduct, useAdjustStock } from '../../hooks/useProducts';
 import { formatStockLabel } from '../../utils/stock';
@@ -72,15 +73,16 @@ export default function StockAdjustment() {
           <Text style={[typography.h3, { color: colors.ink.primary }]}>{t('stock.adjustment.title')}</Text>
         </View>
 
-        <View style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.lg }}>
-          <View style={{ width: 44, height: 44, borderRadius: radii.md, backgroundColor: colors.surface.border }} />
-          <View>
-            <Text style={[typography.bodyMedium, { color: colors.ink.primary, textAlign }]}>{product.name}</Text>
-            <Text style={[typography.caption, { color: colors.ink.secondary, textAlign }]}>{t('stock.adjustment.currentStockLabel').replace('{stock}', formatStockLabel(product))}</Text>
+        <KeyboardAwareView>
+          <View style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.lg }}>
+            <View style={{ width: 44, height: 44, borderRadius: radii.md, backgroundColor: colors.surface.border }} />
+            <View>
+              <Text style={[typography.bodyMedium, { color: colors.ink.primary, textAlign }]}>{product.name}</Text>
+              <Text style={[typography.caption, { color: colors.ink.secondary, textAlign }]}>{t('stock.adjustment.currentStockLabel').replace('{stock}', formatStockLabel(product))}</Text>
+            </View>
           </View>
-        </View>
 
-        <View style={{ padding: spacing.lg, gap: spacing.md }}>
+          <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, paddingBottom: spacing.xl }}>
           <View style={{ flexDirection: rowDirection, gap: spacing.sm }}>
             {[
               { key: 'IN', label: t('stock.overview.filterStockIn') },
@@ -137,11 +139,12 @@ export default function StockAdjustment() {
           <TextField label={t('stock.adjustment.noteOptional')} value={note} onChangeText={setNote} placeholder="Invoice #4471, MediCorp Distributors" style={{ textAlign }} />
 
           {error ? <Text style={[typography.caption, { color: colors.semantic.danger, textAlign }]}>{error}</Text> : null}
-        </View>
+          </KeyboardAwareScrollView>
 
-        <View style={{ padding: spacing.lg, marginTop: 'auto' }}>
-          <Button title={t('stock.adjustment.saveAdjustment')} onPress={handleSave} loading={adjustStock.isPending} />
-        </View>
+          <View style={{ padding: spacing.lg, marginTop: 'auto' }}>
+            <Button title={t('stock.adjustment.saveAdjustment')} onPress={handleSave} loading={adjustStock.isPending} />
+          </View>
+        </KeyboardAwareView>
       </SafeAreaView>
     </AnimatedScreen>
   );

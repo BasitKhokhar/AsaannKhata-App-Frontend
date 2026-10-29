@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Lock } from 'lucide-react-native';
@@ -8,6 +8,7 @@ import { GradientShiftBackground } from '../../components/motion/GradientShiftBa
 import { Header } from '../../components/ui/Header';
 import { TextField } from '../../components/ui/TextField';
 import { Button } from '../../components/ui/Button';
+import { KeyboardAwareScrollView, KeyboardAwareView } from '../../components/ui/KeyboardAware';
 import { useTheme } from '../../theme';
 import { useT, useIsUrdu } from '../../store/languageStore';
 
@@ -45,8 +46,8 @@ export default function ForgotPassword() {
           only needs to cover the remaining edges. */}
       <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1 }}>
         <Header showBack transparent title="" />
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <View style={{ flex: 1, padding: spacing.xl, paddingTop: spacing.md }}>
+        <KeyboardAwareView>
+          <KeyboardAwareScrollView contentContainerStyle={{ flexGrow: 1, padding: spacing.xl, paddingTop: spacing.md }}>
             <View
               style={[
                 {
@@ -90,8 +91,8 @@ export default function ForgotPassword() {
                 {t('auth.forgotPassword.logIn')}
               </Text>
             </Text>
-          </View>
-        </KeyboardAvoidingView>
+          </KeyboardAwareScrollView>
+        </KeyboardAwareView>
       </SafeAreaView>
     </GradientShiftBackground>
   );

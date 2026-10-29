@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, Text, Pressable, ScrollView, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect, DrawerActions } from '@react-navigation/native';
@@ -12,17 +12,18 @@ import { SectionHeader } from '../../components/ui/SectionHeader';
 import { ListRow } from '../../components/ui/ListRow';
 import { AdBanner } from '../../components/ui/AdBanner';
 import { BottomNav } from '../../components/ui/BottomNav';
+import { ManualSyncSheet } from '../../components/sync/ManualSyncSheet';
 import { useTheme } from '../../theme';
 import { useDashboardStats, useSalesByProduct } from '../../hooks/useDashboard';
 import { useShops } from '../../hooks/useShops';
 import { useProducts } from '../../hooks/useProducts';
 import { useCustomers } from '../../hooks/useCustomers';
+import { useEntitlement } from '../../hooks/useEntitlement';
 import { useShopStore } from '../../store/shopStore';
 import { useSyncStore } from '../../store/syncStore';
 import { useCoinsStore } from '../../store/coinsStore';
 import { useNotificationPrefsStore } from '../../store/notificationPrefsStore';
 import { useT, useIsUrdu } from '../../store/languageStore';
-import { entitlementRepository } from '../../db/repositories/entitlementRepository';
 import { formatCurrency } from '../../utils/money';
 import { isLowStock, isOutOfStock } from '../../utils/stock';
 import { formatRelativeTime } from '../../utils/dates';
@@ -44,13 +45,14 @@ export default function Dashboard() {
   const { data: customers = [] } = useCustomers();
   const { data: stats, isRefetching, refetch } = useDashboardStats();
   const { data: topProducts, isError: topProductsError, refetch: refetchTopProducts } = useSalesByProduct({ limit: 5 });
+  const { data: entitlement } = useEntitlement();
+  const [syncOpen, setSyncOpen] = useState(false);
 
   function handleRefresh() {
     refetch();
     refetchTopProducts();
   }
   const lastSyncAt = useSyncStore((s) => s.lastSyncAt);
-  const entitlement = entitlementRepository.get();
   const lowStockAlertsEnabled = useNotificationPrefsStore((s) => s.lowStockAlerts);
   const syncStatusAlertsEnabled = useNotificationPrefsStore((s) => s.syncStatusAlerts);
 
@@ -97,6 +99,7 @@ export default function Dashboard() {
             <Pressable
               onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
               style={{
+                flex: 1,
                 flexDirection: rowDirection,
                 alignItems: 'center',
                 gap: spacing.sm,
@@ -105,13 +108,22 @@ export default function Dashboard() {
               <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.brand.primary, alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={[typography.label, { color: colors.ink.onBrand }]}>{activeShop?.name?.slice(0, 2)?.toUpperCase() || 'AK'}</Text>
               </View>
-              <View>
-                <Text numberOfLines={1} style={[typography.h3, { color: colors.ink.primary, maxWidth: 190 }]}>{activeShop?.name || t('nav.selectShop')}</Text>
+              <View style={{ flex: 1 }}>
+                <Text numberOfLines={1} style={[typography.h3, { color: colors.ink.primary }]}>{activeShop?.name || t('nav.selectShop')}</Text>
                 <Text style={[typography.caption, { color: colors.ink.secondary }]}>{businessLabel}</Text>
               </View>
               <ChevronDown size={14} color={colors.ink.secondary} strokeWidth={1.8} />
             </Pressable>
-            <View style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.md }}>
+            <View style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.sm }}>
+              <Pressable
+                onPress={() => setSyncOpen(true)}
+                accessibilityRole="button"
+                accessibilityLabel={t('dashboard.sync')}
+                style={({ pressed }) => ({ flexDirection: rowDirection, alignItems: 'center', gap: 5, minHeight: 36, paddingHorizontal: spacing.sm, borderRadius: radii.pill, backgroundColor: colors.brand.primary, opacity: pressed ? 0.72 : 1 })}
+              >
+                <Cloud size={15} color={colors.ink.onBrand} strokeWidth={2} />
+                <Text style={[typography.label, { color: colors.ink.onBrand }]}>{t('dashboard.sync')}</Text>
+              </Pressable>
               <Pressable onPress={() => navigation.navigate('Notifications')} hitSlop={8}><Bell size={20} color={colors.ink.primary} strokeWidth={1.8} /></Pressable>
               <Pressable onPress={() => navigation.dispatch(DrawerActions.openDrawer())} hitSlop={8}><Menu size={20} color={colors.ink.primary} strokeWidth={1.8} /></Pressable>
             </View>
@@ -162,10 +174,10 @@ export default function Dashboard() {
             </View>
             <Pressable
               onPress={() => navigation.navigate('EarnCoins')}
-              style={({ pressed }) => ({ flexDirection: rowDirection, alignItems: 'center', justifyContent: 'center', gap: spacing.sm, minHeight: 44, borderRadius: radii.md, borderWidth: 1, borderColor: colors.brand.primary + '40', backgroundColor: colors.brand.accentLight, opacity: pressed ? 0.72 : 1 })}
+              style={({ pressed }) => ({ flexDirection: rowDirection, alignItems: 'center', justifyContent: 'center', gap: spacing.sm, minHeight: 44, borderRadius: radii.md, borderWidth: 1, borderColor: colors.brand.primary, backgroundColor: colors.brand.primary, opacity: pressed ? 0.72 : 1 })}
             >
-              <PlayCircle size={17} color={colors.brand.primary} strokeWidth={2} />
-              <Text style={[typography.label, { color: colors.brand.primary }]}>{t('dashboard.earnCoins')}</Text>
+              <PlayCircle size={17} color={colors.ink.onBrand} strokeWidth={2} />
+              <Text style={[typography.label, { color: colors.ink.onBrand }]}>{t('dashboard.earnCoins')}</Text>
             </Pressable>
           </Card>
         ) : null}
@@ -279,6 +291,12 @@ export default function Dashboard() {
         </View>
       </View>
       <BottomNav active="home" />
+      <ManualSyncSheet
+        visible={syncOpen}
+        onClose={() => setSyncOpen(false)}
+        shopIds={shops.length ? shops.map((shop) => shop.id) : [activeShopId]}
+        cloudEnabled={!!entitlement?.cloudEnabled}
+      />
     </AnimatedScreen>
   );
 }
