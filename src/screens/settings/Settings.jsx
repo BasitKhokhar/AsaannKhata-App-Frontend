@@ -80,7 +80,7 @@ export default function Settings() {
     setAnalyticsUserId(null);
     entitlementRepository.clear();
     queryClient.clear();
-    logoutRevenueCat().catch(() => {});
+    logoutRevenueCat().catch(() => { });
     // Local SQLite business data is deliberately left intact — the same
     // shop owner logging back in should see it instantly (offline-first).
   }
@@ -254,7 +254,7 @@ export default function Settings() {
           </Pressable>
         </ScrollView>
       </SafeAreaView>
-      <BottomNav active="more" />
+      <BottomNav active="settings" />
     </AnimatedScreen>
   );
 }

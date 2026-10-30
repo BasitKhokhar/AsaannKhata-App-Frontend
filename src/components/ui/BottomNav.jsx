@@ -2,16 +2,15 @@ import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { House, ShoppingCart, Package, ChartNoAxesCombined, Menu } from 'lucide-react-native';
+import { House, Package, ChartNoAxesCombined, Settings } from 'lucide-react-native';
 import { useTheme } from '../../theme';
 import { useT, useIsUrdu } from '../../store/languageStore';
 
 const tabs = [
   { key: 'home', label: 'nav.home', icon: House, route: 'HomeStack', screen: 'Dashboard' },
-  { key: 'sales', label: 'nav.sales', icon: ShoppingCart, route: 'BillingStack', screen: 'NewBill' },
   { key: 'products', label: 'nav.products', icon: Package, route: 'CatalogStack', screen: 'ProductsList' },
   { key: 'reports', label: 'nav.reports', icon: ChartNoAxesCombined, route: 'SalesReport' },
-  { key: 'more', label: 'nav.more', icon: Menu, route: 'SettingsStack', screen: 'Settings' },
+  { key: 'settings', label: 'nav.settings', icon: Settings, route: 'SettingsStack', screen: 'Settings' },
 ];
 
 export function BottomNav({ active }) {
