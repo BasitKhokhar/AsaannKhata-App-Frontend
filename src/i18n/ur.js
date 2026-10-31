@@ -213,7 +213,7 @@ export const ur = {
   'auth.register1.continue': 'جاری رکھیں',
   'auth.register1.errorRequired': 'براہ کرم اپنا نام، ای میل، اور پاس ورڈ درج کریں۔',
   'auth.register1.errorPasswordMismatch': 'پاس ورڈز مماثل نہیں ہیں۔',
-  'auth.register1.errorPasswordLength': 'پاس ورڈ 12 سے 128 حروف کا ہونا چاہیے۔',
+  'auth.register1.errorPasswordLength': 'پاس ورڈ 8 سے 128 حروف کا ہونا چاہیے۔',
 
   'auth.register2.shopName': 'دکان کا نام',
   'auth.register2.addLogo': 'دکان کا لوگو شامل کریں',
@@ -260,7 +260,7 @@ export const ur = {
   'auth.otp.newPassword': 'نیا پاس ورڈ',
   'auth.otp.confirmPassword': 'نئے پاس ورڈ کی تصدیق',
   'auth.otp.invalidCode': '6 ہندسوں کا کوڈ درج کریں۔',
-  'auth.otp.invalidPassword': 'پاس ورڈ 12 سے 128 حروف کا ہونا چاہیے۔',
+  'auth.otp.invalidPassword': 'پاس ورڈ 8 سے 128 حروف کا ہونا چاہیے۔',
   'auth.otp.passwordMismatch': 'پاس ورڈ ایک جیسے نہیں ہیں۔',
   'auth.otp.resetFailed': 'پاس ورڈ ری سیٹ نہیں ہو سکا۔ کوڈ چیک کر کے دوبارہ کوشش کریں۔',
 
@@ -569,11 +569,11 @@ export const ur = {
   'settings.profile.changePasswordDesc': 'آسان کھاتہ میں سائن ان کرنے کے لیے استعمال ہونے والا پاس ورڈ تبدیل کریں۔',
   'settings.profile.currentPassword': 'موجودہ پاس ورڈ',
   'settings.profile.newPassword': 'نیا پاس ورڈ',
-  'settings.profile.newPasswordHint': '12 سے 128 حروف',
+  'settings.profile.newPasswordHint': '8 سے 128 حروف',
   'settings.profile.updatePassword': 'پاس ورڈ اپ ڈیٹ کریں',
   'settings.profile.passwordUpdated': 'پاس ورڈ اپ ڈیٹ ہو گیا',
   'settings.profile.errorFillBoth': 'اپنا موجودہ اور نیا پاس ورڈ درج کریں۔',
-  'settings.profile.errorMinLength': 'پاس ورڈ 12 سے 128 حروف کا ہونا چاہیے۔',
+  'settings.profile.errorMinLength': 'پاس ورڈ 8 سے 128 حروف کا ہونا چاہیے۔',
   'settings.profile.errorGeneric': 'پاس ورڈ اپ ڈیٹ نہیں ہو سکا۔ اپنا موجودہ پاس ورڈ چیک کریں اور دوبارہ کوشش کریں۔',
 
   // ---------------------------------------------------------------------

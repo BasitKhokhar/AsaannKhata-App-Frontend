@@ -31,7 +31,7 @@ export default function RegisterStep3() {
       setError(t('auth.register1.errorRequired'));
       return;
     }
-    if (password.length < 12 || password.length > 128) {
+    if (password.length < 8 || password.length > 128) {
       setError(t('auth.register1.errorPasswordLength'));
       return;
     }
@@ -52,7 +52,19 @@ export default function RegisterStep3() {
       });
       store.reset();
     } catch (submitError) {
-      setError(submitError?.response?.data?.message || t('auth.register3.genericError'));
+      const responseData = submitError?.response?.data;
+      const responseMessage = typeof responseData?.message === 'string' ? responseData.message : null;
+
+      if (__DEV__) {
+        console.log('Register API response:', responseData);
+      }
+
+      if (responseMessage && /12\s*[-–]\s*128/i.test(responseMessage)) {
+        setError(t('auth.register1.errorPasswordLength'));
+        return;
+      }
+
+      setError(responseMessage || t('auth.register3.genericError'));
     }
   }
 

@@ -55,7 +55,7 @@ export default function Profile() {
       setFormError(t('settings.profile.errorFillBoth'));
       return;
     }
-    if (newPassword.length < 12 || newPassword.length > 128) {
+    if (newPassword.length < 8 || newPassword.length > 128) {
       setFormError(t('settings.profile.errorMinLength'));
       return;
     }

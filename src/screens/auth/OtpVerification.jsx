@@ -35,7 +35,7 @@ export default function OtpVerification() {
 
   async function resetPassword() {
     if (!/^\d{6}$/.test(code)) return setError(t('auth.otp.invalidCode'));
-    if (newPassword.length < 12 || newPassword.length > 128) return setError(t('auth.otp.invalidPassword'));
+    if (newPassword.length < 8 || newPassword.length > 128) return setError(t('auth.otp.invalidPassword'));
     if (newPassword !== confirmPassword) return setError(t('auth.otp.passwordMismatch'));
     setError('');
     setLoading(true);
