@@ -146,6 +146,7 @@ export const en = {
     "This removes your session from this device and signs you out. Full server-side account deletion isn't available yet — contact support if you need your account permanently erased.",
   'settings.confirmSignOut': 'Sign Out & Clear Session',
   'settings.logout': 'Log Out',
+  'settings.logoutFailed': 'Could not log out. Please try again.',
 
   // ---------------------------------------------------------------------
   // Notifications (push inbox + in-app alert prefs, same screen)
@@ -473,6 +474,8 @@ export const en = {
   'settings.helpSupport.contactUnavailable': 'Support email will appear here when available.',
   'catalog.addProduct.errorSheetDims': 'Please enter sheet width and height.',
   'catalog.addProduct.errorPhotoPermission': 'Permission to access photos is required to add a product image.',
+  'catalog.addProduct.errorImageTooLarge': "Couldn't compress this photo to 50 KB. Please choose another image.",
+  'catalog.addProduct.errorImageProcessing': "Couldn't process this photo. Please try another image.",
 
   // ---------------------------------------------------------------------
   // Catalog / Products List

@@ -43,6 +43,13 @@
       "when": 1792860688915,
       "tag": "0005_thankful_piledriver",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1793466684821,
+      "tag": "0006_product_image_sync",
+      "breakpoints": true
     }
   ]
 }

@@ -1,7 +1,10 @@
 import { eq } from 'drizzle-orm';
+import { File } from 'expo-file-system';
 import { db } from '../db/client';
 import { categories, products, bills, billItems, stockTransactions, customers, customerPayments, expenses } from '../db/schema';
 import { resolveLocalIdByServerId } from './idMap';
+import { productRepository } from '../db/repositories/productRepository';
+import { cacheRemoteProductImage, deleteLocalProductImage, MAX_PRODUCT_IMAGE_BYTES } from '../services/productImages';
 
 // Finds the existing local row for an incoming server row (matched by
 // serverId if this device has seen it before, else by clientId if THIS
@@ -43,12 +46,19 @@ function upsertCategory(row) {
 
 function upsertProduct(row) {
   const localCategoryId = row.categoryId ? resolveLocalIdByServerId(categories, row.categoryId) : null;
+  const existingByServerId = db.select().from(products).where(eq(products.serverId, row.id)).get();
+  const existingByClientId = row.clientId
+    ? db.select().from(products).where(eq(products.id, row.clientId)).get()
+    : null;
+  const existing = existingByServerId || existingByClientId;
+  const imageRemoteUrl = row.image || null;
   upsert(products, row, {
     serverId: row.id,
     shopId: String(row.shopId),
     categoryId: localCategoryId,
     name: row.name,
-    image: row.image || null,
+    imageLocalUri: existing?.imageRemoteUrl === imageRemoteUrl ? existing.imageLocalUri : null,
+    imageRemoteUrl,
     stockType: row.stockType,
     stockQuantity: row.stockQuantity ?? 0,
     stockAreaCm2: row.stockAreaCm2 ?? 0,
@@ -70,6 +80,32 @@ function upsertProduct(row) {
     updatedAt: row.updatedAt,
     createdAt: row.createdAt,
   });
+}
+
+export async function cachePulledProductImages(rows, shopId) {
+  for (const row of rows || []) {
+    if (!row.image) continue;
+    const product = db.select().from(products).where(eq(products.serverId, row.id)).get();
+    if (
+      !product ||
+      product.shopId !== String(shopId) ||
+      product.imageRemoteUrl !== row.image ||
+      product.syncStatus === 'pending' ||
+      product.syncStatus === 'conflict'
+    ) continue;
+
+    const currentFile = product.imageLocalUri ? new File(product.imageLocalUri) : null;
+    if (currentFile?.exists && currentFile.size > 0 && currentFile.size <= MAX_PRODUCT_IMAGE_BYTES) continue;
+
+    const imageLocalUri = await cacheRemoteProductImage(row.image, row.id);
+    if (productRepository.setCachedImage(product.id, row.image, imageLocalUri)) {
+      if (product.imageLocalUri && product.imageLocalUri !== imageLocalUri) {
+        deleteLocalProductImage(product.imageLocalUri);
+      }
+    } else {
+      deleteLocalProductImage(imageLocalUri);
+    }
+  }
 }
 
 function upsertCustomer(row) {

@@ -24,7 +24,15 @@ export function Button({ title, onPress, variant = 'primary', disabled, loading,
   const content = (
     <>
       {loading ? (
-        <ActivityIndicator color={variant === 'accent' ? colors.ink.primary : colors.ink.inverse} />
+        <ActivityIndicator
+          color={
+            variant === 'accent'
+              ? colors.ink.primary
+              : variant === 'danger'
+              ? colors.semantic.danger
+              : colors.ink.inverse
+          }
+        />
       ) : (
         <>
           {icon}

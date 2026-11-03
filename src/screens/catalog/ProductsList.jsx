@@ -118,8 +118,8 @@ export default function ProductsList() {
                         overflow: 'hidden',
                       }}
                     >
-                      {item.image ? (
-                        <Image source={{ uri: item.image }} style={{ width: 44, height: 44 }} resizeMode="cover" />
+                      {item.imageLocalUri || item.imageRemoteUrl ? (
+                        <Image source={{ uri: item.imageLocalUri || item.imageRemoteUrl }} style={{ width: 44, height: 44 }} resizeMode="cover" />
                       ) : (
                         <Package size={18} color={colors.ink.secondary} strokeWidth={1.6} />
                       )}

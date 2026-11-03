@@ -10,6 +10,11 @@ import { billRepository } from '../db/repositories/billRepository';
 import { expenseRepository } from '../db/repositories/expenseRepository';
 import { coinUsageLogRepository } from '../db/repositories/coinUsageLogRepository';
 import { syncApi } from '../services/syncApi';
+import {
+  deleteLocalProductImage,
+  ensureProductImageWithinLimit,
+  uploadProductImage,
+} from '../services/productImages';
 import { adsApi } from '../services/adsApi';
 import { useCoinsStore } from '../store/coinsStore';
 
@@ -72,13 +77,29 @@ async function pushPendingCategories(shopId, deviceId) {
 async function pushPendingProducts(shopId, deviceId) {
   const pending = productRepository.listPending(shopId);
   if (!pending.length) return;
-  const operations = pending.map((row) => ({
+  for (const row of pending) {
+    if (row.isDeleted || !row.imageLocalUri || row.imageRemoteUrl) continue;
+    const imageLocalUri = await ensureProductImageWithinLimit(row.imageLocalUri);
+    if (
+      imageLocalUri !== row.imageLocalUri &&
+      !productRepository.replaceLocalImageUri(row.id, row.imageLocalUri, imageLocalUri)
+    ) {
+      deleteLocalProductImage(imageLocalUri);
+      throw new Error('Product image changed during sync; retry synchronization');
+    }
+    if (imageLocalUri !== row.imageLocalUri) deleteLocalProductImage(row.imageLocalUri);
+    const imageRemoteUrl = await uploadProductImage(shopId, deviceId, imageLocalUri);
+    if (!productRepository.setImageRemoteUrl(row.id, imageLocalUri, imageRemoteUrl)) {
+      throw new Error('Product image changed during sync; retry synchronization');
+    }
+  }
+  const operations = productRepository.listPending(shopId).map((row) => ({
     clientId: row.id,
     operationType: row.isDeleted ? 'DELETE' : 'UPSERT',
     payload: {
       categoryId: serverIdOf(categories, row.categoryId),
       name: row.name,
-      image: row.image,
+      image: row.imageRemoteUrl,
       stockType: row.stockType,
       stockQuantity: row.stockQuantity,
       stockAreaCm2: row.stockAreaCm2,

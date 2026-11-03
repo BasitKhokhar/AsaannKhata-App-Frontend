@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { User, Bell, Cloud, Coins, HelpCircle, Info, Trash2, LogOut, Check, Users, Store, CreditCard } from 'lucide-react-native';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { Card } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
 import { ListRow } from '../../components/ui/ListRow';
 import { SectionHeader } from '../../components/ui/SectionHeader';
 import { Chip } from '../../components/ui/Chip';
@@ -15,6 +16,7 @@ import { useThemeStore } from '../../store/themeStore';
 import { themePresets } from '../../theme/colors';
 import { useLanguageStore, useT, useIsUrdu } from '../../store/languageStore';
 import { showConfirm } from '../../store/confirmStore';
+import { showToast } from '../../store/toastStore';
 import * as secureSession from '../../services/secureSession';
 import { setAnalyticsUserId } from '../../services/analyticsService';
 import { unregisterCurrentDevice } from '../../services/fcmService';
@@ -71,18 +73,27 @@ export default function Settings() {
   const lang = useLanguageStore((s) => s.lang);
   const setLang = useLanguageStore((s) => s.setLang);
   const rowDirection = isUrdu ? 'row-reverse' : 'row';
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   async function handleLogout() {
-    await unregisterCurrentDevice();
-    useShopStore.getState().setActiveShopId(null);
-    clearSession();
-    await secureSession.clearSession();
-    setAnalyticsUserId(null);
-    entitlementRepository.clear();
-    queryClient.clear();
-    logoutRevenueCat().catch(() => { });
-    // Local SQLite business data is deliberately left intact — the same
-    // shop owner logging back in should see it instantly (offline-first).
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    try {
+      await unregisterCurrentDevice();
+      await secureSession.clearSession();
+      useShopStore.getState().setActiveShopId(null);
+      setAnalyticsUserId(null);
+      entitlementRepository.clear();
+      queryClient.clear();
+      logoutRevenueCat().catch(() => {});
+      clearSession();
+      // Local SQLite business data is deliberately left intact — the same
+      // shop owner logging back in should see it instantly (offline-first).
+    } catch (error) {
+      if (__DEV__) console.warn('Logout failed:', error.message);
+      showToast(t('settings.logoutFailed'), 'danger');
+      setIsLoggingOut(false);
+    }
   }
 
   async function handleDeleteLocalData() {
@@ -245,13 +256,19 @@ export default function Settings() {
             />
           </Card>
 
-          <Pressable
+          <Button
+            title={t('settings.logout')}
             onPress={handleLogout}
-            style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.sm, justifyContent: 'center', paddingVertical: spacing.md }}
-          >
-            <LogOut size={16} color={colors.ink.secondary} strokeWidth={1.8} />
-            <Text style={[typography.body, { color: colors.ink.secondary }]}>{t('settings.logout')}</Text>
-          </Pressable>
+            variant="danger"
+            loading={isLoggingOut}
+            disabled={isLoggingOut}
+            icon={<LogOut size={17} color={colors.semantic.danger} strokeWidth={1.8} />}
+            style={{
+              width: '100%',
+              borderWidth: 1.5,
+              borderColor: colors.semantic.danger,
+            }}
+          />
         </ScrollView>
       </SafeAreaView>
       <BottomNav active="settings" />

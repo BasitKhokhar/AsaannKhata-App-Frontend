@@ -54,7 +54,8 @@ export const products = sqliteTable('products', {
   shopId: text('shop_id').notNull(),
   categoryId: text('category_id'),
   name: text('name').notNull(),
-  image: text('image'),
+  imageLocalUri: text('image_local_uri'),
+  imageRemoteUrl: text('image_remote_url'),
   stockType: text('stock_type').notNull().default('QUANTITY'), // QUANTITY | AREA | LENGTH | PACK
 
   stockQuantity: real('stock_quantity').notNull().default(0),

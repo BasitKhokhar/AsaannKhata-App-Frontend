@@ -14,6 +14,11 @@ import { useTheme } from '../../theme';
 import { useCategories } from '../../hooks/useCategories';
 import { useCreateProduct, useProduct, useUpdateProduct } from '../../hooks/useProducts';
 import { useT, useIsUrdu } from '../../store/languageStore';
+import {
+  compressProductImage,
+  deleteLocalProductImage,
+  persistCompressedProductImage,
+} from '../../services/productImages';
 
 export default function AddProduct() {
   const navigation = useNavigation();
@@ -40,6 +45,7 @@ export default function AddProduct() {
   const [name, setName] = useState('');
   const [step, setStep] = useState(0);
   const [image, setImage] = useState(null);
+  const [selectedImageUri, setSelectedImageUri] = useState(null);
   const [categoryId, setCategoryId] = useState(null);
   const [stockType, setStockType] = useState('QUANTITY');
   const [purchasePrice, setPurchasePrice] = useState('');
@@ -62,7 +68,8 @@ export default function AddProduct() {
   useEffect(() => {
     if (!isEditing || !existingProduct) return;
     setName(existingProduct.name || '');
-    setImage(existingProduct.image || null);
+    setImage(existingProduct.imageLocalUri || existingProduct.imageRemoteUrl || null);
+    setSelectedImageUri(null);
     setCategoryId(existingProduct.categoryId || null);
     setStockType(existingProduct.stockType);
     setPurchasePrice(String(existingProduct.purchasePrice ?? ''));
@@ -89,11 +96,24 @@ export default function AddProduct() {
       setError(t('catalog.addProduct.errorPhotoPermission'));
       return;
     }
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 0.7 });
-    if (!result.canceled) setImage(result.assets[0].uri);
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 1 });
+      if (!result.canceled) {
+        const compressedUri = await compressProductImage(result.assets[0].uri);
+        setImage(compressedUri);
+        setSelectedImageUri(compressedUri);
+        setError(null);
+      }
+    } catch (pickError) {
+      setError(
+        pickError.message === 'PRODUCT_IMAGE_EXCEEDS_SIZE_LIMIT'
+          ? t('catalog.addProduct.errorImageTooLarge')
+          : t('catalog.addProduct.errorImageProcessing')
+      );
+    }
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (saving) return;
     if (!name.trim() || purchasePrice.trim() === '' || salePrice.trim() === '') {
       setError(t('catalog.addProduct.errorNameAndPrices'));
@@ -114,57 +134,83 @@ export default function AddProduct() {
       return;
     }
     setError(null);
-
-    if (isEditing) {
-      setSaving(true);
-      updateProduct.mutate(
-        productId,
-        {
-          name: name.trim(),
-          image: image || null,
-          categoryId: categoryId || null,
-          purchasePrice: Number(purchasePrice),
-          salePrice: Number(salePrice),
-          lowStockThreshold: lowStockThreshold === '' ? null : Number(lowStockThreshold),
-          ...(stockType === 'PACK' ? {
-            packPurchasePrice: packPurchasePrice === '' ? null : Number(packPurchasePrice),
-            packSalePrice: packSalePrice === '' ? null : Number(packSalePrice),
-          } : {}),
-        },
-        {
-          onSuccess: () => { setSaving(false); navigation.goBack(); },
-          onError: () => { setSaving(false); setError(t('catalog.addProduct.errorSaveFailed')); },
-        }
-      );
-      return;
-    }
-
     setSaving(true);
-    createProduct.mutate(
-      {
-        name,
-        // Local-only: this is a device file URI, not uploaded anywhere — it won't sync to other devices/cloud until the sync push protocol carries binary files.
-        image,
-        categoryId,
-        stockType,
-        purchasePrice,
-        salePrice,
-        lowStockThreshold: lowStockThreshold || null,
-        unit,
-        quantity,
-        sheetWidth,
-        sheetHeight,
-        packSize,
-        stockPacks,
-        stockLooseUnits,
-        packPurchasePrice,
-        packSalePrice,
-      },
-      {
-        onSuccess: () => { setSaving(false); navigation.goBack(); },
-        onError: () => { setSaving(false); setError(t('catalog.addProduct.errorSaveFailed')); },
+    let persistedImageUri = null;
+    try {
+      let imageLocalUri = isEditing ? existingProduct?.imageLocalUri || null : null;
+      if (selectedImageUri) {
+        persistedImageUri = await persistCompressedProductImage(selectedImageUri);
+        imageLocalUri = persistedImageUri;
       }
-    );
+      const imageRemoteUrl = selectedImageUri
+        ? null
+        : isEditing ? existingProduct?.imageRemoteUrl || null : null;
+      const options = {
+        onSuccess: () => {
+          if (existingProduct?.imageLocalUri && existingProduct.imageLocalUri !== imageLocalUri) {
+            deleteLocalProductImage(existingProduct.imageLocalUri);
+          }
+          setSaving(false);
+          navigation.goBack();
+        },
+        onError: () => {
+          if (persistedImageUri) deleteLocalProductImage(persistedImageUri);
+          setSaving(false);
+          setError(t('catalog.addProduct.errorSaveFailed'));
+        },
+      };
+
+      if (isEditing) {
+        updateProduct.mutate(
+          productId,
+          {
+            name: name.trim(),
+            imageLocalUri,
+            imageRemoteUrl,
+            categoryId: categoryId || null,
+            purchasePrice: Number(purchasePrice),
+            salePrice: Number(salePrice),
+            lowStockThreshold: lowStockThreshold === '' ? null : Number(lowStockThreshold),
+            ...(stockType === 'PACK' ? {
+              packPurchasePrice: packPurchasePrice === '' ? null : Number(packPurchasePrice),
+              packSalePrice: packSalePrice === '' ? null : Number(packSalePrice),
+            } : {}),
+          },
+          options
+        );
+      } else {
+        createProduct.mutate(
+          {
+            name,
+            imageLocalUri,
+            imageRemoteUrl,
+            categoryId,
+            stockType,
+            purchasePrice,
+            salePrice,
+            lowStockThreshold: lowStockThreshold || null,
+            unit,
+            quantity,
+            sheetWidth,
+            sheetHeight,
+            packSize,
+            stockPacks,
+            stockLooseUnits,
+            packPurchasePrice,
+            packSalePrice,
+          },
+          options
+        );
+      }
+    } catch (saveError) {
+      if (persistedImageUri) deleteLocalProductImage(persistedImageUri);
+      setSaving(false);
+      setError(
+        saveError.message === 'PRODUCT_IMAGE_EXCEEDS_SIZE_LIMIT'
+          ? t('catalog.addProduct.errorImageTooLarge')
+          : t('catalog.addProduct.errorSaveFailed')
+      );
+    }
   }
 
   return (

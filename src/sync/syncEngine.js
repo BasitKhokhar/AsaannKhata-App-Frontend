@@ -9,7 +9,7 @@ import { useSyncStore } from '../store/syncStore';
 import { useCoinsStore } from '../store/coinsStore';
 import { useAuthStore } from '../store/authStore';
 import { registerCurrentToken } from '../services/fcmService';
-import { applyPullPage } from './pull';
+import { applyPullPage, cachePulledProductImages } from './pull';
 import { pushAllPending, pushPendingCoinUsage } from './push';
 import { queryClient } from '../services/queryClient';
 
@@ -35,6 +35,7 @@ async function pullAll(deviceId, shopId) {
       throw new Error('Sync pull did not advance its cursor');
     }
     applyPullPage(page, shopId);
+    await cachePulledProductImages(page.products, shopId);
     // Persist the server cursor after each applied page so retries resume.
     syncMetaRepository.set(key, page.nextSince);
     since = page.nextSince;

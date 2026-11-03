@@ -17,7 +17,16 @@ function normalizeProductFields(raw) {
   const threshold = raw.lowStockThreshold == null ? null : Number(raw.lowStockThreshold);
   const thresholdFactor = stockType === 'AREA' ? getAreaConversionFactor(raw.unit)
     : stockType === 'LENGTH' ? getLengthConversionFactor(raw.unit) : 1;
-  const data = { name: raw.name, categoryId: raw.categoryId || null, image: raw.image || null, stockType, purchasePrice, salePrice, lowStockThreshold: threshold == null ? null : threshold * thresholdFactor };
+  const data = {
+    name: raw.name,
+    categoryId: raw.categoryId || null,
+    imageLocalUri: raw.imageLocalUri || null,
+    imageRemoteUrl: raw.imageRemoteUrl || null,
+    stockType,
+    purchasePrice,
+    salePrice,
+    lowStockThreshold: threshold == null ? null : threshold * thresholdFactor,
+  };
 
   if (stockType === 'AREA') {
     const areaCm2 = calculateAreaCm2(parseFloat(raw.sheetWidth), parseFloat(raw.sheetHeight), raw.unit);
