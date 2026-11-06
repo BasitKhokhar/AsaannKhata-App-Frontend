@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import Svg, { Path } from 'react-native-svg';
 import { Smartphone } from 'lucide-react-native';
+import { Header } from '../../components/ui/Header';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
@@ -32,23 +33,26 @@ export default function SyncStatus() {
 
   if (!entitlement?.cloudEnabled) {
     return (
-      <AnimatedScreen style={{ alignItems: 'center', justifyContent: 'center', padding: 32 }}>
-        <Svg width={64} height={64} viewBox="0 0 24 24">
-          <Path d="M4 12a8 8 0 0 1 13.6-5.6M20 12a8 8 0 0 1-13.6 5.6" stroke={colors.brand.primary} strokeWidth={1.6} fill="none" strokeLinecap="round" />
-        </Svg>
-        <Text style={[typography.h2, { color: colors.ink.primary, marginTop: spacing.lg, textAlign: 'center' }]}>{t('settings.syncStatus.notActiveTitle')}</Text>
-        <Text style={[typography.body, { color: colors.ink.secondary, marginTop: spacing.sm, textAlign: 'center' }]}>
-          {t('settings.syncStatus.notActiveDescription')}
-        </Text>
-        <Button title={t('settings.syncStatus.upgradeButton')} variant="accent" onPress={() => navigation.navigate('SubscriptionPlans')} style={{ marginTop: spacing.xl, alignSelf: 'stretch' }} />
+      <AnimatedScreen>
+        <Header title={t('settings.syncStatus')} />
+        <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 }}>
+          <Svg width={64} height={64} viewBox="0 0 24 24">
+            <Path d="M4 12a8 8 0 0 1 13.6-5.6M20 12a8 8 0 0 1-13.6 5.6" stroke={colors.brand.primary} strokeWidth={1.6} fill="none" strokeLinecap="round" />
+          </Svg>
+          <Text style={[typography.h2, { color: colors.ink.primary, marginTop: spacing.lg, textAlign: 'center' }]}>{t('settings.syncStatus.notActiveTitle')}</Text>
+          <Text style={[typography.body, { color: colors.ink.secondary, marginTop: spacing.sm, textAlign: 'center' }]}>
+            {t('settings.syncStatus.notActiveDescription')}
+          </Text>
+          <Button title={t('settings.syncStatus.upgradeButton')} variant="accent" onPress={() => navigation.navigate('SubscriptionPlans')} style={{ marginTop: spacing.xl, alignSelf: 'stretch' }} />
+        </SafeAreaView>
       </AnimatedScreen>
     );
   }
 
   return (
     <AnimatedScreen>
-      <SafeAreaView style={{ flex: 1, padding: spacing.lg }}>
-        <Text style={[typography.h1, { color: colors.ink.primary, marginBottom: spacing.xl, textAlign }]}>{t('settings.syncStatus')}</Text>
+      <Header title={t('settings.syncStatus')} />
+      <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1, padding: spacing.lg }}>
 
         <View style={{ alignItems: 'center', gap: spacing.xs }}>
           <View

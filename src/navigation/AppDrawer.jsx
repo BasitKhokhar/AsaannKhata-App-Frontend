@@ -22,6 +22,7 @@ const Drawer = createDrawerNavigator();
 export function AppDrawer() {
   return (
     <Drawer.Navigator
+      backBehavior="history"
       screenOptions={{ headerShown: false, drawerType: 'front', overlayColor: 'rgba(0,0,0,0.4)' }}
       drawerContent={(props) => <SidebarContent {...props} />}
     >

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { User, Bell, Cloud, Coins, HelpCircle, Info, Trash2, LogOut, Check, Users, Store, CreditCard } from 'lucide-react-native';
+import { User, Bell, Cloud, Coins, HelpCircle, Info, Trash2, LogOut, Check, Users, Store, CreditCard, Printer } from 'lucide-react-native';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -155,6 +155,18 @@ export default function Settings() {
           <View>
             <SectionHeader title={t('settings.business')} style={{ flexDirection: rowDirection }} />
             <Card bordered={false} style={{ padding: spacing.xs }}>
+              <ListRow
+                leading={<Printer size={18} color={colors.brand.primary} />}
+                title={t('printer.settings')}
+                subtitle={t('printer.settingsDesc')}
+                onPress={() => navigation.navigate('PrinterSettings')}
+                showChevron
+                style={{ flexDirection: rowDirection }}
+                titleStyle={{ textAlign: isUrdu ? 'right' : 'left' }}
+                subtitleStyle={{ textAlign: isUrdu ? 'right' : 'left' }}
+              />
+              <ListRow title={t('receipt.settings')} onPress={() => navigation.navigate('ReceiptSettings')} showChevron />
+              <ListRow title={t('barcode.settings')} onPress={() => navigation.navigate('ScannerSettings')} showChevron />
               <ListRow
                 onPress={() => navigation.navigate('ShopsStack', { screen: 'ShopsList' })}
                 leading={<Store size={18} color={colors.brand.primary} />}

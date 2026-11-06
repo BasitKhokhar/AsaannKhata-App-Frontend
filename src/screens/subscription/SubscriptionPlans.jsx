@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Check, Crown, AlertCircle, Settings2, RotateCcw } from 'lucide-react-native';
+import { Header } from '../../components/ui/Header';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
@@ -185,8 +186,8 @@ export default function SubscriptionPlans() {
     return packageFor(offering, plan)?.product?.priceString || t('subscription.plans.priceUnavailable');
   }
 
-  return <AnimatedScreen><SafeAreaView style={{ flex: 1 }}>
-    <Text style={[typography.h1, { color: colors.ink.primary, padding: spacing.lg, paddingBottom: spacing.sm, textAlign }]}>{t('subscription.plans.title')}</Text>
+  return <AnimatedScreen><SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1 }}>
+    <Header title={t('subscription.plans.title')} />
     <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
       {entitlement?.planCode ? <Card style={{ backgroundColor: colors.brand.accentLight }}>
         <Text style={[typography.label, { color: colors.brand.accentDark, textAlign }]}>{t('subscription.plans.currentPlan')}</Text>

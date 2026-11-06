@@ -1,3 +1,5 @@
+import { BarcodeScanner } from '../../components/barcode/BarcodeScanner';
+import { randomUUID } from 'expo-crypto';
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, Pressable, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -42,6 +44,9 @@ export default function AddProduct() {
     { key: 'PACK', label: t('catalog.addProduct.modePack') },
   ];
 
+  const [barcode, setBarcode] = useState(route.params?.barcode || '');
+  const [looseBarcode, setLooseBarcode] = useState('');
+  const [scanning, setScanning] = useState(null);
   const [name, setName] = useState('');
   const [step, setStep] = useState(0);
   const [image, setImage] = useState(null);
@@ -67,6 +72,8 @@ export default function AddProduct() {
 
   useEffect(() => {
     if (!isEditing || !existingProduct) return;
+    setBarcode(existingProduct.barcode || '');
+    setLooseBarcode(existingProduct.looseBarcode || '');
     setName(existingProduct.name || '');
     setImage(existingProduct.imageLocalUri || existingProduct.imageRemoteUrl || null);
     setSelectedImageUri(null);
@@ -153,10 +160,10 @@ export default function AddProduct() {
           setSaving(false);
           navigation.goBack();
         },
-        onError: () => {
+        onError: (cause) => {
           if (persistedImageUri) deleteLocalProductImage(persistedImageUri);
           setSaving(false);
-          setError(t('catalog.addProduct.errorSaveFailed'));
+          setError(t(cause?.message?.startsWith('barcode.') ? cause.message : 'catalog.addProduct.errorSaveFailed'));
         },
       };
 
@@ -165,6 +172,7 @@ export default function AddProduct() {
           productId,
           {
             name: name.trim(),
+            barcode, looseBarcode,
             imageLocalUri,
             imageRemoteUrl,
             categoryId: categoryId || null,
@@ -182,6 +190,7 @@ export default function AddProduct() {
         createProduct.mutate(
           {
             name,
+            barcode, looseBarcode,
             imageLocalUri,
             imageRemoteUrl,
             categoryId,
@@ -299,6 +308,16 @@ export default function AddProduct() {
 
           <TextField label={t('catalog.addProduct.productName')} value={name} onChangeText={setName} placeholder="Ceramic Floor Tile 60x60" style={{ textAlign }} />
 
+          <TextField label={t(stockType === 'PACK' ? 'barcode.pack' : 'barcode.label')} value={barcode} onChangeText={setBarcode} autoCapitalize="none" autoCorrect={false} maxLength={128} />
+          <View style={{ flexDirection: rowDirection, gap: spacing.sm }}>
+            <Button title={t('barcode.scan')} variant="outline" onPress={() => setScanning('barcode')} style={{ flex: 1 }} />
+            <Button title={t('barcode.generate')} variant="outline" onPress={() => setBarcode(`AK${randomUUID().replace(/-/g, '').toUpperCase()}`)} style={{ flex: 1 }} />
+          </View>
+          {stockType === 'PACK' ? <>
+            <TextField label={t('barcode.loose')} value={looseBarcode} onChangeText={setLooseBarcode} autoCapitalize="none" autoCorrect={false} maxLength={128} />
+            <Button title={t('barcode.scanLoose')} variant="outline" onPress={() => setScanning('loose')} />
+          </> : null}
+
           {categories.length > 0 ? (
             <View>
               <Text style={[typography.label, { color: colors.ink.secondary, marginBottom: spacing.xs, textAlign }]}>{t('catalog.addProduct.category')}</Text>
@@ -408,6 +427,7 @@ export default function AddProduct() {
           </View>
         </KeyboardAwareView>
       </SafeAreaView>
+      <BarcodeScanner visible={!!scanning} onClose={() => setScanning(null)} onScan={(code) => scanning === 'loose' ? setLooseBarcode(code) : setBarcode(code)} />
     </AnimatedScreen>
   );
 }

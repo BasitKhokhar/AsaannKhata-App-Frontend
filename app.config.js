@@ -42,14 +42,8 @@ module.exports = ({ config }) => ({
       // AsyncStorage, which could otherwise leak business data to a Google
       // Drive backup outside our control.
       allowBackup: false,
-      // Explicit allow-list beyond whatever expo-image-picker/expo-sqlite/
-      // etc. already declare for themselves: INTERNET for all API/sync/ads/
-      // Firebase traffic, POST_NOTIFICATIONS for FCM's Android 13+ runtime
-      // permission. Camera/location/storage/bluetooth are deliberately not
-      // requested — nothing in this app uses them. react-native-google-
-      // mobile-ads and @react-native-firebase/* will still merge in their
-      // own required permissions (e.g. AD_ID, ACCESS_NETWORK_STATE) — that's
-      // expected and not blocked.
+      // Camera and Bluetooth permissions are merged by their native modules.
+      // USB permission is requested per attached device. BLE discovery requires location permission only on Android 11 and older.
       permissions: ["INTERNET", "POST_NOTIFICATIONS"],
       adaptiveIcon: {
         backgroundColor: "#151E33",
@@ -62,7 +56,10 @@ module.exports = ({ config }) => ({
       favicon: "./assets/favicon.png",
     },
     plugins: [
-      "expo-sqlite",
+      "expo-asset",
+      "./modules/expo-usb-printer/app.plugin.js",
+      ["expo-sqlite", { enableFTS: true }],
+      ["expo-camera", { cameraPermission: "Allow AsaanKhata to scan product barcodes.", recordAudioAndroid: false, barcodeScannerEnabled: true }],
       "expo-secure-store",
       "expo-font",
       // @react-native-firebase/messaging ships no config plugin of its own —

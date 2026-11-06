@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Plus, ReceiptText, Store, Zap, Users, Truck, MoreHorizontal, Trash2 } from 'lucide-react-native';
+import { Header } from '../../components/ui/Header';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { Card } from '../../components/ui/Card';
 import { Chip } from '../../components/ui/Chip';
@@ -85,8 +86,8 @@ export default function Expenses() {
 
   return (
     <AnimatedScreen>
-      <SafeAreaView style={{ flex: 1 }}>
-        <Text style={[typography.h1, { color: colors.ink.primary, padding: spacing.lg, paddingBottom: spacing.sm, textAlign: isUrdu ? 'right' : 'left' }]}>{t('nav.expenses')}</Text>
+      <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1 }}>
+        <Header title={t('nav.expenses')} />
         <View style={{ flexDirection: isUrdu ? 'row-reverse' : 'row', gap: spacing.sm, paddingHorizontal: spacing.lg, paddingBottom: spacing.md }}>
           {['all', 'today', 'month'].map((key) => <Chip key={key} label={t(`expenses.filter.${key}`)} selected={filter === key} onPress={() => setFilter(key)} />)}
         </View>

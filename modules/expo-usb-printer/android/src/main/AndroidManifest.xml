@@ -1,0 +1,24 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+  <!--
+    USB host ("OTG") mode is what lets the phone act as the host for an
+    attached thermal printer. Marked required="false" so the app still installs
+    on devices without OTG support — UsbPrinterModule.isSupported() reports it
+    to JS at runtime instead of blocking installation.
+
+    The USB_DEVICE_ATTACHED <intent-filter> + device_filter resource cannot live
+    here: they belong on the app's own MainActivity, so they are injected by
+    ../../app.plugin.js during prebuild.
+  -->
+  <uses-feature
+    android:name="android.hardware.usb.host"
+    android:required="false" />
+
+  <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+  <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+  <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+  <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
+  <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30" />
+  <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
+  <uses-feature android:name="android.hardware.bluetooth" android:required="false" />
+</manifest>

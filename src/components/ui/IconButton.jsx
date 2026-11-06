@@ -9,7 +9,7 @@ const PRESS_SPRING = { damping: 14, stiffness: 260 };
 // Icon-only tap target (header back buttons, row actions) with a spring
 // press-scale (0.94) — every bare icon button in the app should render
 // through this rather than a plain Pressable+Icon pair.
-export function IconButton({ icon: Icon, onPress, size = 20, color, tone = 'default', disabled, style, hitSlop = 8 }) {
+export function IconButton({ icon: Icon, onPress, size = 20, color, tone = 'default', disabled, style, hitSlop = 8, accessibilityLabel }) {
   const { colors, radii } = useTheme();
   const scale = useSharedValue(1);
   const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
@@ -18,6 +18,8 @@ export function IconButton({ icon: Icon, onPress, size = 20, color, tone = 'defa
 
   return (
     <AnimatedPressable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
       onPress={onPress}
       disabled={disabled}
       hitSlop={hitSlop}

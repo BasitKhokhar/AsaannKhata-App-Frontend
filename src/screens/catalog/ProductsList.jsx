@@ -4,7 +4,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Search, Plus, Package } from 'lucide-react-native';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
-import { StaggeredList } from '../../components/motion/StaggeredList';
+import { FlashList } from '@shopify/flash-list';
+import { BarcodeScanner } from '../../components/barcode/BarcodeScanner';
+import { BarcodeUnknown } from '../../components/barcode/BarcodeUnknown';
+import { Button } from '../../components/ui/Button';
+import { productRepository } from '../../db/repositories/productRepository';
+import { useShopStore } from '../../store/shopStore';
 import { PulseFab } from '../../components/motion/PulseFab';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Badge } from '../../components/ui/Badge';
@@ -13,7 +18,7 @@ import { ListRow } from '../../components/ui/ListRow';
 import { SubscriptionBanner } from '../../components/ui/SubscriptionBanner';
 import { BottomNav } from '../../components/ui/BottomNav';
 import { useTheme } from '../../theme';
-import { useProducts } from '../../hooks/useProducts';
+import { useProductPages } from '../../hooks/useProducts';
 import { formatStockLabel, isLowStock, isOutOfStock } from '../../utils/stock';
 import { formatCurrency } from '../../utils/money';
 import { useT, useIsUrdu } from '../../store/languageStore';
@@ -25,7 +30,15 @@ export default function ProductsList() {
   const { colors, radii, typography, spacing, elevation } = useTheme();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
-  const { data: products = [], isLoading, isRefetching, refetch } = useProducts({ search });
+  const { rows: visible, isLoading, isRefetching, refetch, loadMore, isError } = useProductPages({ search, lowStock: filter === 'low' });
+  const shopId = useShopStore((s) => s.activeShopId);
+  const [scanning, setScanning] = useState(false);
+  const [unknown, setUnknown] = useState(null);
+  function scan(code) {
+    const product = productRepository.findByBarcode(shopId, code);
+    if (product) navigation.navigate('ProductDetail', { productId: product.id });
+    else setUnknown(code);
+  }
   const t = useT();
   const isUrdu = useIsUrdu();
   const rowDirection = isUrdu ? 'row-reverse' : 'row';
@@ -36,7 +49,7 @@ export default function ProductsList() {
     { key: 'low', label: t('catalog.productsList.filterLowStock') },
   ];
 
-  const visible = filter === 'low' ? products.filter((p) => isLowStock(p) || isOutOfStock(p)) : products;
+
 
   return (
     <AnimatedScreen>
@@ -61,6 +74,7 @@ export default function ProductsList() {
             <Search size={16} color={colors.ink.secondary} strokeWidth={1.8} />
             <TextInput
               value={search}
+              maxLength={128}
               onChangeText={setSearch}
               placeholder={t('billing.searchProducts')}
               placeholderTextColor={colors.ink.secondary}
@@ -75,6 +89,10 @@ export default function ProductsList() {
           ))}
         </View>
 
+        <View style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.sm }}>
+          <Button title={t('barcode.scan')} variant="outline" onPress={() => setScanning(true)} />
+          {isError ? <Button title={t('barcode.retry')} variant="ghost" onPress={refetch} /> : null}
+        </View>
         {!isLoading && visible.length === 0 ? (
           <EmptyState
             icon={<Package size={40} color={colors.brand.primary} strokeWidth={1.6} />}
@@ -84,9 +102,11 @@ export default function ProductsList() {
             onAction={() => navigation.navigate('AddProduct')}
           />
         ) : (
-          <StaggeredList
+          <FlashList
             data={visible}
-            estimatedItemSize={68}
+            keyExtractor={(item) => item.id}
+            onEndReached={loadMore}
+            onEndReachedThreshold={0.4}
             refreshing={isRefetching}
             onRefresh={refetch}
             contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: 96 }}
@@ -153,6 +173,8 @@ export default function ProductsList() {
         </View>
       </SafeAreaView>
       <BottomNav active="products" />
+      <BarcodeScanner visible={scanning} onClose={() => setScanning(false)} onScan={scan} />
+      <BarcodeUnknown code={unknown} onClose={() => setUnknown(null)} onLinked={scan} />
     </AnimatedScreen>
   );
 }

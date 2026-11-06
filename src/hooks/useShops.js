@@ -1,3 +1,4 @@
+import { cacheShopLogos } from '../services/shopLogos';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { shopsApi } from '../services/shopsApi';
 import { shopRepository } from '../db/repositories/shopRepository';
@@ -14,6 +15,7 @@ export function useShops() {
       try {
         const remote = await shopsApi.list();
         shopRepository.upsertMany(remote);
+        cacheShopLogos(remote);
       } catch (err) {
         // offline — fall through to whatever's cached locally
       }

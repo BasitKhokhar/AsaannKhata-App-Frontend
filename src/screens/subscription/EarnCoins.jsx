@@ -3,6 +3,7 @@ import { View, Text, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Coins, PlayCircle, Cloud, Clock } from 'lucide-react-native';
+import { Header } from '../../components/ui/Header';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -99,8 +100,8 @@ export default function EarnCoins() {
 
   return (
     <AnimatedScreen>
-      <SafeAreaView style={{ flex: 1 }}>
-        <Text style={[typography.h1, { color: colors.ink.primary, padding: spacing.lg, paddingBottom: spacing.sm, textAlign }]}>{t('settings.earnCoins')}</Text>
+      <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1 }}>
+        <Header title={t('settings.earnCoins')} />
 
         <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
           <Card level="md" style={{ alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xl }}>

@@ -29,7 +29,7 @@ const methods = [
 const round2 = (value) => Math.round(value * 100) / 100;
 
 function lineQuantity(line) {
-  if (line.stockType === 'PACK') return line.packQuantity || 1;
+  if (line.stockType === 'PACK') return (line.unit === 'loose' ? line.looseQuantity : line.packQuantity) || 1;
   return line.quantity || 1;
 }
 
@@ -42,7 +42,7 @@ function recalculate(line, quantity) {
     const lengthCm = quantity * 100;
     return { quantity, lengthCm, total: round2(lengthCm * line.pricePerUnit) };
   }
-  if (line.stockType === 'PACK') return { quantity, packQuantity: quantity, total: round2(quantity * line.pricePerUnit) };
+  if (line.stockType === 'PACK') return { quantity, packQuantity: line.unit === 'loose' ? 0 : quantity, looseQuantity: line.unit === 'loose' ? quantity : 0, total: round2(quantity * line.pricePerUnit) };
   return { quantity, total: round2(quantity * line.pricePerUnit) };
 }
 

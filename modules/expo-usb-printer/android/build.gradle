@@ -1,0 +1,21 @@
+// Matches the build configuration used by the first-party SDK 57 modules in this
+// app (see node_modules/expo-haptics/android/build.gradle). `expo-module-gradle-plugin`
+// is the consolidated replacement for the older ExpoModulesCorePlugin.gradle
+// include: it applies the Kotlin plugin, wires the expo-modules-core dependency,
+// and sets compileSdk/minSdk/targetSdk from the root project.
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'expo.modules.usbprinter'
+version = '0.1.0'
+
+android {
+  namespace "expo.modules.usbprinter"
+
+  defaultConfig {
+    versionCode 1
+    versionName '0.1.0'
+  }
+}

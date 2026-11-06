@@ -2,8 +2,6 @@ import React from 'react';
 import { View, Text, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import * as Print from 'expo-print';
-import * as Sharing from 'expo-sharing';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { Logo } from '../../components/ui/Logo';
 import { Button } from '../../components/ui/Button';
@@ -14,7 +12,7 @@ import { useBill } from '../../hooks/useBills';
 import { useShops } from '../../hooks/useShops';
 import { useShopStore } from '../../store/shopStore';
 import { formatCurrency } from '../../utils/money';
-import { buildReceiptHtml } from '../../utils/receiptHtml';
+import { ReceiptActions } from '../../components/ui/ReceiptActions';
 import { paymentMethodLabelKey } from '../../utils/paymentMethod';
 import { useT, useIsUrdu } from '../../store/languageStore';
 
@@ -30,24 +28,13 @@ export default function BillDetail() {
   const isUrdu = useIsUrdu();
   const rowDirection = isUrdu ? 'row-reverse' : 'row';
 
-  if (!bill) return null;
+  if (!bill) return <AnimatedScreen><Header title={t('records.details')} /></AnimatedScreen>;
   const taxAmount = Math.max(0, Number(bill.totalAmount) - (Number(bill.subtotal) - Number(bill.discount)));
-
-  async function handlePrint() {
-    await Print.printAsync({ html: buildReceiptHtml({ shopName, bill }) });
-  }
-
-  async function handleShare() {
-    const { uri } = await Print.printToFileAsync({ html: buildReceiptHtml({ shopName, bill }) });
-    if (await Sharing.isAvailableAsync()) {
-      await Sharing.shareAsync(uri);
-    }
-  }
 
   return (
     <AnimatedScreen>
       <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1 }}>
-        <Header title={t('billing.billDetail.title').replace('{id}', bill.serverId || bill.id.slice(0, 6))} onBack={() => navigation.goBack()} />
+        <Header title={t('billing.billDetail.title').replace('{id}', bill.serverId || bill.id.slice(0, 6))} />
 
         <ScrollView contentContainerStyle={{ padding: spacing.lg }}>
           <View
@@ -113,8 +100,7 @@ export default function BillDetail() {
         </ScrollView>
 
         <View style={{ flexDirection: rowDirection, gap: spacing.sm, padding: spacing.lg }}>
-          <Button title={t('billing.billDetail.print')} variant="outline" onPress={handlePrint} style={{ flex: 1 }} />
-          <Button title={t('billing.billDetail.share')} onPress={handleShare} style={{ flex: 1 }} />
+          <View style={{ flex: 1 }}><ReceiptActions bill={bill} /></View>
         </View>
         <View style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.md }}>
           <Button title={t('records.viewPaymentRecord')} variant="outline" onPress={() => navigation.navigate('Records', { screen: 'RecordDetail', params: { billId: bill.id } })} />

@@ -51,8 +51,15 @@ function applyResults(repo, results, operations) {
 const PUSH_BATCH_SIZE = 100;
 
 async function pushBatches(shopId, deviceId, operations, send, repo) {
-  for (let offset = 0; offset < operations.length; offset += PUSH_BATCH_SIZE) {
-    const batch = operations.slice(offset, offset + PUSH_BATCH_SIZE);
+  for (let offset = 0; offset < operations.length;) {
+    const batch = [];
+    let bytes = 0;
+    while (offset < operations.length && batch.length < PUSH_BATCH_SIZE) {
+      // Three bytes per UTF-16 code unit is a conservative UTF-8 upper bound.
+      const size = JSON.stringify(operations[offset]).length * 3;
+      if (batch.length && bytes + size > 2000000) break;
+      batch.push(operations[offset++]); bytes += size;
+    }
     const { results } = await send(shopId, deviceId, batch);
     if (!Array.isArray(results)) throw new Error('Sync server returned an invalid batch response');
     applyResults(repo, results, batch);
@@ -115,6 +122,8 @@ async function pushPendingProducts(shopId, deviceId) {
       purchasePrice: row.purchasePrice,
       salePrice: row.salePrice,
       lowStockThreshold: row.lowStockThreshold,
+      barcode: row.barcode,
+      looseBarcode: row.looseBarcode,
     },
     baseUpdatedAt: row.updatedAt,
   }));
@@ -188,6 +197,7 @@ async function pushPendingBills(shopId, deviceId) {
         operationType: 'CREATE',
         payload: {
           customerId: serverIdOf(customers, row.customerId),
+          receiptSnapshot: row.receiptSnapshot,
           customerName: row.customerName,
           customerPhone: row.customerPhone,
           subtotal: row.subtotal,

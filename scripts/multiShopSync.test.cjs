@@ -12,7 +12,7 @@ const compiled = babel.transformSync(source, {
   plugins: ['@babel/plugin-transform-modules-commonjs'],
 }).code;
 
-function setup({ failShop } = {}) {
+function setup({ failShop, conflictShop } = {}) {
   const calls = [];
   const statuses = {};
   const cursors = new Map();
@@ -52,7 +52,8 @@ function setup({ failShop } = {}) {
     '../store/coinsStore': { useCoinsStore: { getState: () => ({}) } },
     '../store/authStore': { useAuthStore: { getState: () => ({ accessToken: 'token', adminId: 5 }) } },
     '../services/fcmService': { registerCurrentToken: async () => null },
-    './pull': { applyPullPage: (_page, shopId) => calls.push(['apply', shopId]) },
+    './receiptProfiles': { syncReceiptProfile: async (shopId) => { calls.push(['receipt', shopId]); return { conflict: shopId === conflictShop }; } },
+    './pull': { cachePulledProductImages: async () => {}, applyPullPage: (_page, shopId) => calls.push(['apply', shopId]) },
     './push': {
       pushPendingCoinUsage: async () => {},
       pushAllPending: async (shopId) => calls.push(['push', shopId]),
@@ -86,4 +87,12 @@ test('one shop failure does not prevent another shop from syncing', async () => 
   assert.deepEqual(calls.filter(([kind]) => kind === 'push'), [['push', '2']]);
   assert.deepEqual(statuses, { 1: 'error', 2: 'synced' });
   assert.match(syncState.lastError, /Grocery: registration failed/);
+});
+
+test('receipt design conflict does not block business writes for either shop', async () => {
+  const { runSync, calls, statuses, syncState } = setup({ conflictShop: '1' });
+  await runSync();
+  assert.deepEqual(calls.filter(([kind]) => kind === 'push'), [['push', '1'], ['push', '2']]);
+  assert.deepEqual(statuses, { 1: 'error', 2: 'synced' });
+  assert.match(syncState.lastError, /receipt.conflict/);
 });

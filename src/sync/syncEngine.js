@@ -1,3 +1,4 @@
+import { syncReceiptProfile } from './receiptProfiles';
 import { syncApi } from '../services/syncApi';
 import { shopsApi } from '../services/shopsApi';
 import { deviceRepository } from '../db/repositories/deviceRepository';
@@ -44,7 +45,7 @@ async function pullAll(deviceId, shopId) {
 }
 
 function invalidateShopQueries(shopId) {
-  for (const key of ['categories', 'products', 'customers', 'bills', 'expenses', 'stockTransactions', 'salesReport', 'dashboardStats']) {
+  for (const key of ['receiptProfile', 'categories', 'products', 'customers', 'bills', 'expenses', 'stockTransactions', 'salesReport', 'dashboardStats']) {
     queryClient.invalidateQueries({ queryKey: [key, shopId] });
   }
 }
@@ -89,7 +90,9 @@ export async function runSync() {
       try {
         const deviceId = await ensureDeviceRegistered(shopId);
         await pullAll(deviceId, shopId);
+        const profileResult = await syncReceiptProfile(shopId, deviceId);
         await pushAllPending(shopId, deviceId);
+        if (profileResult?.conflict) throw new Error('receipt.conflict');
         syncStore.setShopStatus(shopId, 'synced');
       } catch (err) {
         failures.push(`${shop.name || shopId}: ${err.message}`);

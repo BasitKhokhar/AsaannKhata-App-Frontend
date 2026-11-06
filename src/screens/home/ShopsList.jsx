@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
+import { Header } from '../../components/ui/Header';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { Badge } from '../../components/ui/Badge';
 import { useTheme } from '../../theme';
@@ -23,10 +24,8 @@ export default function ShopsList() {
 
   return (
     <AnimatedScreen>
-      <SafeAreaView style={{ flex: 1 }}>
-        <Text style={[typography.h1, { color: colors.ink.primary, padding: spacing.lg, paddingBottom: spacing.md, textAlign: isUrdu ? 'right' : 'left' }]}>
-          {t('nav.myShops')}
-        </Text>
+      <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1 }}>
+        <Header title={t('nav.myShops')} />
 
         <FlatList
           data={shops}

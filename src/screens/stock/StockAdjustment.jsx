@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, Pressable, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import Svg, { Path } from 'react-native-svg';
+import { Header } from '../../components/ui/Header';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { TextField } from '../../components/ui/TextField';
 import { Button } from '../../components/ui/Button';
@@ -59,19 +59,12 @@ export default function StockAdjustment() {
     );
   }
 
-  if (!product) return null;
+  if (!product) return <AnimatedScreen><Header title={t('stock.adjustment.title')} /></AnimatedScreen>;
 
   return (
     <AnimatedScreen>
-      <SafeAreaView style={{ flex: 1 }}>
-        <View style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.sm, padding: spacing.lg }}>
-          <Pressable onPress={() => navigation.goBack()} hitSlop={8}>
-            <Svg width={16} height={16} viewBox="0 0 16 16" style={isUrdu ? { transform: [{ scaleX: -1 }] } : undefined}>
-              <Path d="M10.5 3l-5 5 5 5" stroke={colors.ink.primary} strokeWidth={1.6} fill="none" strokeLinecap="round" strokeLinejoin="round" />
-            </Svg>
-          </Pressable>
-          <Text style={[typography.h3, { color: colors.ink.primary }]}>{t('stock.adjustment.title')}</Text>
-        </View>
+      <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1 }}>
+        <Header title={t('stock.adjustment.title')} />
 
         <KeyboardAwareView>
           <View style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.lg }}>

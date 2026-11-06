@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState, useMemo } from 'react';
+import { useQuery, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { productRepository } from '../db/repositories/productRepository';
 import { stockRepository } from '../db/repositories/stockRepository';
 import { expoDb } from '../db/client';
@@ -18,7 +18,9 @@ function normalizeProductFields(raw) {
   const thresholdFactor = stockType === 'AREA' ? getAreaConversionFactor(raw.unit)
     : stockType === 'LENGTH' ? getLengthConversionFactor(raw.unit) : 1;
   const data = {
-    name: raw.name,
+    name: raw.name.trim(),
+    barcode: raw.barcode,
+    looseBarcode: raw.looseBarcode,
     categoryId: raw.categoryId || null,
     imageLocalUri: raw.imageLocalUri || null,
     imageRemoteUrl: raw.imageRemoteUrl || null,
@@ -205,4 +207,28 @@ function patchForStockType(product, signedQty) {
     default:
       return { stockQuantity: Math.max(0, (product.stockQuantity || 0) + signedQty) };
   }
+}
+
+// Query only a bounded page after a short typing pause. Scans bypass this
+// hook entirely and use the unique barcode index synchronously.
+export function useProductPages({ search = '', categoryId, lowStock = false } = {}) {
+  const shopId = useShopStore((s) => s.activeShopId);
+  const [debounced, setDebounced] = useState(search);
+  useEffect(() => { const timer = setTimeout(() => setDebounced(search), 150); return () => clearTimeout(timer); }, [search]);
+  const query = useInfiniteQuery({
+    queryKey: ['products', shopId, 'pages', debounced, categoryId, lowStock],
+    initialPageParam: null,
+    queryFn: ({ pageParam }) => productRepository.searchPage(shopId, { search: debounced, categoryId, lowStock, cursor: pageParam }),
+    getNextPageParam: (page) => page.nextCursor,
+    enabled: !!shopId,
+    staleTime: 15000,
+    gcTime: 60000,
+  });
+  const rows = useMemo(() => query.data?.pages.flatMap((page) => page.rows) || [], [query.data]);
+  return { ...query, rows, searching: search !== debounced, loadMore: () => { if (query.hasNextPage && !query.isFetching) query.fetchNextPage(); } };
+}
+
+export function useProductCounts() {
+  const shopId = useShopStore((s) => s.activeShopId);
+  return useQuery({ queryKey: ['products', shopId, 'counts'], queryFn: () => productRepository.counts(shopId), enabled: !!shopId });
 }

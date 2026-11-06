@@ -1,6 +1,6 @@
 # AsaanKhata frontend project context
 
-Last repository review: 2026-10-29
+Last repository review: 2026-11-06
 
 This is the durable project map for coding agents. Read this before scanning the repository. Inspect only the files relevant to the current task after reading it, and update this document whenever an architectural change makes it inaccurate.
 
@@ -16,7 +16,7 @@ AsaanKhata is a portrait mobile bookkeeping/POS app for small shops. It supports
 
 ## Stack and runtime shape
 
-- Expo `~57.0.12`, React Native `0.86.2`, React `19.2.3`; JavaScript/JSX (no TypeScript).
+- Expo `~57.0.12`, React Native `0.86.3`, React `19.2.3`; JavaScript/JSX (no TypeScript).
 - Entry: `index.js` initializes Sentry, registers the background FCM handler, and registers `App`.
 - Root: `App.jsx` loads fonts, runs Drizzle migrations, restores SecureStore auth, holds the native splash until ready, initializes ads/analytics/FCM, mounts providers and global toast/confirm UI, and enables sync triggers.
 - Navigation: React Navigation 7 with native stacks and a drawer. This project does **not** use Expo Router.
@@ -54,16 +54,17 @@ Firebase Analytics screen views are emitted on navigation route changes.
 - Auth: `Login`, three registration steps (business type, shop details, account), `ForgotPassword`, `OtpVerification`. Registration still creates the account and first shop in one backend call, with a free trial; paid plan selection is available after sign-in. ForgotPassword requests a 6-digit email code; OtpVerification confirms the code and sets a new password through backend auth endpoints.
 - Drawer routes:
   - `HomeStack`: `Dashboard`
-  - `BillingStack`: `NewBill`, `Payment`, `BillDetail`, `CreditCustomers`, `CustomerDetail`, `AddProduct`
+  - `BillingStack`: `NewBill`, `Payment`, `BillDetail`, `CreditCustomers`, `CustomerDetail`, `RecordDetail`, `RecordPayment`, `AddProduct`
   - `CatalogStack`: `ProductsList`, `ProductDetail`, `EditProduct`, `AddProduct`, `StockAdjustment`
   - `StockStack`: `StockOverview`, `StockAdjustment`
   - `ShopsStack`: `ShopsList`, `AddShop`
   - Direct drawer screens: `SalesReport`, `Expenses`, `Notifications`, `SubscriptionPlans`, `EarnCoins`
   - `RecordsStack`: `RecordsList`, `RecordDetail`, `RecordPayment` (shop-scoped invoice table with full-screen bill detail and later-payment entry)
-  - `SettingsStack`: `Settings`, `SyncStatus`, `Profile`, `StaffManagement`, `Notifications`, `HelpSupport`, `About`
+  - `SettingsStack`: `Settings`, `ScannerSettings`, `ReceiptSettings`, `PrinterSettings`, `SyncStatus`, `Profile`, `StaffManagement`, `Notifications`, `HelpSupport`, `About`
 - `AddProduct` exists in both Billing and Catalog stacks so a product created during billing returns to `NewBill`; `StockAdjustment` deliberately exists in both Catalog and Stock stacks so each stack can navigate locally.
+- Customer-history bill taps open `RecordDetail`, the same invoice details used by Records. `RecordDetail` and `RecordPayment` are also registered in Billing so the detail/payment flow stays in the customer's stack and Back returns to customer history. `BillDetail` remains the post-checkout screen.
 - Cross-drawer navigation usually uses `navigation.navigate('SomeStack', { screen: 'SomeScreen' })`.
-- Dashboard, Products, Reports, and Settings also render a shared five-destination bottom navigation (Home, Sales, Products, Reports, More). Sales opens `NewBill`; secondary routes remain in the drawer/stacks.
+- Dashboard, Products, Reports, and Settings also render a shared four-destination bottom navigation (Home, Products, Reports, Settings). Secondary routes, including `NewBill`, remain in the drawer/stacks. All authenticated secondary screens use the shared `Header` with a left-side back button, including loading/missing-detail and inactive-sync states. The drawer uses history-based back navigation; the shared header falls back to Dashboard when no history exists.
 
 ## Directory ownership
 
@@ -92,6 +93,8 @@ The schema is in `src/db/schema.js`. Tables are:
 - Nested under bills: `bill_items`
 - Append-only syncable ledgers: `stock_transactions`, `customer_payments`
 - Account-level append-only reconciliation: `coin_usage_log`
+- Barcode/search: `product_barcodes` (shop/code unique), `product_search` (FTS5 virtual table with triggers)
+- Per-shop receipt settings: `receipt_profiles`; bills carry immutable `receiptSnapshot` branding/checkout values
 - Infrastructure/cache: `devices`, `sync_meta`, `entitlement_cache`
 
 Syncable rows use these conventions:
@@ -305,3 +308,14 @@ Before finishing a code change, consider only the relevant items:
 8. Keep secrets/tokens out of AsyncStorage, logs, commits, and docs.
 9. Consider offline, free-tier, paid/cloud, and multi-shop behavior.
 10. Update this file if architecture, routes, commands, environment keys, or known limitations changed.
+
+## Barcode and receipt printing architecture
+
+See `BARCODE_RECEIPT_PRINTING.md` for rollout, supported protocols, and hardware acceptance checks. The matching backend migration is required before syncing barcode/receipt data. No production migration is performed by frontend setup.
+
+- Migration 0007 adds barcode/loose-barcode registry triggers, FTS5 token-prefix search, receipt profiles and bill snapshots. `expo-sqlite` enables FTS in native configuration. Product grid/picker screens use `useProductPages` with bounded keyset pages and FlashList; `useProductCounts` avoids fetching every product for dashboard statistics. Exact scans use the local shop/code index.
+- `components/barcode` implements camera and HID input plus unknown-code linking. `scannerStore` saves device preferences. Cart scanning checks total reserved stock and distinguishes loose units from packs; shop changes clear the cart.
+- `receiptProfileRepository` supplies bounded shop defaults and syncable template settings; logo caches are device-local. `sync/receiptProfiles.js` checks backend capability and handles optimistic version conflicts. Business writes still sync when only the receipt profile conflicts. Push batches are bounded by count and estimated JSON size because snapshots may include logos.
+- `receiptHtml.js` builds escaped multilingual receipt HTML, `services/receipts.js` embeds bundled Noto fonts and routes system print/PDF/direct print, and `ReceiptActions` offers preview, original receipt or updated statement. `react-native-webview` previews without JavaScript.
+- `modules/expo-usb-printer` is a local Android Expo module for ESC/POS USB bulk OUT, Classic SPP, and explicitly selected BLE writable GATT channels. `app.plugin.js` registers USB attach handling. `thermalPrinter.js` owns the single-job guard, explicit device selection, permission flow, PDF cleanup, and no-retry policy. `printerStore` keeps phone-local profiles for paper/head width and cutter. `PrinterSettings` distinguishes attached, paired, saved and actively connected states; it shows transport/device details and sends a diagnostic test receipt through the selected direct printer. It is not available in Expo Go; iOS uses system printing/sharing.
+- Run `node --test scripts/barcodeReceipts.test.cjs scripts/multiShopSync.test.cjs` for local migration, 10k-product lookup, receipt, print orchestration and multi-shop sync checks. Native/hardware validation remains required before release; USB/Bluetooth connection does not prove physical output.

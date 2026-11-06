@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, getTableColumns } from 'drizzle-orm';
 import { db, expoDb } from '../client';
 import { bills, customerPayments } from '../schema';
 import { customerRepository } from './customerRepository';
@@ -48,7 +48,8 @@ export function settledBill(bill, payments = paymentsForBill(bill)) {
 }
 
 export function listSettledBills(shopId) {
-  const rows = db.select().from(bills)
+  const { receiptSnapshot, ...summaryColumns } = getTableColumns(bills);
+  const rows = db.select(summaryColumns).from(bills)
     .where(and(eq(bills.shopId, shopId), eq(bills.isDeleted, false)))
     .all()
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));

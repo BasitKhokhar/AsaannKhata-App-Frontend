@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
-import Svg, { Path } from 'react-native-svg';
+import { Header } from '../../components/ui/Header';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { TextField } from '../../components/ui/TextField';
 import { Button } from '../../components/ui/Button';
@@ -55,15 +55,8 @@ export default function AddShop() {
 
   return (
     <AnimatedScreen>
-      <SafeAreaView style={{ flex: 1 }}>
-        <View style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.sm, padding: spacing.lg }}>
-          <Pressable onPress={() => navigation.goBack()} hitSlop={8}>
-            <Svg width={16} height={16} viewBox="0 0 16 16" style={isUrdu ? { transform: [{ scaleX: -1 }] } : undefined}>
-              <Path d="M10.5 3l-5 5 5 5" stroke={colors.ink.primary} strokeWidth={1.6} fill="none" strokeLinecap="round" strokeLinejoin="round" />
-            </Svg>
-          </Pressable>
-          <Text style={[typography.h3, { color: colors.ink.primary }]}>{t('home.addShop.title')}</Text>
-        </View>
+      <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1 }}>
+        <Header title={t('home.addShop.title')} />
 
         <KeyboardAwareView>
           <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, paddingBottom: spacing.xl }}>

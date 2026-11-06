@@ -1,3 +1,4 @@
+import { receiptProfileRepository } from './receiptProfileRepository';
 import { eq, and, desc } from 'drizzle-orm';
 import { randomUUID } from 'expo-crypto';
 import { db, expoDb } from '../client';
@@ -40,6 +41,7 @@ function createBillWithItems({ shopId, customerId, customerName, customerPhone, 
   db.insert(bills)
     .values({
       id: billId,
+      receiptSnapshot: { ...receiptProfileRepository.resolved(shopId), issuedAt: timestamp, invoiceId: billId, receivedAtIssue: totalReceived, dueAtIssue: remainingDue },
       shopId,
       customerId: resolvedCustomerId,
       customerName,

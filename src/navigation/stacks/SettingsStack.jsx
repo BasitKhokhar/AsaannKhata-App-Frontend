@@ -8,12 +8,20 @@ import About from '../../screens/settings/About';
 import StaffManagement from '../../screens/settings/StaffManagement';
 import Notifications from '../../screens/shared/Notifications';
 
+import ReceiptSettings from '../../screens/settings/ReceiptSettings';
+import ScannerSettings from '../../screens/settings/ScannerSettings';
+
+import PrinterSettings from '../../screens/settings/PrinterSettings';
+
 const Stack = createNativeStackNavigator();
 
 export function SettingsStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Settings" component={Settings} />
+      <Stack.Screen name="PrinterSettings" component={PrinterSettings} />
+      <Stack.Screen name="ReceiptSettings" component={ReceiptSettings} />
+      <Stack.Screen name="ScannerSettings" component={ScannerSettings} />
       <Stack.Screen name="SyncStatus" component={SyncStatus} />
       <Stack.Screen name="Profile" component={Profile} />
       <Stack.Screen name="Notifications" component={Notifications} />

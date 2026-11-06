@@ -1,4 +1,4 @@
-// Explicit migration imports are required for Expo/React Native SQLite.
+// Explicit imports are required for Expo/React Native SQLite migrations.
 import journal from './meta/_journal.json';
 import m0000 from './0000_salty_shriek.sql';
 import m0001 from './0001_loud_george_stacy.sql';
@@ -7,8 +7,9 @@ import m0003 from './0003_expenses.sql';
 import m0004 from './0004_greedy_gauntlet.sql';
 import m0005 from './0005_thankful_piledriver.sql';
 import m0006 from './0006_product_image_sync.sql';
+import m0007 from './0007_barcode_receipts.sql';
 
 export default {
   journal,
-  migrations: { m0000, m0001, m0002, m0003, m0004, m0005, m0006 },
+  migrations: { m0000, m0001, m0002, m0003, m0004, m0005, m0006, m0007 },
 };

@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real, index } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, real, index, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 // -----------------------------------------------------------------------
 // Sync bookkeeping convention used on every syncable table:
@@ -54,6 +54,8 @@ export const products = sqliteTable('products', {
   shopId: text('shop_id').notNull(),
   categoryId: text('category_id'),
   name: text('name').notNull(),
+  barcode: text('barcode'),
+  looseBarcode: text('loose_barcode'),
   imageLocalUri: text('image_local_uri'),
   imageRemoteUrl: text('image_remote_url'),
   stockType: text('stock_type').notNull().default('QUANTITY'), // QUANTITY | AREA | LENGTH | PACK
@@ -86,6 +88,7 @@ export const products = sqliteTable('products', {
   createdAt: text('created_at').notNull(),
 }, (table) => [
   index('products_shop_active_name_idx').on(table.shopId, table.isDeleted, table.name),
+  index('products_shop_name_cursor_idx').on(table.shopId, table.isDeleted, table.name, table.id),
   index('products_shop_pending_idx').on(table.shopId, table.syncStatus),
   index('products_server_id_idx').on(table.serverId),
 ]);
@@ -133,6 +136,7 @@ export const bills = sqliteTable('bills', {
   id: text('id').primaryKey(),
   serverId: integer('server_id'),
   shopId: text('shop_id').notNull(),
+  receiptSnapshot: text('receipt_snapshot', { mode: 'json' }),
   customerId: text('customer_id'),
   customerName: text('customer_name').notNull(),
   customerPhone: text('customer_phone'),
@@ -262,4 +266,24 @@ export const entitlementCache = sqliteTable('entitlement_cache', {
   isTrial: integer('is_trial', { mode: 'boolean' }).notNull().default(false),
   canWrite: integer('can_write', { mode: 'boolean' }).notNull().default(true),
   fetchedAt: text('fetched_at'),
+});
+
+// Maintained by product triggers, including sync writes. One code identifies
+// exactly one selling unit in a shop; deleted products release their codes.
+export const productBarcodes = sqliteTable('product_barcodes', {
+  shopId: text('shop_id').notNull(),
+  code: text('code').notNull(),
+  productId: text('product_id').notNull(),
+  unit: text('unit').notNull(),
+}, (table) => [
+  uniqueIndex('product_barcodes_shop_code_idx').on(table.shopId, table.code),
+  index('product_barcodes_product_idx').on(table.productId),
+]);
+
+export const receiptProfiles = sqliteTable('receipt_profiles', {
+  shopId: text('shop_id').primaryKey(),
+  config: text('config', { mode: 'json' }).notNull(),
+  version: integer('version').notNull().default(0),
+  syncStatus: text('sync_status').notNull().default('pending'),
+  updatedAt: text('updated_at').notNull(),
 });

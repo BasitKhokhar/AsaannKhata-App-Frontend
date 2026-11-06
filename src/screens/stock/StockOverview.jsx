@@ -16,7 +16,7 @@ import { Sheet } from '../../components/ui/Sheet';
 import { SkeletonListRow } from '../../components/ui/Skeleton';
 import { useTheme } from '../../theme';
 import { useStockOverview, useStockTransactions } from '../../hooks/useStock';
-import { useProducts } from '../../hooks/useProducts';
+import { useProductPages } from '../../hooks/useProducts';
 import { formatCurrency } from '../../utils/money';
 import { formatRelativeTime } from '../../utils/dates';
 import { useT, useIsUrdu } from '../../store/languageStore';
@@ -51,7 +51,7 @@ export default function StockOverview() {
   return (
     <AnimatedScreen>
       <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1 }}>
-        <Header title={t('nav.stock')} showBack={false} />
+        <Header title={t('nav.stock')} />
 
         <View style={{ paddingHorizontal: spacing.lg, gap: spacing.lg }}>
           <View style={{ flexDirection: rowDirection, gap: spacing.sm }}>
@@ -178,7 +178,7 @@ export default function StockOverview() {
 function ProductPickerSheet({ visible, onClose, onPick }) {
   const { colors, radii, typography, spacing } = useTheme();
   const [search, setSearch] = useState('');
-  const { data: products = [] } = useProducts({ search });
+  const { rows: products, hasNextPage } = useProductPages({ search });
   const t = useT();
   const isUrdu = useIsUrdu();
   const rowDirection = isUrdu ? 'row-reverse' : 'row';
@@ -208,7 +208,7 @@ function ProductPickerSheet({ visible, onClose, onPick }) {
         />
       </View>
 
-      {products.map((product) => (
+      {products.slice(0, 20).map((product) => (
         <Pressable
           key={product.id}
           onPress={() => onPick(product)}
@@ -228,6 +228,7 @@ function ProductPickerSheet({ visible, onClose, onPick }) {
         </Pressable>
       ))}
 
+      {products.length > 20 || hasNextPage ? <Text style={{ color: colors.ink.secondary }}>{t('barcode.refineSearch')}</Text> : null}
       {products.length === 0 ? (
         <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: 'center', paddingVertical: spacing.lg }]}>
           {t('stock.overview.noProductsMatch')}

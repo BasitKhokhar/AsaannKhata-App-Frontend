@@ -16,7 +16,7 @@ import { ManualSyncSheet } from '../../components/sync/ManualSyncSheet';
 import { useTheme } from '../../theme';
 import { useDashboardStats, useSalesByProduct } from '../../hooks/useDashboard';
 import { useShops } from '../../hooks/useShops';
-import { useProducts } from '../../hooks/useProducts';
+import { useProductCounts } from '../../hooks/useProducts';
 import { useCustomers } from '../../hooks/useCustomers';
 import { useEntitlement } from '../../hooks/useEntitlement';
 import { useShopStore } from '../../store/shopStore';
@@ -41,7 +41,7 @@ export default function Dashboard() {
   const businessLabel = activeShop?.shopTypeCode
     ? activeShop.shopTypeCode.toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
     : t('dashboard.mainBranch');
-  const { data: products = [] } = useProducts();
+  const { data: productCounts } = useProductCounts();
   const { data: customers = [] } = useCustomers();
   const { data: stats, isRefetching, refetch } = useDashboardStats();
   const { data: topProducts, isError: topProductsError, refetch: refetchTopProducts } = useSalesByProduct({ limit: 5 });
@@ -80,11 +80,11 @@ export default function Dashboard() {
     frontColor: colors.brand.primary,
   }));
   const pendingDues = customers.reduce((sum, customer) => sum + Math.max(0, Number(customer.balance) || 0), 0);
-  const lowStockCount = products.filter((product) => isLowStock(product) || isOutOfStock(product)).length;
+  const lowStockCount = productCounts?.lowStock || 0;
   const metrics = [
     { key: 'sales', label: t('dashboard.salesToday'), value: formatCurrency(summary.totalSales), icon: BadgeDollarSign, color: colors.brand.primary },
     { key: 'profit', label: t('dashboard.profitToday'), value: formatCurrency(summary.profitToday), icon: TrendingUp, color: colors.semantic.success },
-    { key: 'items', label: t('dashboard.itemsCount'), value: String(products.length), icon: Boxes, color: colors.brand.accent },
+    { key: 'items', label: t('dashboard.itemsCount'), value: String(productCounts?.total || 0), icon: Boxes, color: colors.brand.accent },
     { key: 'customers', label: t('dashboard.customersCount'), value: String(customers.length), icon: Users, color: colors.semantic.success },
     { key: 'lowStock', label: t('dashboard.lowStockCount'), value: String(lowStockCount), icon: AlertTriangle, color: colors.semantic.danger },
     { key: 'dues', label: t('dashboard.pendingDues'), value: formatCurrency(pendingDues), icon: Wallet, color: colors.semantic.warning },

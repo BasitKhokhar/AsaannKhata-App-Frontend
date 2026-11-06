@@ -3,6 +3,7 @@ import { FlatList, Pressable, RefreshControl, ScrollView, Text, View, useWindowD
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { CalendarDays, Download, Eye, Pencil, ReceiptText, Search } from 'lucide-react-native';
+import { Header } from '../../components/ui/Header';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { Sheet } from '../../components/ui/Sheet';
 import { Chip } from '../../components/ui/Chip';
@@ -69,11 +70,8 @@ export default function Records() {
 
   return (
     <AnimatedScreen>
-      <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={{ flex: 1 }}>
-        <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.sm }}>
-          <Text style={[typography.h1, { color: colors.ink.primary, textAlign: align }]}>{t('nav.records')}</Text>
-          <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: align }]}>{t('records.subtitle')}</Text>
-        </View>
+      <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1 }}>
+        <Header title={t('nav.records')} subtitle={t('records.subtitle')} />
         <View style={{ paddingHorizontal: spacing.lg, gap: spacing.sm }}>
           <View style={{ flexDirection: direction, gap: spacing.sm }}>
             <TextField style={{ flex: 1 }} value={search} onChangeText={setSearch} placeholder={t('records.search')} right={<Search size={16} color={colors.ink.secondary} />} />

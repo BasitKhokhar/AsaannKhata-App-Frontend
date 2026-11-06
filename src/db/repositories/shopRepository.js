@@ -19,6 +19,7 @@ function upsertMany(shopRows) {
       address: s.address || null,
       phone: s.phone || null,
       logoRemoteUrl: s.logo || null,
+      logoLocalUri: existing?.logoRemoteUrl === (s.logo || null) ? existing?.logoLocalUri : null,
       updatedAt: s.updatedAt || timestamp,
       createdAt: s.createdAt || timestamp,
     };

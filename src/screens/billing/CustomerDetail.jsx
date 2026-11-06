@@ -34,7 +34,7 @@ export default function CustomerDetail() {
   const rowDirection = isUrdu ? 'row-reverse' : 'row';
   const textAlign = isUrdu ? 'right' : 'left';
 
-  if (!customer) return null;
+  if (!customer) return <AnimatedScreen><Header title={t('nav.creditCustomers')} /></AnimatedScreen>;
 
   const bills = listSettledBills(customer.shopId).filter((bill) => bill.customerId === customerId);
   const payments = customerPaymentRepository.listByShop(customer.shopId).filter((p) => p.customerId === customerId);
@@ -61,7 +61,7 @@ export default function CustomerDetail() {
   return (
     <AnimatedScreen>
       <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1 }}>
-        <Header title={customer.name} onBack={() => navigation.goBack()} />
+        <Header title={customer.name} />
 
         <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
           <Card style={{ alignItems: 'center' }}>
@@ -84,7 +84,7 @@ export default function CustomerDetail() {
             history.map((entry) => (
               <Pressable
                 key={`${entry.kind}-${entry.id}`}
-                onPress={() => entry.kind === 'bill' && navigation.navigate('BillDetail', { billId: entry.id })}
+                onPress={() => entry.kind === 'bill' && navigation.navigate('RecordDetail', { billId: entry.id })}
                 style={[
                   {
                     flexDirection: rowDirection,

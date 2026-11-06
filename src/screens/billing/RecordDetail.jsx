@@ -1,3 +1,4 @@
+import { ReceiptActions } from '../../components/ui/ReceiptActions';
 import React from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -25,7 +26,7 @@ export default function RecordDetail() {
   const align = isUrdu ? 'right' : 'left';
   const { data: bill } = useBill(route.params?.billId);
 
-  if (!bill) return null;
+  if (!bill) return <AnimatedScreen><Header title={t('records.details')} /></AnimatedScreen>;
   const checkoutPaid = Math.max(0, bill.totalReceived - bill.payments.reduce((sum, payment) => sum + payment.amount, 0));
   const taxAmount = Math.max(0, Number(bill.totalAmount) - (Number(bill.subtotal) - Number(bill.discount)));
   const row = (label, value, color) => (
@@ -38,7 +39,7 @@ export default function RecordDetail() {
   return (
     <AnimatedScreen>
       <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1 }}>
-        <Header title={t('records.details')} onBack={() => navigation.goBack()} />
+        <Header title={t('records.details')} />
         <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.lg }}>
           <View style={{ flexDirection: direction, alignItems: 'center', gap: spacing.md }}>
             <View style={{ width: 46, height: 46, borderRadius: radii.md, backgroundColor: colors.brand.accentLight, alignItems: 'center', justifyContent: 'center' }}>
@@ -92,6 +93,7 @@ export default function RecordDetail() {
             {row(t('billing.remainingDue'), formatCurrency(bill.remainingDue), bill.remainingDue ? colors.semantic.warning : colors.semantic.success)}
           </View>
 
+          <ReceiptActions bill={bill} />
           {bill.remainingDue > 0 && bill.customerId ? <Button title={t('records.addPayment')} onPress={() => navigation.navigate('RecordPayment', { billId: bill.id })} /> : null}
         </ScrollView>
       </SafeAreaView>

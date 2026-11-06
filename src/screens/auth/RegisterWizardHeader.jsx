@@ -17,8 +17,8 @@ export function RegisterWizardHeader({ step }) {
 
   return (
     <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.sm }}>
-      <View style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.xs }}>
-        <IconButton icon={ArrowLeft} onPress={() => navigation.goBack()} style={{ marginLeft: -spacing.sm }} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+        <IconButton icon={ArrowLeft} accessibilityLabel={t('common.back')} onPress={() => navigation.goBack()} style={{ marginLeft: -spacing.sm }} />
         <Text style={[typography.h3, { color: colors.ink.primary }]}>{t('auth.register.createAccount')}</Text>
       </View>
 
