@@ -3,18 +3,20 @@ import { dashboardApi } from '../services/dashboardApi';
 import { computeLocalDashboardStats } from '../db/repositories/analyticsRepository';
 import { useShopStore } from '../store/shopStore';
 
-export function useDashboardStats() {
+export function useDashboardStats(range) {
   const activeShopId = useShopStore((s) => s.activeShopId);
+  const startDate = range?.startDate ? new Date(range.startDate).toISOString() : null;
+  const endDate = range?.endDate ? new Date(range.endDate).toISOString() : null;
 
   return useQuery({
-    queryKey: ['dashboardStats', activeShopId],
+    queryKey: ['dashboardStats', activeShopId, startDate, endDate],
     queryFn: async () => {
-      const local = computeLocalDashboardStats(activeShopId);
+      const local = computeLocalDashboardStats(activeShopId, range);
       try {
         const remote = await dashboardApi.stats({ shopId: activeShopId });
-        // The card labels say "today" and local rows include unsynced writes.
-        // The remote stats endpoint defaults to all-time, so keep the local
-        // summary and recent alerts while using its chart data when available.
+        // The selected-range summary and invoices must include unsynced local
+        // writes. The remote endpoint defaults to all-time, so keep those
+        // range-aware local values while using its chart data when available.
         return {
           ...remote,
           summary: local.summary,

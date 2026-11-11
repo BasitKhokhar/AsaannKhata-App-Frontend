@@ -4,68 +4,47 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
-import * as FileSystem from 'expo-file-system';
 import { Download, Wallet, TrendingUp, Receipt } from 'lucide-react-native';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
-import { Chip } from '../../components/ui/Chip';
 import { StatCard } from '../../components/ui/StatCard';
 import { SectionHeader } from '../../components/ui/SectionHeader';
 import { BottomNav } from '../../components/ui/BottomNav';
+import { AdBanner } from '../../components/ui/AdBanner';
+import { DateFilterSection } from '../../components/ui/DateFilterSection';
+import { DateFilterSheet } from '../../components/ui/DateFilterSheet';
 import { useTheme } from '../../theme';
 import { onBrandAlpha } from '../../theme/colors';
 import { useSalesReport } from '../../hooks/useSalesReport';
 import { useProfitMarginTrend } from '../../hooks/useDashboard';
-import { dashboardApi } from '../../services/dashboardApi';
-import { useShopStore } from '../../store/shopStore';
 import { useNavigation } from '@react-navigation/native';
 import { formatCurrency } from '../../utils/money';
 import { useT, useIsUrdu } from '../../store/languageStore';
+import { dateRangeForPreset, dateRangeLabel } from '../../utils/dateRanges';
 
 export default function SalesReport() {
   const navigation = useNavigation();
   const { colors, radii, typography, spacing, elevation } = useTheme();
-  const [period, setPeriod] = useState('week');
-  const isCloudPeriod = period === 'year';
-  const activeShopId = useShopStore((s) => s.activeShopId);
+  const [dateRange, setDateRange] = useState(() => dateRangeForPreset('thisMonth'));
+  const [dateRangeId, setDateRangeId] = useState('thisMonth');
+  const [dateFilterOpen, setDateFilterOpen] = useState(false);
   const t = useT();
   const isUrdu = useIsUrdu();
   const rowDirection = isUrdu ? 'row-reverse' : 'row';
-  const textAlign = isUrdu ? 'right' : 'left';
 
-  const PERIODS = [
-    { key: 'week', label: t('reports.sales.periodWeek') },
-    { key: 'month', label: t('reports.sales.periodMonth') },
-    { key: 'year', label: t('reports.sales.periodYear'), cloud: true },
-  ];
-
-  const { data: report, isRefetching: isReportRefetching, refetch: refetchReport } = useSalesReport(isCloudPeriod ? 'month' : period, {
-    enabled: !isCloudPeriod,
-  });
-  const { data: marginTrend, isError: marginTrendError, isRefetching: isTrendRefetching, refetch: refetchTrend } = useProfitMarginTrend({
-    period: 'year',
-  });
-
-  const isRefreshing = isCloudPeriod ? isTrendRefetching : isReportRefetching;
+  const { data: report, isRefetching: isReportRefetching, refetch: refetchReport } = useSalesReport(dateRange);
+  const { data: marginTrend, isError: marginTrendError } = useProfitMarginTrend({ period: 'year' });
+  const isRefreshing = isReportRefetching;
   function handleRefresh() {
-    if (isCloudPeriod) refetchTrend();
-    else refetchReport();
+    refetchReport();
   }
 
   async function handleExport() {
-    if (isCloudPeriod) {
-      const csv = await dashboardApi.exportCsv({ report: 'profit-margin', period: 'year', shopId: activeShopId });
-      const uri = FileSystem.cacheDirectory + `asaankhata-profit-margin-${Date.now()}.csv`;
-      await FileSystem.writeAsStringAsync(uri, csv, { encoding: FileSystem.EncodingType.UTF8 });
-      if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(uri, { mimeType: 'text/csv' });
-      return;
-    }
-
     if (!report) return;
     const rowsHtml = report.topProducts.map((p) => `<tr><td>${p.name}</td><td style="text-align:right">${formatCurrency(p.total)}</td></tr>`).join('');
-    const periodLabel = period === 'week' ? t('reports.sales.periodWeek') : t('reports.sales.periodMonth');
+    const periodLabel = dateRangeLabel(dateRange, dateRangeId, t);
     const html = `
       <html><body style="font-family:-apple-system,Helvetica,Arial,sans-serif;padding:24px;">
         <h2>${t('reports.sales.reportTitle').replace('{period}', periodLabel)}</h2>
@@ -86,45 +65,39 @@ export default function SalesReport() {
           <Text style={[typography.h1, { color: colors.ink.primary }]}>{t('nav.reports')}</Text>
         </View>
 
-        <View style={{ flexDirection: rowDirection, gap: spacing.sm, paddingHorizontal: spacing.lg, paddingBottom: spacing.sm }}>
-          {PERIODS.map((p) => (
-            <Chip key={p.key} label={p.label} selected={period === p.key} onPress={() => setPeriod(p.key)} />
-          ))}
+        <View style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.sm }}>
+          <DateFilterSection selectedRange={dateRangeLabel(dateRange, dateRangeId, t)} onPress={() => setDateFilterOpen(true)} />
         </View>
 
         <ScrollView
           contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}
           refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.brand.primary} />}
         >
-          {isCloudPeriod ? (
+          <AdBanner style={{ marginVertical: 0 }} />
+          {dateRangeId === 'thisYear' ? (
             <>
               <View style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.sm }}>
-                <Text style={[typography.caption, { color: colors.ink.secondary, flex: 1, textAlign }]}>
-                  {t('reports.sales.yearlyNote')}
-                </Text>
+                <Text style={[typography.caption, { color: colors.ink.secondary, flex: 1, textAlign: isUrdu ? 'right' : 'left' }]}>{t('reports.sales.yearlyNote')}</Text>
                 <Badge label={t('dashboard.syncedData')} tone="brand" />
               </View>
-
               <Card>
                 <SectionHeader title={t('reports.sales.monthlyRevenueMargin')} />
                 {marginTrendError ? (
                   <Text style={[typography.caption, { color: colors.ink.secondary }]}>{t('dashboard.couldntLoad')}</Text>
-                ) : (marginTrend?.data || []).every((m) => !m.revenue) ? (
+                ) : (marginTrend?.data || []).every((month) => !month.revenue) ? (
                   <Text style={[typography.caption, { color: colors.ink.secondary }]}>{t('reports.sales.noSyncedDataYear')}</Text>
                 ) : (
-                  marginTrend.data.map((m) => (
-                    <View key={m.label} style={{ flexDirection: rowDirection, justifyContent: 'space-between', paddingVertical: spacing.xs }}>
-                      <Text style={[typography.body, { color: colors.ink.primary }]}>{m.label}</Text>
-                      <Text style={[typography.bodyMedium, { color: colors.ink.primary }]}>
-                        {t('reports.sales.marginLabel').replace('{revenue}', formatCurrency(m.revenue)).replace('{margin}', m.marginPct)}
-                      </Text>
+                  marginTrend.data.map((month) => (
+                    <View key={month.label} style={{ flexDirection: rowDirection, justifyContent: 'space-between', paddingVertical: spacing.xs }}>
+                      <Text style={[typography.body, { color: colors.ink.primary }]}>{month.label}</Text>
+                      <Text style={[typography.bodyMedium, { color: colors.ink.primary }]}>{t('reports.sales.marginLabel').replace('{revenue}', formatCurrency(month.revenue)).replace('{margin}', month.marginPct)}</Text>
                     </View>
                   ))
                 )}
               </Card>
             </>
-          ) : (
-            <>
+          ) : null}
+          <>
               <LinearGradient
                 colors={colors.gradient.header}
                 style={[{ borderRadius: radii.lg, padding: spacing.lg }, elevation.md]}
@@ -169,8 +142,7 @@ export default function SalesReport() {
                   ))
                 )}
               </Card>
-            </>
-          )}
+          </>
         </ScrollView>
 
         <View style={{ padding: spacing.lg }}>
@@ -183,6 +155,16 @@ export default function SalesReport() {
         </View>
       </SafeAreaView>
       <BottomNav active="reports" />
+      <DateFilterSheet
+        visible={dateFilterOpen}
+        onClose={() => setDateFilterOpen(false)}
+        value={dateRange}
+        showAllTime
+        onSelect={(range, label) => {
+          setDateRange(range);
+          setDateRangeId(label);
+        }}
+      />
     </AnimatedScreen>
   );
 }

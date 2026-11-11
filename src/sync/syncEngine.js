@@ -3,16 +3,16 @@ import { syncApi } from '../services/syncApi';
 import { shopsApi } from '../services/shopsApi';
 import { deviceRepository } from '../db/repositories/deviceRepository';
 import { shopRepository } from '../db/repositories/shopRepository';
-import { entitlementRepository } from '../db/repositories/entitlementRepository';
 import { syncMetaRepository } from '../db/repositories/syncMetaRepository';
 import { useShopStore } from '../store/shopStore';
 import { useSyncStore } from '../store/syncStore';
-import { useCoinsStore } from '../store/coinsStore';
 import { useAuthStore } from '../store/authStore';
 import { registerCurrentToken } from '../services/fcmService';
 import { applyPullPage, cachePulledProductImages } from './pull';
 import { pushAllPending, pushPendingCoinUsage } from './push';
 import { queryClient } from '../services/queryClient';
+import { entitlementRepository } from '../db/repositories/entitlementRepository';
+import { hasSyncEntitlement } from '../utils/entitlements';
 
 const sinceKey = (shopId) => `lastSyncSince:${shopId}`;
 
@@ -63,10 +63,9 @@ export async function runSync() {
     // Account-level coin usage is reconciled even for offline-only plans.
     await pushPendingCoinUsage();
 
-    const entitlement = entitlementRepository.get();
-    const unlockExpiresAt = useCoinsStore.getState().syncUnlockExpiresAt;
-    const hasSyncAccess = entitlement?.cloudEnabled || (unlockExpiresAt && Date.parse(unlockExpiresAt) > Date.now());
-    if (!hasSyncAccess) {
+    // Free accounts include sync. Lifetime Offline remains intentionally
+    // local-only, while Basic/Pro use their cloudEnabled entitlement.
+    if (!hasSyncEntitlement(entitlementRepository.get())) {
       syncStore.syncFinished(syncStore.lastSyncAt);
       return;
     }

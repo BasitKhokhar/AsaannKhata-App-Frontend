@@ -1,4 +1,4 @@
-import { eq, and, gte, inArray, sql } from 'drizzle-orm';
+import { eq, and, gte, lte, inArray, sql } from 'drizzle-orm';
 import { db } from '../client';
 import { bills, billItems, products, expenses } from '../schema';
 import { isLowStock } from '../../utils/stock';
@@ -45,15 +45,23 @@ function lineCost(item, { purchasePrice, packPurchasePrice, packSize }) {
   return purchasePrice * (item.quantity ?? item.totalArea ?? item.lengthCm ?? 0);
 }
 
-// Sales Report screen — period is 'week' | 'month'. Entirely local, since
-// this is a device-level analytics view, not something the backend exposes.
-export function computeSalesReport(shopId, period = 'week') {
-  const since = period === 'month' ? daysAgoIso(30) : daysAgoIso(7);
+// Sales Report screen. The caller supplies the same explicit range used by
+// the shared date-filter sheet, so calendar presets and custom dates follow
+// one local/offline code path.
+function rangeConditions(column, range) {
+  const conditions = [];
+  if (range?.startDate) conditions.push(gte(column, new Date(range.startDate).toISOString()));
+  if (range?.endDate) conditions.push(lte(column, new Date(range.endDate).toISOString()));
+  return conditions;
+}
+
+export function computeSalesReport(shopId, range) {
+  const selectedRange = range || { startDate: daysAgoIso(7), endDate: new Date().toISOString() };
 
   const periodBills = db
     .select()
     .from(bills)
-    .where(and(eq(bills.shopId, shopId), eq(bills.isDeleted, false), gte(bills.createdAt, since)))
+    .where(and(eq(bills.shopId, shopId), eq(bills.isDeleted, false), ...rangeConditions(bills.createdAt, selectedRange)))
     .all();
 
   const revenue = periodBills.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
@@ -75,7 +83,7 @@ export function computeSalesReport(shopId, period = 'week') {
     .slice(0, 5)
     .map(([name, total]) => ({ name, total }));
 
-  const expenseRows = db.select().from(expenses).where(and(eq(expenses.shopId, shopId), eq(expenses.isDeleted, false), gte(expenses.occurredAt, since))).all();
+  const expenseRows = db.select().from(expenses).where(and(eq(expenses.shopId, shopId), eq(expenses.isDeleted, false), ...rangeConditions(expenses.occurredAt, selectedRange))).all();
   const expenseTotal = expenseRows.reduce((sum, expense) => sum + expense.amount, 0);
   return { grossProfit, expenseTotal, netProfit: grossProfit - expenseTotal, revenue, billCount: periodBills.length, topProducts };
 }
@@ -83,13 +91,13 @@ export function computeSalesReport(shopId, period = 'week') {
 // The dashboard always uses local rows so unsynced sales are included. Its
 // profit card is gross sales profit: sold-line revenue minus current product
 // cost. Expenses remain separate and are subtracted only in Sales Reports.
-export function computeLocalDashboardStats(shopId) {
-  const since = startOfTodayIso();
+export function computeLocalDashboardStats(shopId, range) {
+  const selectedRange = range || { startDate: startOfTodayIso(), endDate: new Date().toISOString() };
 
   const todaysBills = db
     .select()
     .from(bills)
-    .where(and(eq(bills.shopId, shopId), eq(bills.isDeleted, false), gte(bills.createdAt, since)))
+    .where(and(eq(bills.shopId, shopId), eq(bills.isDeleted, false), ...rangeConditions(bills.createdAt, selectedRange)))
     .all();
 
   const salesToday = todaysBills.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
@@ -138,7 +146,7 @@ export function computeLocalDashboardStats(shopId) {
   const recentInvoices = db
     .select()
     .from(bills)
-    .where(and(eq(bills.shopId, shopId), eq(bills.isDeleted, false)))
+    .where(and(eq(bills.shopId, shopId), eq(bills.isDeleted, false), ...rangeConditions(bills.createdAt, selectedRange)))
     .orderBy(sql`${bills.createdAt} desc`)
     .limit(5)
     .all()

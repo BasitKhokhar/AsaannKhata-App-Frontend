@@ -3,6 +3,8 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { adsApi } from '../services/adsApi';
 
+const MAX_REWARDED_ADS_PER_DAY = 10;
+
 // Local cache of GET /ads/config plus this device's own rewarded-ad pacing
 // counters — persisted so the coin balance and "Daily usage" numbers are
 // readable instantly offline (same offline-first guarantee as
@@ -41,6 +43,7 @@ export const useCoinsStore = create(
           cloudEnabled: false,
           consecutiveRewardedAds: 0,
           rewardedCooldownUntil: null,
+          lastInterstitialShownAt: 0,
         };
       }),
 
@@ -48,17 +51,21 @@ export const useCoinsStore = create(
       // backend) — see showRewardedAd()'s batch cooldown in adsService.js.
       consecutiveRewardedAds: 0,
       rewardedCooldownUntil: null,
+      lastInterstitialShownAt: 0,
 
       // Pulls the authoritative snapshot from the server. Call on Dashboard
       // mount/focus and after EarnCoins actions; safe to call while offline —
       // callers should let the request fail and keep showing cached values.
       refresh: async () => {
         const config = await adsApi.getConfig();
+        const watchedToday = Math.max(0, config.adsWatchedToday ?? 0);
+        const serverDailyCap = Math.max(0, config.maxRewardAdsPerDay ?? MAX_REWARDED_ADS_PER_DAY);
+        const dailyCap = Math.min(MAX_REWARDED_ADS_PER_DAY, serverDailyCap);
         set({
           adCoins: config.adCoins ?? 0,
-          adsWatchedToday: config.adsWatchedToday ?? 0,
-          adsRemainingToday: config.adsRemainingToday ?? 0,
-          maxRewardAdsPerDay: config.maxRewardAdsPerDay ?? 0,
+          adsWatchedToday: watchedToday,
+          adsRemainingToday: Math.min(config.adsRemainingToday ?? 0, Math.max(0, dailyCap - watchedToday)),
+          maxRewardAdsPerDay: dailyCap,
           syncCoinCost: config.syncCoinCost ?? 0,
           freeDailyRecordLimit: config.freeDailyRecordLimit ?? 0,
           billCoinCost: config.billCoinCost ?? get().billCoinCost,
@@ -75,10 +82,16 @@ export const useCoinsStore = create(
       // EARNED_REWARD event (see adsService.showRewardedAd — never award
       // coins client-side without that round trip).
       applyRewardResult: (payload) =>
-        set({
-          adCoins: payload.adCoins ?? get().adCoins,
-          adsWatchedToday: payload.adsWatchedToday ?? get().adsWatchedToday,
-          adsRemainingToday: payload.adsRemainingToday ?? get().adsRemainingToday,
+        set((state) => {
+          const watchedToday = payload.adsWatchedToday ?? state.adsWatchedToday;
+          return {
+            adCoins: payload.adCoins ?? state.adCoins,
+            adsWatchedToday: watchedToday,
+            adsRemainingToday: Math.min(
+              payload.adsRemainingToday ?? state.adsRemainingToday,
+              Math.max(0, Math.min(MAX_REWARDED_ADS_PER_DAY, state.maxRewardAdsPerDay || MAX_REWARDED_ADS_PER_DAY) - watchedToday)
+            ),
+          };
         }),
 
       // Merges the response from POST /ads/sync/unlock.
@@ -98,7 +111,10 @@ export const useCoinsStore = create(
           billsUsedToday: s.billsUsedToday + 1,
         })),
 
+      recordFreeBillOptimistic: () => set((state) => ({ billsUsedToday: state.billsUsedToday + 1 })),
+
       setRewardedPacing: (patch) => set(patch),
+      setLastInterstitialShownAt: (timestamp) => set({ lastInterstitialShownAt: timestamp }),
     }),
     {
       name: 'asaankhata-coins',

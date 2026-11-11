@@ -53,7 +53,7 @@ export default function Splash() {
             </FloatingIconCluster>
           </View>
 
-          <Text style={[typography.display, styles.wordmark, { color: colors.ink.onBrand, marginTop: spacing.xl }]}>AsaanKhata</Text>
+          <Text style={[typography.display, styles.wordmark, { color: colors.ink.onBrand, marginTop: spacing.xl }]}>AsaanDukaan</Text>
           <View style={[styles.wordmarkRule, { marginTop: spacing.sm }]}>
             <View style={[styles.rule, { backgroundColor: onBrandAlpha(0.24) }]} />
             <View style={[styles.ruleDot, { backgroundColor: colors.brand.accent }]} />

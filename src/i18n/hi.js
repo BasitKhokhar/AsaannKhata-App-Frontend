@@ -174,7 +174,7 @@ export const hi = {
   'dashboard.quickNewSale': 'नई बिक्री',
   'dashboard.quickAddItem': 'आइटम जोड़ें',
   'dashboard.quickCustomers': 'ग्राहक',
-  'nav.billing': 'बिलिंग',
+  'nav.billing': 'POS / नई बिक्री',
   'nav.records': 'रिकॉर्ड',
   'nav.products': 'उत्पाद',
   'nav.stock': 'स्टॉक',
@@ -238,7 +238,7 @@ export const hi = {
   'settings.syncStatus': 'सिंक स्थिति',
   'settings.syncStatusDesc': 'क्लाउड सिंक और जुड़े हुए डिवाइस',
   'settings.earnCoins': 'सिक्के कमाएं',
-  'settings.earnCoinsDesc': 'विज्ञापन देखकर सिक्के कमाएं और सिंक अनलॉक करें',
+  'settings.earnCoinsDesc': 'अतिरिक्त बिलों के लिए विज्ञापन देखकर सिक्के कमाएं',
   'settings.helpSupport': 'सहायता और समर्थन',
   'settings.helpSupportDesc': 'सामान्य प्रश्न और संपर्क',
   'settings.about': 'ऐप के बारे में, नियम व गोपनीयता',
@@ -404,7 +404,7 @@ export const hi = {
   // ---------------------------------------------------------------------
   // Billing / New Bill (dictionary coverage only)
   // ---------------------------------------------------------------------
-  'billing.newBill': 'नया बिल',
+  'billing.newBill': 'POS · नई बिक्री',
   'billing.paymentContinue': 'भुगतान जारी रखें',
   'billing.catalogSubtitle': 'उत्पाद चुनें और कार्ट बनाएं',
   'billing.goToCheckout': 'चेकआउट पर जाएं',
@@ -459,6 +459,7 @@ export const hi = {
   'billing.searchProducts': 'उत्पाद खोजें',
   'billing.noProductsFound': 'कोई उत्पाद नहीं मिला',
   'billing.addAtLeastOneProduct': 'कार्ट में कम से कम एक उत्पाद जोड़ें।',
+  'billing.coinsRequired': 'आज के मुफ़्त बिल पूरे हो गए हैं। एक और बिल के लिए सिक्के कमाने हेतु विज्ञापन देखें।',
 
   // ---------------------------------------------------------------------
   // Billing / Bill Detail
@@ -466,6 +467,7 @@ export const hi = {
   'billing.billDetail.title': 'बिल #{id}',
   'billing.billDetail.print': 'प्रिंट करें',
   'billing.billDetail.share': 'शेयर करें',
+  'billing.billDetail.goToPos': 'POS पर जाएं',
   'billing.billDetail.paid': 'भुगतान हो गया',
   'billing.billDetail.pendingDue': 'लंबित · {amount} बकाया',
   'billing.billDetail.discount': 'छूट',
@@ -758,7 +760,7 @@ export const hi = {
   'subscription.earnCoins.exhausted': 'आपने आज के लिए उपलब्ध सभी विज्ञापन देख लिए हैं — कल फिर से आएं।',
   'subscription.earnCoins.watchDescription': '{coins} सिक्के कमाने के लिए एक छोटा विज्ञापन देखें। आज {max} में से {remaining} बचे हैं।',
   'subscription.earnCoins.watchAdButton': 'सिक्के कमाने के लिए विज्ञापन देखें',
-  'subscription.earnCoins.cooldownWarning': 'लगातार बहुत सारे विज्ञापन देख लिए — थोड़ी देर बाद पुनः प्रयास करें।',
+  'subscription.earnCoins.cooldownWarning': 'आप {time} बाद अगला विज्ञापन देख सकते हैं।',
   'subscription.earnCoins.unlockSyncTitle': 'अभी सिंक अनलॉक करें',
   'subscription.earnCoins.coinsBadge': '{count} सिक्के',
   'subscription.earnCoins.unlockDescription':
@@ -831,4 +833,22 @@ export const hi = {
   'expenses.deleteMessage': 'यह खर्च रिपोर्ट से हटा दिया जाएगा।',
   'expenses.delete': 'खर्च हटाएँ',
   'expenses.deleted': 'खर्च हटाया गया',
+  'dashboard.salesPeriod': 'अवधि की बिक्री',
+  'dashboard.profitPeriod': 'अवधि का लाभ',
+  'dateFilter.filterPeriod': 'अवधि फ़िल्टर करें',
+  'dateFilter.selectDateRange': 'तारीख सीमा चुनें',
+  'dateFilter.startDate': 'शुरू होने की तारीख',
+  'dateFilter.endDate': 'समाप्ति तारीख',
+  'dateFilter.showReport': 'रिपोर्ट दिखाएँ',
+  'dateFilter.invalidRange': 'शुरू होने की तारीख समाप्ति तारीख से पहले होनी चाहिए।',
+  'dateFilter.today': 'आज',
+  'dateFilter.yesterday': 'कल',
+  'dateFilter.thisWeek': 'इस सप्ताह',
+  'dateFilter.lastWeek': 'पिछला सप्ताह',
+  'dateFilter.thisMonth': 'इस महीने',
+  'dateFilter.lastMonth': 'पिछला महीना',
+  'dateFilter.thisYear': 'इस वर्ष',
+  'dateFilter.lastYear': 'पिछला वर्ष',
+  'dateFilter.allTime': 'पूरा समय',
+  'dateFilter.customRange': 'कस्टम सीमा',
 };

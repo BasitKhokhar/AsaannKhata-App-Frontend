@@ -8,7 +8,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const PRESS_SPRING = { damping: 14, stiffness: 260 };
 
 // variant: 'primary' (navy gradient), 'accent' (gold gradient), 'outline', 'ghost', 'danger'
-export function Button({ title, onPress, variant = 'primary', disabled, loading, style, icon }) {
+export function Button({ title, onPress, variant = 'primary', disabled, loading, style, icon, compact = false }) {
   const { colors, radii, typography, spacing } = useTheme();
   const isGradient = variant === 'primary' || variant === 'accent';
   const gradientColors = variant === 'accent' ? colors.gradient.accent : colors.gradient.primary;
@@ -37,8 +37,11 @@ export function Button({ title, onPress, variant = 'primary', disabled, loading,
         <>
           {icon}
           <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.78}
             style={[
-              typography.h3,
+              compact ? typography.label : typography.h3,
               {
                 color: textColorFor(variant, colors),
                 marginLeft: icon ? spacing.sm : 0,
@@ -53,11 +56,12 @@ export function Button({ title, onPress, variant = 'primary', disabled, loading,
   );
 
   const baseStyle = {
-    height: 50,
+    height: compact ? 42 : 50,
     borderRadius: radii.lg,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
+    paddingHorizontal: compact ? spacing.sm : spacing.xl,
     opacity: disabled ? 0.5 : 1,
   };
 

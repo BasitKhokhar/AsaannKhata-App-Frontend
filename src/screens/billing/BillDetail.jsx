@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, Text, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -15,6 +15,7 @@ import { formatCurrency } from '../../utils/money';
 import { ReceiptActions } from '../../components/ui/ReceiptActions';
 import { paymentMethodLabelKey } from '../../utils/paymentMethod';
 import { useT, useIsUrdu } from '../../store/languageStore';
+import { adsService } from '../../services/adsService';
 
 export default function BillDetail() {
   const navigation = useNavigation();
@@ -27,6 +28,18 @@ export default function BillDetail() {
   const t = useT();
   const isUrdu = useIsUrdu();
   const rowDirection = isUrdu ? 'row-reverse' : 'row';
+  const interstitialHandled = useRef(false);
+
+  useEffect(() => {
+    if (!route.params?.interstitialEligible) return undefined;
+    adsService.preloadInterstitialAd();
+    return navigation.addListener('beforeRemove', (event) => {
+      if (interstitialHandled.current) return;
+      event.preventDefault();
+      interstitialHandled.current = true;
+      adsService.showInterstitialThenContinue(() => navigation.dispatch(event.data.action));
+    });
+  }, [navigation, route.params?.interstitialEligible]);
 
   if (!bill) return <AnimatedScreen><Header title={t('records.details')} /></AnimatedScreen>;
   const taxAmount = Math.max(0, Number(bill.totalAmount) - (Number(bill.subtotal) - Number(bill.discount)));
@@ -46,15 +59,23 @@ export default function BillDetail() {
             <View style={{ alignItems: 'center' }}>
               <Logo size={30} color={colors.brand.primary} accentColor={colors.brand.accentLight} />
               <Text style={[typography.h3, { color: colors.ink.primary, marginTop: spacing.xs }]}>{shopName || 'AsaanKhata'}</Text>
+              <Text style={[typography.label, { color: colors.brand.primary, marginTop: spacing.xs }]}>{t('receipt.title')}</Text>
               <Text style={[typography.caption, { color: colors.ink.secondary }]}>
                 {new Date(bill.createdAt).toLocaleString()} · #{bill.serverId || bill.id.slice(0, 6)}
               </Text>
             </View>
 
+            <View style={{ marginTop: spacing.md, padding: spacing.sm, borderRadius: radii.md, backgroundColor: colors.surface.raised }}>
+              <Text style={[typography.caption, { color: colors.ink.secondary }]}>{t('records.customer')}</Text>
+              <Text style={[typography.bodyMedium, { color: colors.ink.primary }]}>{bill.customerName}</Text>
+              {bill.customerPhone ? <Text style={[typography.caption, { color: colors.ink.secondary }]}>{bill.customerPhone}</Text> : null}
+            </View>
+
             <View style={{ marginTop: spacing.md, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.surface.border, borderStyle: 'dashed', gap: spacing.sm }}>
+              <View style={{ flexDirection: rowDirection, justifyContent: 'space-between' }}><Text style={[typography.label, { color: colors.ink.secondary }]}>{t('records.items')}</Text><Text style={[typography.label, { color: colors.ink.secondary }]}>{t('billing.total')}</Text></View>
               {(bill.items || []).map((item) => (
                 <View key={item.id} style={{ flexDirection: rowDirection, justifyContent: 'space-between' }}>
-                  <Text style={[typography.caption, { color: colors.ink.primary }]}>
+                  <Text style={[typography.caption, { flex: 1, color: colors.ink.primary }]}>
                     {item.productName} × {item.quantity ?? item.totalArea ?? item.lengthCm ?? item.packQuantity ?? ''}
                   </Text>
                   <Text style={[typography.caption, { color: colors.ink.primary }]}>{formatCurrency(item.total)}</Text>
@@ -99,10 +120,9 @@ export default function BillDetail() {
           </View>
         </ScrollView>
 
-        <View style={{ flexDirection: rowDirection, gap: spacing.sm, padding: spacing.lg }}>
-          <View style={{ flex: 1 }}><ReceiptActions bill={bill} /></View>
-        </View>
-        <View style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.md }}>
+        <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.sm }}><ReceiptActions bill={bill} /></View>
+        <View style={{ padding: spacing.lg, paddingTop: spacing.sm, gap: spacing.sm }}>
+          <Button title={t('billing.billDetail.goToPos')} onPress={() => navigation.navigate('NewBill')} />
           <Button title={t('records.viewPaymentRecord')} variant="outline" onPress={() => navigation.navigate('Records', { screen: 'RecordDetail', params: { billId: bill.id } })} />
         </View>
       </SafeAreaView>

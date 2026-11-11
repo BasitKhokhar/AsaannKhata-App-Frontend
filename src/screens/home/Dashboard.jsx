@@ -13,6 +13,8 @@ import { ListRow } from '../../components/ui/ListRow';
 import { AdBanner } from '../../components/ui/AdBanner';
 import { BottomNav } from '../../components/ui/BottomNav';
 import { ManualSyncSheet } from '../../components/sync/ManualSyncSheet';
+import { DateFilterSection } from '../../components/ui/DateFilterSection';
+import { DateFilterSheet } from '../../components/ui/DateFilterSheet';
 import { useTheme } from '../../theme';
 import { useDashboardStats, useSalesByProduct } from '../../hooks/useDashboard';
 import { useShops } from '../../hooks/useShops';
@@ -27,6 +29,8 @@ import { useT, useIsUrdu } from '../../store/languageStore';
 import { formatCurrency } from '../../utils/money';
 import { isLowStock, isOutOfStock } from '../../utils/stock';
 import { formatRelativeTime } from '../../utils/dates';
+import { dateRangeForPreset, dateRangeLabel } from '../../utils/dateRanges';
+import { hasSyncEntitlement, isAdSupportedEntitlement } from '../../utils/entitlements';
 
 export default function Dashboard() {
   const navigation = useNavigation();
@@ -43,9 +47,18 @@ export default function Dashboard() {
     : t('dashboard.mainBranch');
   const { data: productCounts } = useProductCounts();
   const { data: customers = [] } = useCustomers();
-  const { data: stats, isRefetching, refetch } = useDashboardStats();
-  const { data: topProducts, isError: topProductsError, refetch: refetchTopProducts } = useSalesByProduct({ limit: 5 });
+  const [dateRange, setDateRange] = useState(() => dateRangeForPreset('today'));
+  const [dateRangeId, setDateRangeId] = useState('today');
+  const [dateFilterOpen, setDateFilterOpen] = useState(false);
+  const { data: stats, isRefetching, refetch } = useDashboardStats(dateRange);
+  const { data: topProducts, isError: topProductsError, refetch: refetchTopProducts } = useSalesByProduct({
+    startDate: dateRange.startDate?.toISOString(),
+    endDate: dateRange.endDate?.toISOString(),
+    limit: 5,
+  });
   const { data: entitlement } = useEntitlement();
+  const adSupported = isAdSupportedEntitlement(entitlement);
+  const syncEnabled = hasSyncEntitlement(entitlement);
   const [syncOpen, setSyncOpen] = useState(false);
 
   function handleRefresh() {
@@ -67,10 +80,10 @@ export default function Dashboard() {
   // entirely for them.
   useFocusEffect(
     useCallback(() => {
-      if (!entitlement?.cloudEnabled) {
+      if (adSupported) {
         useCoinsStore.getState().refresh().catch(() => {});
       }
-    }, [entitlement?.cloudEnabled])
+    }, [adSupported])
   );
 
   const summary = stats?.summary || {};
@@ -82,8 +95,8 @@ export default function Dashboard() {
   const pendingDues = customers.reduce((sum, customer) => sum + Math.max(0, Number(customer.balance) || 0), 0);
   const lowStockCount = productCounts?.lowStock || 0;
   const metrics = [
-    { key: 'sales', label: t('dashboard.salesToday'), value: formatCurrency(summary.totalSales), icon: BadgeDollarSign, color: colors.brand.primary },
-    { key: 'profit', label: t('dashboard.profitToday'), value: formatCurrency(summary.profitToday), icon: TrendingUp, color: colors.semantic.success },
+    { key: 'sales', label: t('dashboard.salesPeriod'), value: formatCurrency(summary.totalSales), icon: BadgeDollarSign, color: colors.brand.primary },
+    { key: 'profit', label: t('dashboard.profitPeriod'), value: formatCurrency(summary.profitToday), icon: TrendingUp, color: colors.semantic.success },
     { key: 'items', label: t('dashboard.itemsCount'), value: String(productCounts?.total || 0), icon: Boxes, color: colors.brand.accent },
     { key: 'customers', label: t('dashboard.customersCount'), value: String(customers.length), icon: Users, color: colors.semantic.success },
     { key: 'lowStock', label: t('dashboard.lowStockCount'), value: String(lowStockCount), icon: AlertTriangle, color: colors.semantic.danger },
@@ -119,7 +132,7 @@ export default function Dashboard() {
               <Pressable onPress={() => navigation.dispatch(DrawerActions.openDrawer())} hitSlop={8}><Menu size={20} color={colors.ink.primary} strokeWidth={1.8} /></Pressable>
             </View>
           </View>
-          {entitlement?.cloudEnabled && syncStatusAlertsEnabled ? (
+          {syncEnabled && syncStatusAlertsEnabled ? (
             <Pressable
               onPress={() => navigation.navigate('SettingsStack', { screen: 'SyncStatus' })}
               style={{ flexDirection: rowDirection, alignItems: 'center', gap: 6, paddingHorizontal: spacing.md, paddingBottom: spacing.sm }}
@@ -138,7 +151,7 @@ export default function Dashboard() {
           contentContainerStyle={{ padding: spacing.md, paddingBottom: 96, gap: spacing.md }}
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={handleRefresh} tintColor={colors.brand.primary} />}
         >
-        {!entitlement?.cloudEnabled ? (
+        {adSupported ? (
           <Card style={{ padding: spacing.md, gap: spacing.md }} level="sm">
             <View style={{ flexDirection: rowDirection, alignItems: 'center', justifyContent: 'space-between' }}>
               <View style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.sm }}>
@@ -175,7 +188,9 @@ export default function Dashboard() {
 
         <AdBanner />
 
-        <Pressable
+        <DateFilterSection selectedRange={dateRangeLabel(dateRange, dateRangeId, t)} onPress={() => setDateFilterOpen(true)} />
+
+        {syncEnabled ? <Pressable
           onPress={() => setSyncOpen(true)}
           accessibilityRole="button"
           accessibilityLabel={t('dashboard.sync')}
@@ -191,7 +206,7 @@ export default function Dashboard() {
             </Text>
           </View>
           <ChevronDown size={16} color={colors.ink.secondary} style={{ transform: [{ rotate: '-90deg' }] }} />
-        </Pressable>
+        </Pressable> : null}
 
         <View style={{ flexDirection: rowDirection, flexWrap: 'wrap', gap: spacing.sm }}>
           {metrics.map((metric) => (
@@ -308,7 +323,15 @@ export default function Dashboard() {
         visible={syncOpen}
         onClose={() => setSyncOpen(false)}
         shopIds={shops.length ? shops.map((shop) => shop.id) : [activeShopId]}
-        cloudEnabled={!!entitlement?.cloudEnabled}
+      />
+      <DateFilterSheet
+        visible={dateFilterOpen}
+        onClose={() => setDateFilterOpen(false)}
+        value={dateRange}
+        onSelect={(range, label) => {
+          setDateRange(range);
+          setDateRangeId(label);
+        }}
       />
     </AnimatedScreen>
   );

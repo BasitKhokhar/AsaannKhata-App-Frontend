@@ -12,7 +12,7 @@ const compiled = babel.transformSync(source, {
   plugins: ['@babel/plugin-transform-modules-commonjs'],
 }).code;
 
-function setup({ failShop, conflictShop } = {}) {
+function setup({ failShop, conflictShop, entitlement = { cloudEnabled: true } } = {}) {
   const calls = [];
   const statuses = {};
   const cursors = new Map();
@@ -43,7 +43,8 @@ function setup({ failShop, conflictShop } = {}) {
       markRegistered() {}, markSynced() {},
     } },
     '../db/repositories/shopRepository': { shopRepository: { upsertMany() {} } },
-    '../db/repositories/entitlementRepository': { entitlementRepository: { get: () => ({ cloudEnabled: true }) } },
+    '../db/repositories/entitlementRepository': { entitlementRepository: { get: () => entitlement } },
+    '../utils/entitlements': { hasSyncEntitlement: (value) => !!value?.cloudEnabled || ['FREE', 'FREE_TRIAL'].includes(value?.tier) },
     '../db/repositories/syncMetaRepository': { syncMetaRepository: {
       get: (key) => cursors.get(key), set: (key, value) => cursors.set(key, value),
     } },
@@ -95,4 +96,18 @@ test('receipt design conflict does not block business writes for either shop', a
   assert.deepEqual(calls.filter(([kind]) => kind === 'push'), [['push', '1'], ['push', '2']]);
   assert.deepEqual(statuses, { 1: 'error', 2: 'synced' });
   assert.match(syncState.lastError, /receipt.conflict/);
+});
+
+test('free accounts sync without a coin unlock', async () => {
+  const { runSync, calls, syncState } = setup({ entitlement: { tier: 'FREE', cloudEnabled: false } });
+  await runSync();
+  assert.deepEqual(calls.filter(([kind]) => kind === 'push'), [['push', '1'], ['push', '2']]);
+  assert.equal(syncState.lastError, null);
+});
+
+test('Lifetime Offline remains local-only', async () => {
+  const { runSync, calls, syncState } = setup({ entitlement: { tier: 'LIFETIME', cloudEnabled: false } });
+  await runSync();
+  assert.deepEqual(calls.filter(([kind]) => kind === 'push'), []);
+  assert.equal(syncState.lastError, null);
 });

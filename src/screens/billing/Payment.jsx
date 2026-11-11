@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -59,6 +59,7 @@ export default function Payment() {
   const [method, setMethod] = useState('CASH');
   const [receivedInput, setReceivedInput] = useState(null);
   const [customerOpen, setCustomerOpen] = useState(false);
+  const [nameTarget, setNameTarget] = useState('first');
   const initialCustomerName = splitCustomerName(cart.customerName);
   const [firstName, setFirstName] = useState(initialCustomerName.firstName);
   const [lastName, setLastName] = useState(initialCustomerName.lastName);
@@ -80,6 +81,15 @@ export default function Payment() {
   const selectedCustomer = customers.find((customer) => customer.id === cart.customerId);
   const visibleCustomers = customers.filter((customer) => `${customer.name} ${customer.phone || ''}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
   const enteredCustomerName = joinCustomerName(firstName, lastName);
+  const matchingCustomer = enteredCustomerName
+    ? customers.find((customer) => customer.name.trim().toLocaleLowerCase() === enteredCustomerName.toLocaleLowerCase())
+    : null;
+  const resolvedCustomer = selectedCustomer || matchingCustomer;
+  const nameSuggestions = useMemo(() => Array.from(new Set(customers
+    .flatMap((customer) => customer.name.trim().split(/\s+/))
+    .filter(Boolean)))
+    .sort((a, b) => a.localeCompare(b)), [customers]);
+  const visibleNames = nameSuggestions.filter((name) => name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
 
   function updateQuantity(index, line, delta) {
     const quantity = Math.max(1, lineQuantity(line) + delta);
@@ -110,6 +120,18 @@ export default function Payment() {
     setCustomerOpen(false);
   }
 
+  function openNameList(target) {
+    setNameTarget(target);
+    setSearch('');
+    setCustomerOpen(true);
+  }
+
+  function selectSuggestedName(name) {
+    if (nameTarget === 'first') updateEnteredCustomer(name, lastName);
+    else updateEnteredCustomer(firstName, name);
+    setCustomerOpen(false);
+  }
+
   function complete() {
     if (busy) return;
     if (!cart.lines.length) return setError(t('billing.addAtLeastOneProduct'));
@@ -119,10 +141,10 @@ export default function Payment() {
     setBusy(true);
     setError(null);
     createBill.mutate({
-      customerId: cart.customerId,
-      customerName: selectedCustomer?.name || enteredCustomerName || t('billing.payment.walkIn'),
-      customerPhone: selectedCustomer?.phone || cart.customerPhone,
-      createCustomer: !cart.customerId && !!enteredCustomerName,
+      customerId: resolvedCustomer?.id || null,
+      customerName: resolvedCustomer?.name || enteredCustomerName || t('billing.payment.walkIn'),
+      customerPhone: resolvedCustomer?.phone || cart.customerPhone,
+      createCustomer: !resolvedCustomer && !!enteredCustomerName,
       subtotal,
       discount,
       totalAmount: total,
@@ -136,11 +158,11 @@ export default function Payment() {
       onSuccess: (bill) => {
         cart.reset();
         setBusy(false);
-        navigation.replace('BillDetail', { billId: bill.id });
+        navigation.replace('BillDetail', { billId: bill.id, interstitialEligible: true });
       },
       onError: (cause) => {
         setBusy(false);
-        setError(cause?.message || t('billing.payment.failed'));
+        setError(cause?.message?.startsWith('billing.') ? t(cause.message) : cause?.message || t('billing.payment.failed'));
       },
     });
   }
@@ -156,7 +178,7 @@ export default function Payment() {
           <Text style={[typography.h3, { color: colors.ink.primary, textAlign: align }]}>{t('billing.cartItems')} · {cart.lines.length}</Text>
           <Card style={{ padding: 0, overflow: 'hidden' }} level="none">
             {cart.lines.map((line, index) => (
-              <View key={`${line.productId}-${index}`} style={{ flexDirection: direction, alignItems: 'center', gap: spacing.sm, padding: spacing.md, borderBottomWidth: index === cart.lines.length - 1 ? 0 : 1, borderBottomColor: colors.surface.border }}>
+              <View key={`${line.productId}-${index}`} style={{ flexDirection: direction, alignItems: 'center', gap: spacing.sm, padding: spacing.sm, borderBottomWidth: index === cart.lines.length - 1 ? 0 : 1, borderBottomColor: colors.surface.border }}>
                 <View style={{ flex: 1 }}><Text numberOfLines={1} style={[typography.bodyMedium, { color: colors.ink.primary, textAlign: align }]}>{line.productName}</Text><Text style={[typography.caption, { color: colors.ink.secondary, textAlign: align }]}>{formatCurrency(line.total)}</Text></View>
                 <View style={{ flexDirection: direction, alignItems: 'center', gap: spacing.xs }}>
                   <MiniStep icon={Minus} onPress={() => updateQuantity(index, line, -1)} colors={colors} radii={radii} />
@@ -168,19 +190,28 @@ export default function Payment() {
             ))}
           </Card>
 
-          <Card style={{ gap: spacing.md }}>
+          <Card style={{ gap: spacing.sm, padding: spacing.md }}>
             {summaryRow(t('billing.subtotal'), formatCurrency(subtotal))}
-            <View style={{ flexDirection: direction, gap: spacing.sm }}>
-              <View style={{ flex: 1 }}><Text style={[typography.label, { color: colors.ink.primary, marginBottom: spacing.xs, textAlign: align }]}>{t('billing.discount')}</Text><View style={{ flexDirection: direction, gap: spacing.xs, marginBottom: spacing.xs }}><Chip label={t('billing.fixed')} selected={cart.discountType === 'fixed'} onPress={() => cart.setDiscountType('fixed')} /><Chip label="%" selected={cart.discountType === 'percent'} onPress={() => cart.setDiscountType('percent')} /></View><TextField value={String(cart.overallDiscount || '')} onChangeText={(value) => cart.setOverallDiscount(value.replace(/[^0-9.]/g, ''))} keyboardType="decimal-pad" placeholder="0" /></View>
-              <TextField style={{ flex: 1 }} label={t('billing.taxPercent')} value={String(cart.taxPercent || '')} onChangeText={(value) => cart.setTaxPercent(value.replace(/[^0-9.]/g, ''))} keyboardType="decimal-pad" placeholder="0" />
+            <View style={{ flexDirection: direction, alignItems: 'flex-end', gap: spacing.sm }}>
+              <View style={{ flex: 1 }}>
+                <View style={{ minHeight: 58, justifyContent: 'flex-end', gap: spacing.xs, marginBottom: spacing.xs }}>
+                  <Text style={[typography.label, { color: colors.ink.primary, textAlign: align }]}>{t('billing.discount')}</Text>
+                  <View style={{ flexDirection: direction, gap: spacing.xs }}><Chip label={t('billing.fixed')} selected={cart.discountType === 'fixed'} onPress={() => cart.setDiscountType('fixed')} /><Chip label="%" selected={cart.discountType === 'percent'} onPress={() => cart.setDiscountType('percent')} /></View>
+                </View>
+                <TextField value={String(cart.overallDiscount || '')} onChangeText={(value) => cart.setOverallDiscount(value.replace(/[^0-9.]/g, ''))} keyboardType="decimal-pad" placeholder="0" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <View style={{ minHeight: 58, justifyContent: 'flex-end', marginBottom: spacing.xs }}><Text style={[typography.label, { color: colors.ink.primary, textAlign: align }]}>{t('billing.taxPercent')}</Text></View>
+                <TextField value={String(cart.taxPercent || '')} onChangeText={(value) => cart.setTaxPercent(value.replace(/[^0-9.]/g, ''))} keyboardType="decimal-pad" placeholder="0" />
+              </View>
             </View>
             {discount > 0 ? summaryRow(t('billing.discount'), `- ${formatCurrency(discount)}`, colors.semantic.success) : null}
             {taxAmount > 0 ? summaryRow(`${t('billing.tax')} (${taxPercent}%)`, `+ ${formatCurrency(taxAmount)}`) : null}
             <View style={{ height: 1, backgroundColor: colors.surface.border }} />
-            <View style={{ flexDirection: direction, alignItems: 'center', justifyContent: 'space-between' }}><View><Text style={[typography.h3, { color: colors.ink.primary, textAlign: align }]}>{t('billing.grandTotal')}</Text><Text style={[typography.caption, { color: colors.ink.secondary, textAlign: align }]}>{t('billing.itemsCount').replace('{count}', cart.lines.length)}</Text></View><Text style={[typography.numericLarge, { color: colors.brand.primary, fontSize: 28 }]}>{formatCurrency(total)}</Text></View>
+            <View style={{ flexDirection: direction, alignItems: 'center', justifyContent: 'space-between' }}><View><Text style={[typography.h3, { color: colors.ink.primary, textAlign: align }]}>{t('billing.grandTotal')}</Text><Text style={[typography.caption, { color: colors.ink.secondary, textAlign: align }]}>{t('billing.itemsCount').replace('{count}', cart.lines.length)}</Text></View><Text style={[typography.h2, { color: colors.brand.primary }]}>{formatCurrency(total)}</Text></View>
           </Card>
 
-          <Card style={{ gap: spacing.md }}>
+          <Card style={{ gap: spacing.sm, padding: spacing.md }}>
             <View style={{ flexDirection: direction, alignItems: 'center', gap: spacing.sm }}>
               <View style={{ width: 36, height: 36, borderRadius: radii.md, backgroundColor: colors.brand.accentLight, alignItems: 'center', justifyContent: 'center' }}>
                 <UserRound size={18} color={colors.brand.primary} strokeWidth={1.8} />
@@ -189,35 +220,19 @@ export default function Payment() {
                 <Text style={[typography.h3, { color: colors.ink.primary, textAlign: align }]}>{t('billing.payment.customerSection')}</Text>
                 <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: align }]}>{t('billing.payment.customerSectionDescription')}</Text>
               </View>
-              {selectedCustomer ? <Check size={18} color={colors.semantic.success} /> : null}
+              {resolvedCustomer ? <Check size={18} color={colors.semantic.success} /> : null}
             </View>
-            <View style={{ flexDirection: direction, gap: spacing.sm }}>
-              <TextField
-                style={{ flex: 1 }}
-                label={t('billing.payment.firstName')}
-                value={firstName}
-                onChangeText={(value) => updateEnteredCustomer(value, lastName)}
-                placeholder={t('billing.payment.firstNamePlaceholder')}
-                textAlign={align}
-              />
-              <TextField
-                style={{ flex: 1 }}
-                label={t('billing.payment.lastName')}
-                value={lastName}
-                onChangeText={(value) => updateEnteredCustomer(firstName, value)}
-                placeholder={t('billing.payment.lastNamePlaceholder')}
-                textAlign={align}
-              />
+            <View style={{ flexDirection: direction, alignItems: 'flex-end', gap: spacing.sm }}>
+              <TextField style={{ flex: 1 }} label={t('billing.payment.firstName')} value={firstName} onChangeText={(value) => updateEnteredCustomer(value, lastName)} placeholder={t('billing.payment.firstNamePlaceholder')} textAlign={align} />
+              <Button title={t('billing.payment.customerList')} compact icon={<List size={16} color={colors.ink.inverse} strokeWidth={1.8} />} onPress={() => openNameList('first')} style={{ minWidth: 92 }} />
             </View>
-            <Button
-              title={t('billing.payment.customerList')}
-              variant="outline"
-              icon={<List size={17} color={colors.brand.primary} strokeWidth={1.8} />}
-              onPress={() => setCustomerOpen(true)}
-            />
-            {selectedCustomer ? (
+            <View style={{ flexDirection: direction, alignItems: 'flex-end', gap: spacing.sm }}>
+              <TextField style={{ flex: 1 }} label={t('billing.payment.lastName')} value={lastName} onChangeText={(value) => updateEnteredCustomer(firstName, value)} placeholder={t('billing.payment.lastNamePlaceholder')} textAlign={align} />
+              <Button title={t('billing.payment.customerList')} compact icon={<List size={16} color={colors.ink.inverse} strokeWidth={1.8} />} onPress={() => openNameList('last')} style={{ minWidth: 92 }} />
+            </View>
+            {resolvedCustomer ? (
               <Text style={[typography.caption, { color: colors.semantic.success, textAlign: align }]}>
-                {t('billing.payment.selectedCustomer').replace('{name}', selectedCustomer.name)}
+                {t('billing.payment.selectedCustomer').replace('{name}', resolvedCustomer.name)}
               </Text>
             ) : enteredCustomerName ? (
               <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: align }]}>
@@ -228,7 +243,7 @@ export default function Payment() {
 
           <Text style={[typography.h3, { color: colors.ink.primary, textAlign: align }]}>{t('billing.payment.methodLabel')}</Text>
           <View style={{ flexDirection: direction, flexWrap: 'wrap', gap: spacing.sm }}>
-            {methods.map((option) => { const Icon = option.icon; const active = method === option.key; return <Pressable key={option.key} onPress={() => selectMethod(option.key)} style={{ width: '48%', minHeight: 70, backgroundColor: active ? colors.semantic.successBg : colors.surface.raised, borderWidth: active ? 1.5 : 1, borderColor: active ? colors.brand.primary : colors.surface.border, borderRadius: radii.md, alignItems: 'center', justifyContent: 'center', gap: spacing.xs }}><Icon size={20} color={active ? colors.brand.primary : colors.ink.secondary} /><Text style={[typography.label, { color: active ? colors.brand.primary : colors.ink.primary }]}>{t(option.label)}</Text></Pressable>; })}
+            {methods.map((option) => { const Icon = option.icon; const active = method === option.key; return <Pressable key={option.key} onPress={() => selectMethod(option.key)} style={{ width: '48%', minHeight: 56, backgroundColor: active ? colors.semantic.successBg : colors.surface.raised, borderWidth: active ? 1.5 : 1, borderColor: active ? colors.brand.primary : colors.surface.border, borderRadius: radii.md, alignItems: 'center', justifyContent: 'center', gap: 2 }}><Icon size={18} color={active ? colors.brand.primary : colors.ink.secondary} /><Text style={[typography.label, { color: active ? colors.brand.primary : colors.ink.primary }]}>{t(option.label)}</Text></Pressable>; })}
           </View>
           <TextField label={t('billing.amountReceived')} value={method === 'CREDIT' ? '0' : String(receivedInput == null ? total : receivedInput)} onChangeText={setReceivedInput} keyboardType="decimal-pad" editable={method !== 'CREDIT'} />
           {changeDue > 0 ? summaryRow(t('billing.payment.change'), formatCurrency(changeDue), colors.semantic.success) : null}
@@ -240,6 +255,10 @@ export default function Payment() {
       </SafeAreaView>
       <Sheet visible={customerOpen} onClose={() => setCustomerOpen(false)} title={t('billing.payment.selectCustomer')}>
         <TextField value={search} onChangeText={setSearch} placeholder={t('billing.creditCustomers.searchPlaceholder')} />
+        {visibleNames.length ? <View style={{ flexDirection: direction, flexWrap: 'wrap', gap: spacing.sm }}>
+          {visibleNames.map((name) => <Pressable key={name} onPress={() => selectSuggestedName(name)} style={{ paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radii.pill, backgroundColor: colors.brand.accentLight, borderWidth: 1, borderColor: colors.brand.primary }}><Text style={[typography.label, { color: colors.brand.primary }]}>{name}</Text></Pressable>)}
+        </View> : null}
+        <View style={{ height: 1, backgroundColor: colors.surface.border }} />
         {visibleCustomers.length ? visibleCustomers.map((customer) => <Pressable key={customer.id} onPress={() => selectCustomer(customer)} style={{ paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.surface.border, flexDirection: direction, alignItems: 'center', gap: spacing.sm }}><View style={{ flex: 1 }}><Text style={[typography.bodyMedium, { color: colors.ink.primary, textAlign: align }]}>{customer.name}</Text>{customer.phone ? <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: align }]}>{customer.phone}</Text> : null}</View>{customer.id === cart.customerId ? <Check size={17} color={colors.semantic.success} /> : null}</Pressable>) : <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: align }]}>{t('billing.payment.noCustomers')}</Text>}
         <Button title={t('billing.creditCustomers.addCustomer')} variant="outline" onPress={() => { setCustomerOpen(false); navigation.navigate('CreditCustomers'); }} style={{ marginTop: spacing.md }} />
       </Sheet>

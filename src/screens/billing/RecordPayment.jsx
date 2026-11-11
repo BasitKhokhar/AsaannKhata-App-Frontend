@@ -13,6 +13,7 @@ import { useBill, useRecordBillPayment } from '../../hooks/useBills';
 import { formatCurrency } from '../../utils/money';
 import { showToast } from '../../store/toastStore';
 import { useT, useIsUrdu } from '../../store/languageStore';
+import { adsService } from '../../services/adsService';
 
 export default function RecordPayment() {
   const navigation = useNavigation();
@@ -28,13 +29,20 @@ export default function RecordPayment() {
   const [error, setError] = useState('');
   const saving = useRef(false);
 
+  React.useEffect(() => {
+    adsService.preloadInterstitialAd();
+  }, []);
+
   if (!bill) return <AnimatedScreen><Header title={t('records.addPayment')} /></AnimatedScreen>;
   const summary = (label, value, color) => <View style={{ flexDirection: direction, justifyContent: 'space-between', gap: spacing.md }}><Text style={[typography.body, { color: colors.ink.secondary, textAlign: align }]}>{label}</Text><Text style={[typography.bodyMedium, { color: color || colors.ink.primary }]}>{value}</Text></View>;
   function save() {
     if (saving.current) return;
     saving.current = true;
     recordPayment.mutate({ billId: bill.id, amount }, {
-      onSuccess: () => { showToast(t('records.paymentSaved'), 'success'); navigation.replace('RecordDetail', { billId: bill.id }); },
+      onSuccess: () => {
+        showToast(t('records.paymentSaved'), 'success');
+        adsService.showInterstitialThenContinue(() => navigation.replace('RecordDetail', { billId: bill.id }), { requirePriorShow: true });
+      },
       onError: (cause) => { saving.current = false; setError(cause.message?.startsWith('records.error.') ? t(cause.message) : t('records.paymentFailed')); },
     });
   }

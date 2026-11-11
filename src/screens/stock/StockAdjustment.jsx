@@ -11,6 +11,7 @@ import { useTheme } from '../../theme';
 import { useProduct, useAdjustStock } from '../../hooks/useProducts';
 import { formatStockLabel } from '../../utils/stock';
 import { useT, useIsUrdu } from '../../store/languageStore';
+import { adsService } from '../../services/adsService';
 
 function currentStockValue(product) {
   if (!product) return 0;
@@ -43,6 +44,10 @@ export default function StockAdjustment() {
   const [note, setNote] = useState('');
   const [error, setError] = useState(null);
 
+  React.useEffect(() => {
+    adsService.preloadInterstitialAd();
+  }, []);
+
   const qtyNum = parseFloat(quantity) || 0;
   const current = currentStockValue(product);
   const preview = direction === 'IN' ? current + qtyNum : Math.max(0, current - qtyNum);
@@ -55,7 +60,7 @@ export default function StockAdjustment() {
     setError(null);
     adjustStock.mutate(
       { productId: product.id, type: direction, quantity: qtyNum, description: [reason, note].filter(Boolean).join(' — ') || undefined },
-      { onSuccess: () => navigation.goBack() }
+      { onSuccess: () => adsService.showInterstitialThenContinue(() => navigation.goBack(), { requirePriorShow: true }) }
     );
   }
 

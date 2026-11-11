@@ -1,6 +1,6 @@
 # AsaanKhata frontend project context
 
-Last repository review: 2026-11-06
+Last repository review: 2026-11-11
 
 This is the durable project map for coding agents. Read this before scanning the repository. Inspect only the files relevant to the current task after reading it, and update this document whenever an architectural change makes it inaccurate.
 
@@ -125,7 +125,7 @@ Syncable rows use these conventions:
 
 The transaction rejects a bill when its combined lines exceed the latest local stock snapshot, preventing duplicate cart lines or stale checkout screens from silently overselling inventory.
 
-For a free-tier bill created while offline, it also appends `coin_usage_log` and optimistically decrements the persisted coin balance. The server later applies its authoritative cost.
+After a free-tier account uses its server-configured daily free-bill allowance, checkout requires enough rewarded-ad coins. Each additional bill appends `coin_usage_log` and optimistically decrements the persisted balance whether the device is currently online or offline; sync later applies the backend's authoritative cost. Paid plans never spend ad coins.
 
 ### Products and stock
 
@@ -148,16 +148,16 @@ The Records stack uses `billSettlementRepository` to associate later customer pa
 
 ### Expenses
 
-`useExpenseActions` writes shop-scoped expense rows locally through `expenseRepository`; edits and deletes use the same pending/soft-delete sync conventions as products. `Expenses` filters the ledger by date. Dashboard profit is gross sales profit (sold-line revenue minus current product cost) and excludes expenses. Local sales reports show gross profit, expenses, and net profit separately. Pack cost uses `packPurchasePrice` when configured, otherwise loose-unit purchase price times pack size. Report bill items and current product costs are fetched in bounded joined groups instead of one query per bill. Expense records have no attachment or staff attribution yet.
+`useExpenseActions` writes shop-scoped expense rows locally through `expenseRepository`; edits and deletes use the same pending/soft-delete sync conventions as products. Dashboard, Sales Reports, Records, and Expenses share the same date-filter sheet with custom start/end dates and calendar presets; the selected range is applied to local totals, lists, and report exports. Dashboard profit is gross sales profit (sold-line revenue minus current product cost) and excludes expenses. Local sales reports show gross profit, expenses, and net profit separately. Pack cost uses `packPurchasePrice` when configured, otherwise loose-unit purchase price times pack size. Report bill items and current product costs are fetched in bounded joined groups instead of one query per bill. Expense records have no attachment or staff attribution yet.
 
 ## Synchronization contract
 
-All triggers call `runSync()` in `src/sync/syncEngine.js`. Triggers are app startup, foreground, offline-to-online transition, every five minutes while foregrounded, and manual Sync Now actions. Dashboard exposes Sync for every plan: cloud-enabled plans sync directly, while offline/free plans use the existing server-authoritative coin unlock before running the same engine.
+All triggers call `runSync()` in `src/sync/syncEngine.js`. Triggers are app startup, foreground, offline-to-online transition, every five minutes while foregrounded, and manual Sync Now actions. Free accounts and cloud-enabled Basic/Pro accounts sync without a coin unlock. Paid Lifetime Offline remains local-only and does not attempt cloud sync.
 
 Sync sequence:
 
 1. Reconcile pending account-level coin usage for every tier.
-2. Stop if neither cached entitlement `cloudEnabled` nor a valid coin sync unlock is present. Otherwise fetch the signed-in admin's authoritative shop list from the backend; the active shop is only a UI selection.
+2. Stop unless the cached entitlement is Free or has `cloudEnabled`; Lifetime Offline intentionally stops here. Otherwise fetch the signed-in admin's authoritative shop list from the backend; the active shop is only a UI selection.
 3. For each owned shop, send an explicit `X-Shop-Id`, upsert this install's stable device UUID for that shop (server registration is shop-scoped), and pull all pages using the server-issued `nextSince`. Persist the watermark per shop after every page. Pulled rows are checked against the requested shop and pending/conflict local edits are preserved. Product image URLs are downloaded and cached as <=50 KiB local JPEGs before their page cursor is persisted.
 4. Push that shop's pending records in FK-safe order: categories -> products -> stock adjustments -> customers -> bills -> customer payments -> expenses. Pending product image files are uploaded to `/sync/images/upload` first and their returned bucket URLs are included in product operations; uploads use the same device, shop, and sync-entitlement checks as pushes. Push requests are capped at 100 operations. Product stock counters are the snapshot sent to the server; synced adjustment and bill operations record audit rows without applying those stock movements again. Bill sale logs are sent with their parent bill and matched by client ID on the next pull.
 5. Mark successes synced, conflicts conflict, and leave errors pending for retry. A failure in one shop does not stop attempts for the remaining shops; the overall sync reports failure until all shops succeed.
@@ -200,9 +200,12 @@ Most core domain reads/writes use repositories. Notable online/server paths incl
 - `REVENUECAT_SETUP.md` is the current billing setup contract: native checkout uses the backend Admin ID, purchase/restore calls `/subscriptions/verify`, and the backend reconciles RevenueCat subscriber snapshots for webhooks. SDK keys are public; REST API and webhook secrets are backend-only. A store sandbox/release build is still required to certify the flow.
 - The Plans screen fetches active backend `SubscriptionPlan` rows and the RevenueCat current offering on focus. It groups Cloud Sync billing variants into separate family cards by the plan-code prefix before `_MONTHLY`/`_SEMIANNUAL`/`_YEARLY` (for example, Basic and Pro). Each family card contains billing-period tabs, one selected RevenueCat `priceString`, backend-provided description/features, and its own purchase button; Pro-family cards receive the recommended treatment. `features` may arrive as parsed JSON or a JSON string. Missing offering packages leave the matching purchase button disabled. The current subscription and remaining days/hours/minutes come from `/subscriptions/me` (or its offline entitlement cache).
 - Backend seed upserts the nine-row Free/Lifetime/Basic/Pro catalog with localized feature arrays and RevenueCat product IDs (overrideable through `REVENUECAT_*_PRODUCT_ID` server environment variables). It migrates the legacy generic Lifetime and Cloud Sync codes to equivalent non-downgrading plans. Matching Play base plans use `subscriptionId:basePlanId` identifiers, and the backend subscriber reconciler resolves the base plan before selecting the plan row.
-- Paid/cloud users do not see ads.
+- Only Free/Free Trial (and expired) entitlements see ads. Paid Lifetime Offline is ad-free even though `cloudEnabled` is false; ad checks must use `src/utils/entitlements.js`, not `cloudEnabled` alone.
 - Development builds use Google's test ad unit IDs.
 - Reward coins are granted only after the SDK emits `EARNED_REWARD` and the backend accepts `/ads/reward`.
+- Rewarded ads are limited by the backend and a client-side ceiling of 10 per day. After three consecutive rewarded ads, the persisted 30-minute cooldown displays a live countdown and disables the watch button.
+- Adaptive banners are mounted only on Dashboard and Sales Report.
+- Interstitials are eligible only at completed workflow breaks: leaving a newly created bill receipt, product save, stock adjustment, or later bill payment. A persisted 90-second cooldown applies across all placements; ordinary navigation never triggers an interstitial.
 - Interstitial navigation has a watchdog and must never block navigation indefinitely.
 - FCM uses `@react-native-firebase/messaging`, not `expo-notifications`.
 - Firebase Messaging and Analytics use the named modular APIs from React Native Firebase 26; those packages no longer export callable defaults.

@@ -2,10 +2,9 @@ import React, { useMemo, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { CalendarDays, Download, Eye, Pencil, ReceiptText, Search } from 'lucide-react-native';
+import { Download, Eye, Pencil, ReceiptText, Search } from 'lucide-react-native';
 import { Header } from '../../components/ui/Header';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
-import { Sheet } from '../../components/ui/Sheet';
 import { Chip } from '../../components/ui/Chip';
 import { Badge } from '../../components/ui/Badge';
 import { TextField } from '../../components/ui/TextField';
@@ -17,6 +16,9 @@ import { formatCurrency } from '../../utils/money';
 import { shareRecordsReport } from '../../utils/recordsReport';
 import { showToast } from '../../store/toastStore';
 import { useT, useIsUrdu } from '../../store/languageStore';
+import { DateFilterSection } from '../../components/ui/DateFilterSection';
+import { DateFilterSheet } from '../../components/ui/DateFilterSheet';
+import { dateIsInRange, dateRangeForPreset, dateRangeLabel } from '../../utils/dateRanges';
 
 const TABLE_WIDTH = 760;
 
@@ -34,7 +36,8 @@ export default function Records() {
   const activeShop = shops.find((shop) => String(shop.id) === String(activeShopId));
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('all');
-  const [period, setPeriod] = useState('all');
+  const [dateRange, setDateRange] = useState(() => dateRangeForPreset('allTime'));
+  const [dateRangeId, setDateRangeId] = useState('allTime');
   const [filterOpen, setFilterOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
 
@@ -42,22 +45,16 @@ export default function Records() {
     const query = search.trim().toLocaleLowerCase();
     return bills.filter((bill) => {
       if (status !== 'all' && bill.status !== status) return false;
-      if (period !== 'all') {
-        const start = new Date();
-        start.setHours(0, 0, 0, 0);
-        if (period === 'week') start.setDate(start.getDate() - 6);
-        if (period === 'month') start.setDate(start.getDate() - 29);
-        if (new Date(bill.createdAt) < start) return false;
-      }
+      if (!dateIsInRange(bill.createdAt, dateRange)) return false;
       return !query || `${bill.customerName} ${bill.customerPhone || ''} ${bill.serverId || ''} ${bill.id}`.toLocaleLowerCase().includes(query);
     });
-  }, [bills, search, status, period]);
+  }, [bills, search, status, dateRange]);
 
   async function exportReport() {
     if (exporting) return;
     setExporting(true);
     try {
-      await shareRecordsReport({ bills: visible, shopName: activeShop?.name, periodLabel: t(`records.period.${period}`) });
+      await shareRecordsReport({ bills: visible, shopName: activeShop?.name, periodLabel: dateRangeLabel(dateRange, dateRangeId, t) });
     } catch (cause) {
       showToast(cause?.message || t('records.exportFailed'), 'error');
     } finally {
@@ -73,10 +70,8 @@ export default function Records() {
       <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1 }}>
         <Header title={t('nav.records')} subtitle={t('records.subtitle')} />
         <View style={{ paddingHorizontal: spacing.lg, gap: spacing.sm }}>
-          <View style={{ flexDirection: direction, gap: spacing.sm }}>
-            <TextField style={{ flex: 1 }} value={search} onChangeText={setSearch} placeholder={t('records.search')} right={<Search size={16} color={colors.ink.secondary} />} />
-            <Pressable onPress={() => setFilterOpen(true)} style={{ width: 48, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.surface.border, borderRadius: radii.md, backgroundColor: colors.surface.raised }}><CalendarDays size={19} color={colors.brand.primary} /></Pressable>
-          </View>
+          <TextField value={search} onChangeText={setSearch} placeholder={t('records.search')} right={<Search size={16} color={colors.ink.secondary} />} />
+          <DateFilterSection selectedRange={dateRangeLabel(dateRange, dateRangeId, t)} onPress={() => setFilterOpen(true)} />
           <View style={{ flexDirection: direction, gap: spacing.sm }}>
             {['all', 'PAID', 'PENDING'].map((value) => <Chip key={value} label={t(`records.${value.toLowerCase()}`)} selected={status === value} onPress={() => setStatus(value)} />)}
           </View>
@@ -118,9 +113,16 @@ export default function Records() {
           </ScrollView>
         </View>
       </SafeAreaView>
-      <Sheet visible={filterOpen} onClose={() => setFilterOpen(false)} title={t('records.dateFilter')}>
-        {['all', 'today', 'week', 'month'].map((value) => <Pressable key={value} onPress={() => { setPeriod(value); setFilterOpen(false); }} style={{ flexDirection: direction, justifyContent: 'space-between', paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.surface.border }}><Text style={[typography.bodyMedium, { color: colors.ink.primary, textAlign: align }]}>{t(`records.period.${value}`)}</Text>{period === value ? <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: colors.brand.primary }} /> : null}</Pressable>)}
-      </Sheet>
+      <DateFilterSheet
+        visible={filterOpen}
+        onClose={() => setFilterOpen(false)}
+        value={dateRange}
+        showAllTime
+        onSelect={(range, label) => {
+          setDateRange(range);
+          setDateRangeId(label);
+        }}
+      />
     </AnimatedScreen>
   );
 }

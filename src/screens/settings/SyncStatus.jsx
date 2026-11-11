@@ -14,24 +14,25 @@ import { useTheme } from '../../theme';
 import { useSyncStore } from '../../store/syncStore';
 import { useShops } from '../../hooks/useShops';
 import { useSyncStatus } from '../../hooks/useSyncStatus';
-import { entitlementRepository } from '../../db/repositories/entitlementRepository';
 import { runSync } from '../../sync/syncEngine';
 import { formatRelativeTime } from '../../utils/dates';
 import { useT, useIsUrdu } from '../../store/languageStore';
+import { useEntitlement } from '../../hooks/useEntitlement';
+import { hasSyncEntitlement } from '../../utils/entitlements';
 
 export default function SyncStatus() {
   const navigation = useNavigation();
   const { colors, radii, typography, spacing } = useTheme();
   const { data: shops = [] } = useShops();
   const { isSyncing, lastSyncAt, lastError, perShopStatus } = useSyncStore();
-  const entitlement = entitlementRepository.get();
   const { data: syncStatusData } = useSyncStatus();
+  const { data: entitlement } = useEntitlement();
   const t = useT();
   const isUrdu = useIsUrdu();
   const rowDirection = isUrdu ? 'row-reverse' : 'row';
   const textAlign = isUrdu ? 'right' : 'left';
 
-  if (!entitlement?.cloudEnabled) {
+  if (!hasSyncEntitlement(entitlement)) {
     return (
       <AnimatedScreen>
         <Header title={t('settings.syncStatus')} />
@@ -40,9 +41,7 @@ export default function SyncStatus() {
             <Path d="M4 12a8 8 0 0 1 13.6-5.6M20 12a8 8 0 0 1-13.6 5.6" stroke={colors.brand.primary} strokeWidth={1.6} fill="none" strokeLinecap="round" />
           </Svg>
           <Text style={[typography.h2, { color: colors.ink.primary, marginTop: spacing.lg, textAlign: 'center' }]}>{t('settings.syncStatus.notActiveTitle')}</Text>
-          <Text style={[typography.body, { color: colors.ink.secondary, marginTop: spacing.sm, textAlign: 'center' }]}>
-            {t('settings.syncStatus.notActiveDescription')}
-          </Text>
+          <Text style={[typography.body, { color: colors.ink.secondary, marginTop: spacing.sm, textAlign: 'center' }]}>{t('settings.syncStatus.notActiveDescription')}</Text>
           <Button title={t('settings.syncStatus.upgradeButton')} variant="accent" onPress={() => navigation.navigate('SubscriptionPlans')} style={{ marginTop: spacing.xl, alignSelf: 'stretch' }} />
         </SafeAreaView>
       </AnimatedScreen>

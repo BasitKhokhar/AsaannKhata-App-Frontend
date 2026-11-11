@@ -176,7 +176,7 @@ export const ur = {
   'dashboard.quickNewSale': 'نئی فروخت',
   'dashboard.quickAddItem': 'شے شامل کریں',
   'dashboard.quickCustomers': 'گاہک',
-  'nav.billing': 'بلنگ',
+  'nav.billing': 'POS / نئی فروخت',
   'nav.records': 'ریکارڈز',
   'nav.products': 'پروڈکٹس',
   'nav.stock': 'اسٹاک',
@@ -240,7 +240,7 @@ export const ur = {
   'settings.syncStatus': 'سنک اسٹیٹس',
   'settings.syncStatusDesc': 'کلاؤڈ سنک اور منسلک آلات',
   'settings.earnCoins': 'سکے کمائیں',
-  'settings.earnCoinsDesc': 'اشتہارات دیکھ کر سکے کمائیں اور سنک ان لاک کریں',
+  'settings.earnCoinsDesc': 'مزید بل بنانے کے لیے اشتہارات دیکھ کر سکے کمائیں',
   'settings.helpSupport': 'مدد اور سپورٹ',
   'settings.helpSupportDesc': 'عمومی سوالات اور رابطہ',
   'settings.about': 'بارے میں، شرائط اور رازداری',
@@ -406,7 +406,7 @@ export const ur = {
   // ---------------------------------------------------------------------
   // Billing / New Bill (dictionary coverage only)
   // ---------------------------------------------------------------------
-  'billing.newBill': 'نیا بل',
+  'billing.newBill': 'POS · نئی فروخت',
   'billing.paymentContinue': 'ادائیگی جاری رکھیں',
   'billing.catalogSubtitle': 'مصنوعات منتخب کریں اور کارٹ بنائیں',
   'billing.goToCheckout': 'چیک آؤٹ پر جائیں',
@@ -461,6 +461,7 @@ export const ur = {
   'billing.searchProducts': 'پروڈکٹس تلاش کریں',
   'billing.noProductsFound': 'کوئی پروڈکٹ نہیں ملا',
   'billing.addAtLeastOneProduct': 'کارٹ میں کم از کم ایک پروڈکٹ شامل کریں۔',
+  'billing.coinsRequired': 'آج کے مفت بل استعمال ہو چکے ہیں۔ مزید بل کے لیے سکے کمانے کا اشتہار دیکھیں۔',
 
   // ---------------------------------------------------------------------
   // Billing / Bill Detail
@@ -468,6 +469,7 @@ export const ur = {
   'billing.billDetail.title': 'بل #{id}',
   'billing.billDetail.print': 'پرنٹ کریں',
   'billing.billDetail.share': 'شیئر کریں',
+  'billing.billDetail.goToPos': 'POS پر جائیں',
   'billing.billDetail.paid': 'ادا شدہ',
   'billing.billDetail.pendingDue': 'زیر التواء · {amount} واجب الادا',
   'billing.billDetail.discount': 'رعایت',
@@ -760,7 +762,7 @@ export const ur = {
   'subscription.earnCoins.exhausted': 'آپ نے آج کے لیے دستیاب تمام اشتہارات دیکھ لیے ہیں — کل دوبارہ آئیں۔',
   'subscription.earnCoins.watchDescription': '{coins} سکے کمانے کے لیے ایک مختصر اشتہار دیکھیں۔ آج {max} میں سے {remaining} باقی ہیں۔',
   'subscription.earnCoins.watchAdButton': 'سکے کمانے کے لیے اشتہار دیکھیں',
-  'subscription.earnCoins.cooldownWarning': 'لگاتار بہت زیادہ اشتہارات دیکھ لیے — تھوڑی دیر بعد دوبارہ کوشش کریں۔',
+  'subscription.earnCoins.cooldownWarning': 'آپ {time} کے بعد اگلا اشتہار دیکھ سکتے ہیں۔',
   'subscription.earnCoins.unlockSyncTitle': 'ابھی سنک ان لاک کریں',
   'subscription.earnCoins.coinsBadge': '{count} سکے',
   'subscription.earnCoins.unlockDescription':
@@ -833,4 +835,22 @@ export const ur = {
   'expenses.deleteMessage': 'یہ خرچ رپورٹس سے ہٹا دیا جائے گا۔',
   'expenses.delete': 'خرچ حذف کریں',
   'expenses.deleted': 'خرچ حذف ہو گیا',
+  'dashboard.salesPeriod': 'مدت کی فروخت',
+  'dashboard.profitPeriod': 'مدت کا منافع',
+  'dateFilter.filterPeriod': 'مدت فلٹر کریں',
+  'dateFilter.selectDateRange': 'تاریخ کی حد منتخب کریں',
+  'dateFilter.startDate': 'شروع کی تاریخ',
+  'dateFilter.endDate': 'اختتامی تاریخ',
+  'dateFilter.showReport': 'رپورٹ دکھائیں',
+  'dateFilter.invalidRange': 'شروع کی تاریخ اختتامی تاریخ سے پہلے ہونی چاہیے۔',
+  'dateFilter.today': 'آج',
+  'dateFilter.yesterday': 'گزشتہ کل',
+  'dateFilter.thisWeek': 'یہ ہفتہ',
+  'dateFilter.lastWeek': 'گزشتہ ہفتہ',
+  'dateFilter.thisMonth': 'یہ مہینہ',
+  'dateFilter.lastMonth': 'گزشتہ مہینہ',
+  'dateFilter.thisYear': 'یہ سال',
+  'dateFilter.lastYear': 'گزشتہ سال',
+  'dateFilter.allTime': 'تمام وقت',
+  'dateFilter.customRange': 'مخصوص مدت',
 };

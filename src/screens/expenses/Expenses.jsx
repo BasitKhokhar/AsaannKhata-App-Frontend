@@ -16,6 +16,9 @@ import { useT, useIsUrdu } from '../../store/languageStore';
 import { formatCurrency } from '../../utils/money';
 import { showToast } from '../../store/toastStore';
 import { showConfirm } from '../../store/confirmStore';
+import { DateFilterSection } from '../../components/ui/DateFilterSection';
+import { DateFilterSheet } from '../../components/ui/DateFilterSheet';
+import { dateIsInRange, dateRangeForPreset, dateRangeLabel } from '../../utils/dateRanges';
 
 const categories = [
   { key: 'RENT', icon: Store }, { key: 'UTILITIES', icon: Zap },
@@ -35,18 +38,14 @@ export default function Expenses() {
   const isUrdu = useIsUrdu();
   const { data: rows = [], isLoading } = useExpenses();
   const actions = useExpenseActions();
-  const [filter, setFilter] = useState('all');
+  const [dateRange, setDateRange] = useState(() => dateRangeForPreset('allTime'));
+  const [dateRangeId, setDateRangeId] = useState('allTime');
+  const [dateFilterOpen, setDateFilterOpen] = useState(false);
   const [draft, setDraft] = useState(null);
   const [error, setError] = useState(null);
   const visible = useMemo(() => {
-    const now = new Date();
-    return rows.filter((row) => {
-      const date = new Date(row.occurredAt);
-      if (filter === 'today') return date.toDateString() === now.toDateString();
-      if (filter === 'month') return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-      return true;
-    });
-  }, [rows, filter]);
+    return rows.filter((row) => dateIsInRange(row.occurredAt, dateRange));
+  }, [rows, dateRange]);
   const total = visible.reduce((sum, row) => sum + (Number(row.amount) || 0), 0);
 
   function edit(row) {
@@ -88,8 +87,8 @@ export default function Expenses() {
     <AnimatedScreen>
       <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1 }}>
         <Header title={t('nav.expenses')} />
-        <View style={{ flexDirection: isUrdu ? 'row-reverse' : 'row', gap: spacing.sm, paddingHorizontal: spacing.lg, paddingBottom: spacing.md }}>
-          {['all', 'today', 'month'].map((key) => <Chip key={key} label={t(`expenses.filter.${key}`)} selected={filter === key} onPress={() => setFilter(key)} />)}
+        <View style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.md }}>
+          <DateFilterSection selectedRange={dateRangeLabel(dateRange, dateRangeId, t)} onPress={() => setDateFilterOpen(true)} />
         </View>
         <Card style={{ marginHorizontal: spacing.lg, marginBottom: spacing.md, gap: spacing.xs }}>
           <Text style={[typography.caption, { color: colors.ink.secondary }]}>{t('expenses.total')}</Text>
@@ -127,6 +126,16 @@ export default function Expenses() {
           {draft.id ? <Button title={t('expenses.delete')} variant="danger" icon={<Trash2 size={17} color={colors.semantic.danger} />} onPress={remove} /> : null}
         </View> : null}
       </Sheet>
+      <DateFilterSheet
+        visible={dateFilterOpen}
+        onClose={() => setDateFilterOpen(false)}
+        value={dateRange}
+        showAllTime
+        onSelect={(range, label) => {
+          setDateRange(range);
+          setDateRangeId(label);
+        }}
+      />
     </AnimatedScreen>
   );
 }

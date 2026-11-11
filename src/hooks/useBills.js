@@ -1,30 +1,33 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import NetInfo from '@react-native-community/netinfo';
 import { billRepository } from '../db/repositories/billRepository';
 import { listSettledBills, recordBillPayment, settledBill } from '../db/repositories/billSettlementRepository';
 import { coinUsageLogRepository } from '../db/repositories/coinUsageLogRepository';
 import { useShopStore } from '../store/shopStore';
 import { useCoinsStore } from '../store/coinsStore';
 import { useEntitlement } from './useEntitlement';
+import { isAdSupportedEntitlement } from '../utils/entitlements';
 
-// A bill created OFFLINE on the free tier draws down the local coin balance
-// — reconciled with the server's authoritative balance by
-// pushPendingCoinUsage() once connectivity returns (src/sync/push.js). The
-// cost itself is server-defined (GET /ads/config's billCoinCost, cached in
-// coinsStore) — the amount logged here is only a local optimistic estimate;
-// the backend ignores any client-supplied amount and always charges its own
-// BILL_COIN_COST, so a stale cached value here can never under/over-charge.
-// Fire-and-forget: runs after the bill is already committed to SQLite, so it
-// can never delay or fail the bill-creation flow itself.
-async function recordCoinUsageIfNeeded(entitlement) {
-  if (entitlement?.cloudEnabled) return; // paid/cloud plans never spend coins
+// Free accounts receive a server-configured daily bill allowance. Additional
+// bills require rewarded-ad coins and append an account-level usage row for
+// authoritative backend reconciliation. Paid plans never enter this path.
+function coinCostForNextBill(entitlement) {
+  if (!isAdSupportedEntitlement(entitlement)) return null;
+  const { adCoins, billsUsedToday, freeDailyRecordLimit, billCoinCost } = useCoinsStore.getState();
+  const cost = billCoinCost || 1;
+  if (freeDailyRecordLimit <= 0 || billsUsedToday < freeDailyRecordLimit) return 0;
+  if (adCoins < cost) throw new Error('billing.coinsRequired');
+  return cost;
+}
+
+function recordCoinUsageIfNeeded(entitlement, coinCost) {
+  if (!isAdSupportedEntitlement(entitlement)) return;
   try {
-    const netState = await NetInfo.fetch();
-    const isOffline = !(netState.isConnected && netState.isInternetReachable !== false);
-    if (!isOffline) return;
-    const cost = useCoinsStore.getState().billCoinCost || 1;
-    coinUsageLogRepository.create({ actionType: 'BILL', amount: cost });
-    useCoinsStore.getState().spendCoinsOptimistic(cost);
+    if (coinCost > 0) {
+      coinUsageLogRepository.create({ actionType: 'BILL', amount: coinCost });
+      useCoinsStore.getState().spendCoinsOptimistic(coinCost);
+    } else {
+      useCoinsStore.getState().recordFreeBillOptimistic();
+    }
   } catch (err) {
     // Best-effort bookkeeping only — never surfaces to the caller.
   }
@@ -82,6 +85,7 @@ export function useCreateBill() {
   return {
     mutate: (payload, options) => {
       try {
+        const coinCost = coinCostForNextBill(entitlement);
         const bill = billRepository.createBillWithItems({ ...payload, shopId: activeShopId });
         queryClient.invalidateQueries({ queryKey: ['bills', activeShopId] });
         queryClient.invalidateQueries({ queryKey: ['products', activeShopId] });
@@ -89,7 +93,7 @@ export function useCreateBill() {
         queryClient.invalidateQueries({ queryKey: ['customer'] });
         queryClient.invalidateQueries({ queryKey: ['dashboardStats', activeShopId] });
         queryClient.invalidateQueries({ queryKey: ['salesReport', activeShopId] });
-        recordCoinUsageIfNeeded(entitlement);
+        recordCoinUsageIfNeeded(entitlement, coinCost);
         options?.onSuccess?.(bill);
       } catch (err) {
         options?.onError?.(err);

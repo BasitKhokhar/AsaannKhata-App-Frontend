@@ -16,6 +16,7 @@ import { useTheme } from '../../theme';
 import { useCategories } from '../../hooks/useCategories';
 import { useCreateProduct, useProduct, useUpdateProduct } from '../../hooks/useProducts';
 import { useT, useIsUrdu } from '../../store/languageStore';
+import { adsService } from '../../services/adsService';
 import {
   compressProductImage,
   deleteLocalProductImage,
@@ -97,6 +98,10 @@ export default function AddProduct() {
     setPackSalePrice(existingProduct.packSalePrice == null ? '' : String(existingProduct.packSalePrice));
   }, [isEditing, existingProduct?.id]);
 
+  useEffect(() => {
+    adsService.preloadInterstitialAd();
+  }, []);
+
   async function handlePickImage() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
@@ -158,7 +163,7 @@ export default function AddProduct() {
             deleteLocalProductImage(existingProduct.imageLocalUri);
           }
           setSaving(false);
-          navigation.goBack();
+          adsService.showInterstitialThenContinue(() => navigation.goBack(), { requirePriorShow: true });
         },
         onError: (cause) => {
           if (persistedImageUri) deleteLocalProductImage(persistedImageUri);

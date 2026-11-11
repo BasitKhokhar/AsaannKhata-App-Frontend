@@ -11,13 +11,14 @@ import mobileAds, {
 import { entitlementRepository } from '../db/repositories/entitlementRepository';
 import { useCoinsStore } from '../store/coinsStore';
 import { adsApi } from './adsApi';
+import { isAdSupportedEntitlement } from '../utils/entitlements';
 
 // Ported from AttaChaki's ads layer, adapted to this app's own conventions
 // (Constants.expoConfig.extra for ad unit ids, entitlementRepository for the
 // paid-plan gate, a Zustand-persisted store instead of a bare AsyncStorage
 // key for pacing counters).
 
-const INTERSTITIAL_COOLDOWN_MS = 3 * 60 * 1000; // 3 minutes between interstitials
+const INTERSTITIAL_COOLDOWN_MS = 90 * 1000; // 90 seconds between eligible completion breaks
 const INTERSTITIAL_WATCHDOG_MS = 4000; // never let an interstitial block navigation longer than this
 const INTERSTITIAL_RETRY_DELAY_MS = 5000;
 const MAX_INTERSTITIAL_LOAD_RETRIES = 2;
@@ -77,15 +78,10 @@ async function isOnline() {
   return !!(state.isConnected && state.isInternetReachable !== false);
 }
 
-function isPaidPlan() {
-  return !!entitlementRepository.get()?.cloudEnabled;
-}
-
-// Every ad-showing entry point in this file gates on this first — cloud/paid
-// plans never see ads, and there's no point attempting a network-backed ad
-// request while offline.
+// Every ad entry point gates here first. Paid Lifetime Offline is ad-free even
+// though cloudEnabled is false, so eligibility comes from the plan helper.
 export async function canShowAds() {
-  if (isPaidPlan()) return false;
+  if (!isAdSupportedEntitlement(entitlementRepository.get())) return false;
   return isOnline();
 }
 
@@ -96,8 +92,6 @@ export async function canShowAds() {
 let interstitial = null;
 let interstitialLoaded = false;
 let interstitialLoading = false;
-let lastInterstitialShownAt = 0;
-
 function loadInterstitial(retriesLeft) {
   const unitId = getAdUnitId('interstitial');
   if (!unitId || interstitialLoading) return;
@@ -127,7 +121,11 @@ function loadInterstitial(retriesLeft) {
 }
 
 export function preloadInterstitialAd() {
-  if (!interstitialLoaded && !interstitialLoading) loadInterstitial(MAX_INTERSTITIAL_LOAD_RETRIES);
+  canShowAds()
+    .then((eligible) => {
+      if (eligible && !interstitialLoaded && !interstitialLoading) loadInterstitial(MAX_INTERSTITIAL_LOAD_RETRIES);
+    })
+    .catch(() => {});
 }
 
 // Shows the preloaded interstitial if one is ready and the cooldown has
@@ -135,7 +133,7 @@ export function preloadInterstitialAd() {
 // `proceed()` always fires, either when the ad's CLOSED/ERROR event lands or
 // — as a safety net in case those events never fire — when the watchdog
 // timer below elapses, whichever comes first.
-export async function showInterstitialThenContinue(proceed) {
+export async function showInterstitialThenContinue(proceed, { requirePriorShow = false } = {}) {
   let settled = false;
   const done = () => {
     if (settled) return;
@@ -145,8 +143,10 @@ export async function showInterstitialThenContinue(proceed) {
   const watchdog = setTimeout(done, INTERSTITIAL_WATCHDOG_MS);
 
   try {
-    const offCooldown = Date.now() - lastInterstitialShownAt >= INTERSTITIAL_COOLDOWN_MS;
-    const eligible = offCooldown && interstitialLoaded && interstitial && (await canShowAds());
+    const { lastInterstitialShownAt } = useCoinsStore.getState();
+    const offCooldown = Date.now() - (lastInterstitialShownAt || 0) >= INTERSTITIAL_COOLDOWN_MS;
+    const hasRequiredPriorShow = !requirePriorShow || !!lastInterstitialShownAt;
+    const eligible = hasRequiredPriorShow && offCooldown && interstitialLoaded && interstitial && (await canShowAds());
 
     if (!eligible) {
       clearTimeout(watchdog);
@@ -160,7 +160,7 @@ export async function showInterstitialThenContinue(proceed) {
       unsubClosed();
       unsubError();
       clearTimeout(watchdog);
-      lastInterstitialShownAt = Date.now();
+      useCoinsStore.getState().setLastInterstitialShownAt(Date.now());
       interstitialLoaded = false;
       done();
       preloadInterstitialAd();

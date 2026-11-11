@@ -24,7 +24,7 @@ export function EmptyState({ icon, title, description, actionLabel, onAction }) 
       {description ? (
         <Text style={[typography.body, { color: colors.ink.secondary, textAlign: 'center' }]}>{description}</Text>
       ) : null}
-      {actionLabel ? <Button title={actionLabel} onPress={onAction} style={{ paddingHorizontal: spacing.xl }} /> : null}
+      {actionLabel ? <Button title={actionLabel} onPress={onAction} /> : null}
     </View>
   );
 }

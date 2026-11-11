@@ -26,8 +26,10 @@ import { useQueryClient } from '@tanstack/react-query';
 import { entitlementRepository } from '../../db/repositories/entitlementRepository';
 import { useShops } from '../../hooks/useShops';
 import { suggestedPresetForShopType } from '../../theme/colors';
+import { useEntitlement } from '../../hooks/useEntitlement';
+import { hasSyncEntitlement, isAdSupportedEntitlement } from '../../utils/entitlements';
 
-function rows(t) {
+function rows(t, showEarnCoins, showSync) {
   return [
     { key: 'Profile', label: t('settings.profile'), description: t('settings.profileDesc'), icon: User },
     { key: 'StaffManagement', label: t('settings.staff.title'), description: t('settings.staff.subtitle'), icon: Users },
@@ -36,7 +38,7 @@ function rows(t) {
     { key: 'EarnCoins', label: t('settings.earnCoins'), description: t('settings.earnCoinsDesc'), icon: Coins },
     { key: 'HelpSupport', label: t('settings.helpSupport'), description: t('settings.helpSupportDesc'), icon: HelpCircle },
     { key: 'About', label: t('settings.about'), description: t('settings.aboutDesc'), icon: Info },
-  ];
+  ].filter((row) => (showEarnCoins || row.key !== 'EarnCoins') && (showSync || row.key !== 'SyncStatus'));
 }
 
 const THEME_MODE_KEYS = [
@@ -66,6 +68,7 @@ export default function Settings() {
   const globalPreset = useThemeStore((s) => s.preset);
   const shopPresets = useThemeStore((s) => s.shopPresets);
   const { data: shops = [] } = useShops();
+  const { data: entitlement } = useEntitlement();
   const activeShop = shops.find((shop) => String(shop.id) === String(activeShopId));
   const selectedPreset = (themeScope && shopPresets?.[themeScope]) || (activeShop ? suggestedPresetForShopType(activeShop.shopTypeCode) : globalPreset) || 'emerald';
   const t = useT();
@@ -125,7 +128,7 @@ export default function Settings() {
 
         <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingTop: spacing.xs, gap: spacing.lg }}>
           <Card bordered={false} style={{ padding: spacing.xs }}>
-            {rows(t).map((row) => (
+            {rows(t, isAdSupportedEntitlement(entitlement), hasSyncEntitlement(entitlement)).map((row) => (
               <ListRow
                 key={row.key}
                 onPress={() => navigation.navigate(row.key)}

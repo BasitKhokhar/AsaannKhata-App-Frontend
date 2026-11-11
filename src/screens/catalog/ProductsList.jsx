@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { Search, Plus, Package } from 'lucide-react-native';
+import { Search, Plus, Package, ScanBarcode } from 'lucide-react-native';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { FlashList } from '@shopify/flash-list';
 import { BarcodeScanner } from '../../components/barcode/BarcodeScanner';
@@ -90,7 +90,11 @@ export default function ProductsList() {
         </View>
 
         <View style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.sm }}>
-          <Button title={t('barcode.scan')} variant="outline" onPress={() => setScanning(true)} />
+          <Button
+            title={t('barcode.scan')}
+            icon={<ScanBarcode size={19} color={colors.ink.inverse} strokeWidth={2} />}
+            onPress={() => setScanning(true)}
+          />
           {isError ? <Button title={t('barcode.retry')} variant="ghost" onPress={refetch} /> : null}
         </View>
         {!isLoading && visible.length === 0 ? (

@@ -177,7 +177,7 @@ export const en = {
   'dashboard.quickNewSale': 'New sale',
   'dashboard.quickAddItem': 'Add item',
   'dashboard.quickCustomers': 'Customer',
-  'nav.billing': 'Billing',
+  'nav.billing': 'POS / New Sale',
   'nav.records': 'Records',
   'nav.products': 'Products',
   'nav.stock': 'Stock',
@@ -241,7 +241,7 @@ export const en = {
   'settings.syncStatus': 'Sync Status',
   'settings.syncStatusDesc': 'Cloud sync & linked devices',
   'settings.earnCoins': 'Earn Coins',
-  'settings.earnCoinsDesc': 'Watch ads to earn coins & unlock sync',
+  'settings.earnCoinsDesc': 'Watch ads to earn coins for additional bills',
   'settings.helpSupport': 'Help & Support',
   'settings.helpSupportDesc': 'FAQs and contact',
   'settings.about': 'About, Terms & Privacy',
@@ -408,7 +408,7 @@ export const en = {
   // Billing / New Bill (key labels — dictionary coverage only, see the
   // engineering summary for wiring status)
   // ---------------------------------------------------------------------
-  'billing.newBill': 'New Bill',
+  'billing.newBill': 'POS · New Sale',
   'billing.paymentContinue': 'Continue to payment',
   'billing.catalogSubtitle': 'Browse products and build the cart',
   'billing.goToCheckout': 'Go to checkout',
@@ -463,6 +463,7 @@ export const en = {
   'billing.searchProducts': 'Search products',
   'billing.noProductsFound': 'No products found',
   'billing.addAtLeastOneProduct': 'Add at least one product to the cart.',
+  'billing.coinsRequired': 'Your free bills are used for today. Watch a rewarded ad to earn coins for another bill.',
 
   // ---------------------------------------------------------------------
   // Billing / Bill Detail
@@ -470,6 +471,7 @@ export const en = {
   'billing.billDetail.title': 'Bill #{id}',
   'billing.billDetail.print': 'Print',
   'billing.billDetail.share': 'Share',
+  'billing.billDetail.goToPos': 'Go to POS',
   'billing.billDetail.paid': 'PAID',
   'billing.billDetail.pendingDue': 'PENDING · {amount} DUE',
   'billing.billDetail.discount': 'Discount',
@@ -762,7 +764,7 @@ export const en = {
   'subscription.earnCoins.exhausted': "You've watched all the ads available for today — come back tomorrow.",
   'subscription.earnCoins.watchDescription': 'Watch a short ad to earn {coins} coins. {remaining} of {max} left today.',
   'subscription.earnCoins.watchAdButton': 'Watch ad to earn coins',
-  'subscription.earnCoins.cooldownWarning': 'Too many ads watched in a row — try again in a bit.',
+  'subscription.earnCoins.cooldownWarning': 'You can watch another ad in {time}.',
   'subscription.earnCoins.unlockSyncTitle': 'Unlock sync now',
   'subscription.earnCoins.coinsBadge': '{count} coins',
   'subscription.earnCoins.unlockDescription':
@@ -835,4 +837,22 @@ export const en = {
   'expenses.deleteMessage': 'This expense will be removed from reports.',
   'expenses.delete': 'Delete expense',
   'expenses.deleted': 'Expense deleted',
+  'dashboard.salesPeriod': 'Sales in period',
+  'dashboard.profitPeriod': 'Profit in period',
+  'dateFilter.filterPeriod': 'Filter period',
+  'dateFilter.selectDateRange': 'Select date range',
+  'dateFilter.startDate': 'Start date',
+  'dateFilter.endDate': 'End date',
+  'dateFilter.showReport': 'Show report',
+  'dateFilter.invalidRange': 'The start date must be before the end date.',
+  'dateFilter.today': 'Today',
+  'dateFilter.yesterday': 'Yesterday',
+  'dateFilter.thisWeek': 'This week',
+  'dateFilter.lastWeek': 'Last week',
+  'dateFilter.thisMonth': 'This month',
+  'dateFilter.lastMonth': 'Last month',
+  'dateFilter.thisYear': 'This year',
+  'dateFilter.lastYear': 'Last year',
+  'dateFilter.allTime': 'All time',
+  'dateFilter.customRange': 'Custom range',
 };

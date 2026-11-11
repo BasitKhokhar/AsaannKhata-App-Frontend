@@ -7,17 +7,16 @@ import { lineFor, assertCartStock } from '../../utils/cartLines';
 import { showToast } from '../../store/toastStore';
 import { BarcodeUnknown } from '../../components/barcode/BarcodeUnknown';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Image, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { Minus, PackageOpen, Plus, ReceiptText, Search, ShoppingCart } from 'lucide-react-native';
+import { Minus, Plus, ReceiptText, ScanBarcode, Search, ShoppingCart } from 'lucide-react-native';
 import { Header } from '../../components/ui/Header';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { Button } from '../../components/ui/Button';
 import { TextField } from '../../components/ui/TextField';
 import { Chip } from '../../components/ui/Chip';
-import { Sheet } from '../../components/ui/Sheet';
 import { SubscriptionBanner } from '../../components/ui/SubscriptionBanner';
 import { useTheme } from '../../theme';
 import { useProductPages } from '../../hooks/useProducts';
@@ -25,6 +24,9 @@ import { useCartStore } from '../../store/cartStore';
 import { formatCurrency } from '../../utils/money';
 import { formatStockLabel, isOutOfStock } from '../../utils/stock';
 import { useT, useIsUrdu } from '../../store/languageStore';
+import { useEntitlement } from '../../hooks/useEntitlement';
+import { useCoinsStore } from '../../store/coinsStore';
+import { isAdSupportedEntitlement } from '../../utils/entitlements';
 
 function availableUnits(product) {
   if (product.stockType === 'AREA') return Math.floor((product.stockAreaCm2 || 0) / Math.max(1, product.sheetAreaCm2 || 1));
@@ -35,6 +37,11 @@ function availableUnits(product) {
 
 export default function NewBill() {
   const navigation = useNavigation();
+  const { data: entitlement } = useEntitlement();
+  const adCoins = useCoinsStore((state) => state.adCoins);
+  const billsUsedToday = useCoinsStore((state) => state.billsUsedToday);
+  const freeDailyRecordLimit = useCoinsStore((state) => state.freeDailyRecordLimit);
+  const billCoinCost = useCoinsStore((state) => state.billCoinCost);
   const { colors, radii, typography, spacing, elevation } = useTheme();
   const t = useT();
   const isUrdu = useIsUrdu();
@@ -56,6 +63,10 @@ export default function NewBill() {
     useCartStore.getState().bindShop(shopId);
     setSelected(null); setUnknown(null); setScanning(false); setSearch(''); setError('');
   }, [shopId]);
+
+  useEffect(() => {
+    if (isAdSupportedEntitlement(entitlement)) useCoinsStore.getState().refresh().catch(() => {});
+  }, [entitlement]);
   const cartCounts = useMemo(() => {
     const result = new Map();
     for (const line of cart.lines) result.set(line.productId, (result.get(line.productId) || 0) + (Number(line.quantity) || 1));
@@ -105,6 +116,14 @@ export default function NewBill() {
       setError(t('billing.addAtLeastOneProduct'));
       return;
     }
+    const needsCoins = isAdSupportedEntitlement(entitlement)
+      && freeDailyRecordLimit > 0
+      && billsUsedToday >= freeDailyRecordLimit;
+    if (needsCoins && adCoins < (billCoinCost || 1)) {
+      showToast(t('billing.coinsRequired'), 'warning');
+      navigation.navigate('EarnCoins');
+      return;
+    }
     navigation.navigate('Payment');
   }
 
@@ -134,7 +153,7 @@ export default function NewBill() {
           </Pressable>
         </View>
         <View style={{ paddingHorizontal: spacing.lg, gap: spacing.sm, paddingBottom: spacing.sm }}>
-          <Button title={t('barcode.scan')} variant="outline" onPress={() => setScanning(true)} />
+          <Button title={t('barcode.scan')} icon={<ScanBarcode size={18} color={colors.ink.inverse} />} onPress={() => setScanning(true)} />
           {external ? <ScannerInput onScan={scan} /> : null}
           {isError ? <Button title={t('barcode.retry')} variant="ghost" onPress={refetch} /> : null}
         </View>
@@ -145,9 +164,15 @@ export default function NewBill() {
           renderItem={({ item: product }) => {
             const unavailable = isOutOfStock(product);
             const inCart = cartCounts.get(product.id) || 0;
+            const imageUri = product.imageLocalUri || product.imageRemoteUrl;
             return <Pressable accessibilityRole="button" onPress={() => openProduct(product)} disabled={unavailable}
-              style={{ flex: 1, margin: spacing.xs, minHeight: 132, borderRadius: radii.md, backgroundColor: colors.surface.raised, borderWidth: 1, borderColor: inCart ? colors.brand.primary : colors.surface.border, padding: spacing.sm, justifyContent: 'space-between', opacity: unavailable ? 0.5 : 1 }}>
-              <Text style={[typography.h3, { color: colors.brand.primary }]}>{inCart ? `${inCart} ×` : product.name.charAt(0)}</Text>
+              style={{ flex: 1, margin: spacing.xs, minHeight: 148, borderRadius: radii.md, backgroundColor: colors.surface.raised, borderWidth: 1, borderColor: inCart ? colors.brand.primary : colors.surface.border, padding: spacing.sm, justifyContent: 'space-between', opacity: unavailable ? 0.5 : 1 }}>
+              <View style={{ alignItems: 'center' }}>
+                <View style={{ width: 60, height: 60, borderRadius: radii.md, overflow: 'hidden', backgroundColor: colors.brand.accentLight, alignItems: 'center', justifyContent: 'center' }}>
+                  {imageUri ? <Image source={{ uri: imageUri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" /> : <Text style={[typography.h2, { color: colors.brand.primary }]}>{product.name.trim().charAt(0).toLocaleUpperCase()}</Text>}
+                </View>
+              </View>
+              {inCart ? <View style={{ position: 'absolute', top: spacing.xs, right: spacing.xs, minWidth: 24, height: 24, borderRadius: 12, paddingHorizontal: 6, backgroundColor: colors.brand.primary, alignItems: 'center', justifyContent: 'center' }}><Text style={[typography.caption, { color: colors.ink.onBrand }]}>{inCart}×</Text></View> : null}
               <Text numberOfLines={2} style={[typography.bodyMedium, { color: colors.ink.primary, textAlign: align }]}>{product.name}</Text>
               <Text style={[typography.caption, { color: colors.ink.secondary }]}>{formatCurrency(product.stockType === 'PACK' ? (product.packSalePrice ?? product.salePrice * (product.packSize || 1)) : product.salePrice)}</Text>
             </Pressable>;
@@ -157,27 +182,37 @@ export default function NewBill() {
           <Button title={`${t('billing.goToCheckout')} · ${cartCount}`} onPress={checkout} icon={<ShoppingCart size={18} color={colors.ink.onBrand} />} />
         </View>
       </SafeAreaView>
-      <Sheet visible={!!selected} onClose={() => setSelected(null)} title={selected?.name} footer={<Button title={t('billing.addToCart')} onPress={addToCart} />}>
-        {selected ? <>
-          <View style={{ alignItems: 'center', gap: spacing.sm }}>
-            <View style={{ width: 72, height: 72, borderRadius: radii.xl, backgroundColor: colors.brand.primary, alignItems: 'center', justifyContent: 'center' }}><Text style={[typography.h1, { color: colors.ink.onBrand }]}>{selected.name.trim().charAt(0).toLocaleUpperCase()}</Text></View>
-            <Text style={[typography.numericLarge, { color: colors.ink.primary }]}>{formatCurrency(selected.stockType === 'PACK' && saleUnit !== 'loose' ? (selected.packSalePrice ?? selected.salePrice * (selected.packSize || 1)) : selected.salePrice)}</Text>
-            <Text style={[typography.caption, { color: colors.ink.secondary }]}>{formatStockLabel(selected)}</Text>
-          </View>
-          {selected.stockType === 'PACK' ? <View style={{ flexDirection: direction, gap: spacing.sm }}>
-            <Chip label={t('barcode.defaultUnit')} selected={saleUnit !== 'loose'} onPress={() => { setSaleUnit('default'); setQuantity(1); }} />
-            <Chip label={t('barcode.loose')} selected={saleUnit === 'loose'} onPress={() => { setSaleUnit('loose'); setQuantity(1); }} />
+      <Modal visible={!!selected} transparent animationType="fade" onRequestClose={() => setSelected(null)}>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.lg }}>
+          <Pressable onPress={() => setSelected(null)} style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: colors.surface.overlay }} />
+          {selected ? <View style={[{ width: '100%', maxWidth: 440, maxHeight: '86%', borderRadius: radii.xl, backgroundColor: colors.surface.card, overflow: 'hidden' }, elevation.xl]}>
+            <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }} keyboardShouldPersistTaps="handled">
+              <View style={{ alignItems: 'center', gap: spacing.sm }}>
+                <View style={{ width: 88, height: 88, borderRadius: radii.xl, overflow: 'hidden', backgroundColor: colors.brand.accentLight, alignItems: 'center', justifyContent: 'center' }}>
+                  {selected.imageLocalUri || selected.imageRemoteUrl ? <Image source={{ uri: selected.imageLocalUri || selected.imageRemoteUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" /> : <Text style={[typography.h1, { color: colors.brand.primary }]}>{selected.name.trim().charAt(0).toLocaleUpperCase()}</Text>}
+                </View>
+                <Text style={[typography.h2, { color: colors.ink.primary, textAlign: 'center' }]}>{selected.name}</Text>
+                <Text style={[typography.h2, { color: colors.brand.primary }]}>{formatCurrency(selected.stockType === 'PACK' && saleUnit !== 'loose' ? (selected.packSalePrice ?? selected.salePrice * (selected.packSize || 1)) : selected.salePrice)}</Text>
+                <Text style={[typography.caption, { color: colors.ink.secondary }]}>{formatStockLabel(selected)}</Text>
+              </View>
+              {selected.stockType === 'PACK' ? <View style={{ flexDirection: direction, gap: spacing.sm }}>
+                <Chip label={t('barcode.defaultUnit')} selected={saleUnit !== 'loose'} onPress={() => { setSaleUnit('default'); setQuantity(1); }} />
+                <Chip label={t('barcode.loose')} selected={saleUnit === 'loose'} onPress={() => { setSaleUnit('loose'); setQuantity(1); }} />
+              </View> : null}
+              {selected.stockType === 'LENGTH' || selected.stockType === 'AREA' ? <TextField label={t(selected.stockType === 'LENGTH' ? 'billing.meters' : 'billing.quantity')} value={String(quantity)} keyboardType="decimal-pad" onChangeText={(value) => setQuantity(value)} /> : null}
+              <View style={{ flexDirection: direction, alignItems: 'center', justifyContent: 'center', gap: spacing.lg }}>
+                <QuantityButton icon={Minus} onPress={() => setQuantity((value) => Math.max(1, value - 1))} colors={colors} radii={radii} />
+                <View style={{ minWidth: 72, alignItems: 'center' }}><Text style={[typography.h1, { color: colors.ink.primary }]}>{quantity}</Text><Text style={[typography.caption, { color: colors.ink.secondary }]}>{selected.stockType === 'LENGTH' ? t('billing.meters') : saleUnit === 'loose' ? t('barcode.loose') : t('billing.quantity')}</Text></View>
+                <QuantityButton icon={Plus} onPress={() => setQuantity((value) => Math.max(value, Math.min(saleUnit === 'loose' ? selected.stockLooseUnits : availableUnits(selected), Number(value) + 1)))} colors={colors} radii={radii} />
+              </View>
+              <View style={{ flexDirection: direction, justifyContent: 'space-between' }}><Text style={[typography.body, { color: colors.ink.secondary }]}>{t('billing.lineTotal')}</Text><Text style={[typography.h3, { color: colors.ink.primary }]}>{formatCurrency(Number(quantity) > 0 ? lineFor(selected, quantity, saleUnit).total : 0)}</Text></View>
+              {error ? <Text style={[typography.caption, { color: colors.semantic.danger, textAlign: align }]}>{error}</Text> : null}
+              <Button title={t('billing.addToCart')} onPress={addToCart} />
+              <Button title={t('common.cancel')} variant="ghost" compact onPress={() => setSelected(null)} />
+            </ScrollView>
           </View> : null}
-          {selected.stockType === 'LENGTH' || selected.stockType === 'AREA' ? <TextField label={t(selected.stockType === 'LENGTH' ? 'billing.meters' : 'billing.quantity')} value={String(quantity)} keyboardType="decimal-pad" onChangeText={(value) => setQuantity(value)} /> : null}
-          <View style={{ flexDirection: direction, alignItems: 'center', justifyContent: 'center', gap: spacing.lg }}>
-            <QuantityButton icon={Minus} onPress={() => setQuantity((value) => Math.max(1, value - 1))} colors={colors} radii={radii} />
-            <View style={{ minWidth: 72, alignItems: 'center' }}><Text style={[typography.h1, { color: colors.ink.primary }]}>{quantity}</Text><Text style={[typography.caption, { color: colors.ink.secondary }]}>{selected.stockType === 'LENGTH' ? t('billing.meters') : saleUnit === 'loose' ? t('barcode.loose') : t('billing.quantity')}</Text></View>
-            <QuantityButton icon={Plus} onPress={() => setQuantity((value) => Math.max(value, Math.min(saleUnit === 'loose' ? selected.stockLooseUnits : availableUnits(selected), Number(value) + 1)))} colors={colors} radii={radii} />
-          </View>
-          <View style={{ flexDirection: direction, justifyContent: 'space-between' }}><Text style={[typography.body, { color: colors.ink.secondary }]}>{t('billing.lineTotal')}</Text><Text style={[typography.h3, { color: colors.ink.primary }]}>{formatCurrency(Number(quantity) > 0 ? lineFor(selected, quantity, saleUnit).total : 0)}</Text></View>
-          {error ? <Text style={[typography.caption, { color: colors.semantic.danger, textAlign: align }]}>{error}</Text> : null}
-        </> : null}
-      </Sheet>
+        </View>
+      </Modal>
       <BarcodeScanner visible={scanning} onClose={() => setScanning(false)} onScan={scan} />
       <BarcodeUnknown code={unknown} onClose={() => setUnknown(null)} onLinked={scan} />
     </AnimatedScreen>

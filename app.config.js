@@ -57,6 +57,7 @@ module.exports = ({ config }) => ({
     },
     plugins: [
       "expo-asset",
+      "@react-native-community/datetimepicker",
       "./modules/expo-usb-printer/app.plugin.js",
       ["expo-sqlite", { enableFTS: true }],
       ["expo-camera", { cameraPermission: "Allow AsaanKhata to scan product barcodes.", recordAudioAndroid: false, barcodeScannerEnabled: true }],

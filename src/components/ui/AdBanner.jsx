@@ -5,6 +5,7 @@ import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
 import { useTheme } from '../../theme';
 import { useEntitlement } from '../../hooks/useEntitlement';
 import { getAdUnitId } from '../../services/adsService';
+import { isAdSupportedEntitlement } from '../../utils/entitlements';
 
 // Adaptive banner, auto-hidden when offline or on a paid/cloud plan. Mount
 // this only on screens that are safe to interrupt (e.g. Dashboard) — never
@@ -22,8 +23,7 @@ export function AdBanner({ style }) {
     return unsubscribe;
   }, []);
 
-  const isPaidPlan = !!entitlement?.cloudEnabled;
-  if (isPaidPlan || !online || failed) return null;
+  if (!isAdSupportedEntitlement(entitlement) || !online || failed) return null;
 
   const unitId = getAdUnitId('banner');
   if (!unitId) return null;

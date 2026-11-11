@@ -2,35 +2,27 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { Coins, PlayCircle, Cloud, Clock } from 'lucide-react-native';
+import { Coins, PlayCircle, Clock } from 'lucide-react-native';
 import { Header } from '../../components/ui/Header';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { Badge } from '../../components/ui/Badge';
 import { SectionHeader } from '../../components/ui/SectionHeader';
 import { useTheme } from '../../theme';
 import { useCoinsStore } from '../../store/coinsStore';
-import { useShopStore } from '../../store/shopStore';
 import { adsService, rewardedAdAvailability } from '../../services/adsService';
-import { adsApi } from '../../services/adsApi';
 import { showToast } from '../../store/toastStore';
 import { useT, useIsUrdu } from '../../store/languageStore';
-import { runSync } from '../../sync/syncEngine';
-import { countPendingSyncRows } from '../../sync/pending';
 
 export default function EarnCoins() {
   const { colors, radii, typography, spacing } = useTheme();
-  const activeShopId = useShopStore((s) => s.activeShopId);
   const adCoins = useCoinsStore((s) => s.adCoins);
   const adsRemainingToday = useCoinsStore((s) => s.adsRemainingToday);
   const maxRewardAdsPerDay = useCoinsStore((s) => s.maxRewardAdsPerDay);
   const rewardAdCoinValue = useCoinsStore((s) => s.rewardAdCoinValue);
-  const syncCoinCost = useCoinsStore((s) => s.syncCoinCost);
-  const cloudEnabled = useCoinsStore((s) => s.cloudEnabled);
+  const rewardedCooldownUntil = useCoinsStore((s) => s.rewardedCooldownUntil);
   const [watching, setWatching] = useState(false);
-  const [unlocking, setUnlocking] = useState(false);
-  const [pendingRows, setPendingRows] = useState(0);
+  const [now, setNow] = useState(Date.now());
   const t = useT();
   const isUrdu = useIsUrdu();
   const rowDirection = isUrdu ? 'row-reverse' : 'row';
@@ -38,12 +30,22 @@ export default function EarnCoins() {
 
   const refresh = useCallback(() => {
     useCoinsStore.getState().refresh().catch(() => {});
-    setPendingRows(countPendingSyncRows(activeShopId));
-  }, [activeShopId]);
+  }, []);
 
   useEffect(() => {
     adsService.preloadRewardedAd();
   }, []);
+
+  useEffect(() => {
+    if (!rewardedCooldownUntil || rewardedCooldownUntil <= Date.now()) return undefined;
+    setNow(Date.now());
+    const timer = setInterval(() => {
+      const next = Date.now();
+      setNow(next);
+      if (next >= rewardedCooldownUntil) clearInterval(timer);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [rewardedCooldownUntil]);
 
   useFocusEffect(
     useCallback(() => {
@@ -53,6 +55,8 @@ export default function EarnCoins() {
 
   const { available: canWatchAd, reason: blockedReason } = rewardedAdAvailability();
   const adsExhausted = adsRemainingToday <= 0;
+  const cooldownSeconds = Math.max(0, Math.ceil(((rewardedCooldownUntil || 0) - now) / 1000));
+  const cooldownTime = `${String(Math.floor(cooldownSeconds / 60)).padStart(2, '0')}:${String(cooldownSeconds % 60).padStart(2, '0')}`;
 
   async function handleWatchAd() {
     setWatching(true);
@@ -76,27 +80,6 @@ export default function EarnCoins() {
       refresh();
     }
   }
-
-  async function handleUnlockSync() {
-    setUnlocking(true);
-    try {
-      const result = await adsApi.unlockSync();
-      useCoinsStore.getState().applyUnlockResult(result);
-      showToast(t('subscription.earnCoins.toastSyncUnlocked'), 'success');
-      refresh();
-      await runSync();
-    } catch (err) {
-      if (err?.response?.status === 402) {
-        showToast(t('subscription.earnCoins.toastNotEnoughCoins'), 'warning');
-      } else {
-        showToast(t('subscription.earnCoins.toastUnlockFail'), 'danger');
-      }
-    } finally {
-      setUnlocking(false);
-    }
-  }
-
-  const showUnlockSync = !cloudEnabled && pendingRows > 0;
 
   return (
     <AnimatedScreen>
@@ -143,31 +126,11 @@ export default function EarnCoins() {
               <View style={{ flexDirection: rowDirection, alignItems: 'center', gap: 6, marginTop: spacing.sm }}>
                 <Clock size={13} color={colors.semantic.warning} strokeWidth={1.8} />
                 <Text style={[typography.caption, { color: colors.semantic.warning }]}>
-                  {t('subscription.earnCoins.cooldownWarning')}
+                  {t('subscription.earnCoins.cooldownWarning').replace('{time}', cooldownTime)}
                 </Text>
               </View>
             ) : null}
           </Card>
-
-          {showUnlockSync ? (
-            <Card>
-              <View style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm }}>
-                <SectionHeader title={t('subscription.earnCoins.unlockSyncTitle')} style={{ marginBottom: 0, flex: 1 }} />
-                <Badge label={t('subscription.earnCoins.coinsBadge').replace('{count}', syncCoinCost)} tone="brand" />
-              </View>
-              <Text style={[typography.caption, { color: colors.ink.secondary, marginBottom: spacing.md, textAlign }]}>
-                {t('subscription.earnCoins.unlockDescription').replace('{count}', pendingRows)}
-              </Text>
-              <Button
-                title={t('subscription.earnCoins.unlockSyncTitle')}
-                variant="outline"
-                icon={<Cloud size={16} color={colors.brand.primary} strokeWidth={1.8} />}
-                loading={unlocking}
-                disabled={unlocking || adCoins < syncCoinCost}
-                onPress={handleUnlockSync}
-              />
-            </Card>
-          ) : null}
         </ScrollView>
       </SafeAreaView>
     </AnimatedScreen>

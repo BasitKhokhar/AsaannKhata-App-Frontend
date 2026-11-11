@@ -3,6 +3,7 @@ import React, { useRef, useState } from 'react';
 import { Modal, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
+import { Eye, Printer, Share2 } from 'lucide-react-native';
 import { Button } from './Button';
 import { useTheme } from '../../theme';
 import { useT } from '../../store/languageStore';
@@ -30,9 +31,9 @@ export function ReceiptActions({ bill, config }) {
   return <View style={{ gap: spacing.sm }}>
     {bill.payments?.length ? <Button title={t(statement ? 'receipt.statement' : 'receipt.original')} variant="ghost" onPress={() => setStatement(!statement)} /> : null}
     <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-      <Button title={t('receipt.preview')} variant="outline" disabled={busy} onPress={() => act('preview')} style={{ flex: 1 }} />
-      <Button title={t('billing.billDetail.print')} variant="outline" disabled={busy} onPress={() => act('print')} style={{ flex: 1 }} />
-      <Button title={t('billing.billDetail.share')} disabled={busy} onPress={() => act('share')} style={{ flex: 1 }} />
+      <Button title={t('receipt.preview')} variant="outline" compact icon={<Eye size={15} color={colors.brand.primary} />} disabled={busy} onPress={() => act('preview')} style={{ flex: 1, minWidth: 0 }} />
+      <Button title={t('billing.billDetail.print')} variant="outline" compact icon={<Printer size={15} color={colors.brand.primary} />} disabled={busy} onPress={() => act('print')} style={{ flex: 1, minWidth: 0 }} />
+      <Button title={t('billing.billDetail.share')} compact icon={<Share2 size={15} color={colors.ink.inverse} />} disabled={busy} onPress={() => act('share')} style={{ flex: 1, minWidth: 0 }} />
     </View>
     <Modal visible={preview !== null} onRequestClose={() => setPreview(null)} animationType="slide">
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface.bg }}>
