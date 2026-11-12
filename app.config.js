@@ -74,12 +74,12 @@ module.exports = ({ config }) => ({
           // Match the first frame of the branded in-app Splash screen so the
           // native-to-React transition does not flash a different color.
           backgroundColor: "#064B42",
-          image: "./assets/splash-icon.png",
+          image: "./assets/icon.png",
           imageWidth: 280,
           resizeMode: "contain",
           dark: {
             backgroundColor: "#064B42",
-            image: "./assets/splash-icon.png",
+            image: "./assets/icon.png",
           },
         },
       ],
