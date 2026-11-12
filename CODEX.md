@@ -227,9 +227,10 @@ Most core domain reads/writes use repositories. Notable online/server paths incl
 
 `app.config.js` is environment-driven and configures:
 
-- Expo project slug `asaankhataapp`, matching the EAS project referenced by `EXPO_ID`
+- Expo project slug `asaandukaan`, matching the EAS project referenced by `EXPO_ID`
 - Android/iOS identity `com.asaandukaan.app`
-- portrait orientation, automatic system UI style, icons/splash, and Android keyboard resize mode
+- portrait orientation, automatic system UI style, icons, and Android keyboard resize mode
+- a branded native splash using the transparent AsaanDukaan monogram/wordmark asset on the Emerald deep background (`#064B42`), with the same image/background in dark mode and a short native fade into React
 - SQLite, SecureStore, fonts, image picker, sharing/file system
 - Firebase app, Sentry, Google Mobile Ads
 - Android `allowBackup: false`

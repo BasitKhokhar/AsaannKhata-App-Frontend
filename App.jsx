@@ -33,6 +33,7 @@ import { Toast } from './src/components/ui/Toast';
 import { ConfirmDialog } from './src/components/ui/ConfirmDialog';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
+SplashScreen.setOptions({ duration: 450, fade: true });
 
 export default function App() {
   const [fontsLoaded] = useFonts({

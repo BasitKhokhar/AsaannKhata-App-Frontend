@@ -71,9 +71,16 @@ module.exports = ({ config }) => ({
       [
         "expo-splash-screen",
         {
-          backgroundColor: "#151E33",
+          // Match the first frame of the branded in-app Splash screen so the
+          // native-to-React transition does not flash a different color.
+          backgroundColor: "#064B42",
           image: "./assets/splash-icon.png",
-          imageWidth: 160,
+          imageWidth: 280,
+          resizeMode: "contain",
+          dark: {
+            backgroundColor: "#064B42",
+            image: "./assets/splash-icon.png",
+          },
         },
       ],
       [
