@@ -58,7 +58,7 @@ export const products = sqliteTable('products', {
   looseBarcode: text('loose_barcode'),
   imageLocalUri: text('image_local_uri'),
   imageRemoteUrl: text('image_remote_url'),
-  stockType: text('stock_type').notNull().default('QUANTITY'), // QUANTITY | AREA | LENGTH | PACK
+  stockType: text('stock_type').notNull().default('QUANTITY'), // QUANTITY | AREA | LENGTH | PACK | LIQUID
 
   stockQuantity: real('stock_quantity').notNull().default(0),
 
@@ -68,6 +68,9 @@ export const products = sqliteTable('products', {
   sheetAreaCm2: real('sheet_area_cm2'),
 
   stockLengthCm: real('stock_length_cm').notNull().default(0),
+
+  // Liquid stock is normalized to millilitres. Prices are stored per mL.
+  stockVolumeMl: real('stock_volume_ml').notNull().default(0),
 
   packSize: integer('pack_size'),
   stockPacks: real('stock_packs').notNull().default(0),
@@ -177,6 +180,7 @@ export const billItems = sqliteTable('bill_items', {
   unitArea: real('unit_area'),
   totalArea: real('total_area'),
   lengthCm: real('length_cm'),
+  volumeMl: real('volume_ml'),
   pricePerUnit: real('price_per_unit').notNull(),
   total: real('total').notNull(),
   createdAt: text('created_at').notNull(),

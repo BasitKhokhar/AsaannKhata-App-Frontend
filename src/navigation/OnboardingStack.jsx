@@ -9,8 +9,8 @@ import Onboarding4 from '../screens/onboarding/Onboarding4';
 const Stack = createNativeStackNavigator();
 
 // Shown once, before the very first login/register — Splash auto-advances
-// into the 4-slide carousel, which ends by handing off to AuthStack's Login
-// (see Onboarding4's "Get Started" action) after flipping hasSeenOnboarding.
+// into the 4-slide carousel, which ends by handing off to registration.
+// Returning signed-out users still enter AuthStack at Login.
 export function OnboardingStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>

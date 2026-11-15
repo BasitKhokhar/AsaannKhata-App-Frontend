@@ -5,7 +5,7 @@ import { View, Text, ScrollView, Pressable, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
-import { Camera, Pencil, Package, Ruler, Boxes, ScanLine, ChevronRight } from 'lucide-react-native';
+import { Camera, Pencil, Package, Ruler, Boxes, ScanLine, ChevronRight, Droplets } from 'lucide-react-native';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { Header } from '../../components/ui/Header';
 import { Chip } from '../../components/ui/Chip';
@@ -43,6 +43,7 @@ export default function AddProduct() {
     { key: 'AREA', label: t('catalog.addProduct.modeArea') },
     { key: 'LENGTH', label: t('catalog.addProduct.modeLength') },
     { key: 'PACK', label: t('catalog.addProduct.modePack') },
+    { key: 'LIQUID', label: t('catalog.addProduct.modeLiquid') },
   ];
 
   const [barcode, setBarcode] = useState(route.params?.barcode || '');
@@ -80,16 +81,19 @@ export default function AddProduct() {
     setSelectedImageUri(null);
     setCategoryId(existingProduct.categoryId || null);
     setStockType(existingProduct.stockType);
-    setPurchasePrice(String(existingProduct.purchasePrice ?? ''));
-    setSalePrice(String(existingProduct.salePrice ?? ''));
-    setLowStockThreshold(existingProduct.lowStockThreshold == null ? '' : String(existingProduct.lowStockThreshold));
-    setUnit('cm');
+    const displayFactor = existingProduct.stockType === 'LIQUID' ? 1000 : 1;
+    setPurchasePrice(String((existingProduct.purchasePrice ?? 0) * displayFactor));
+    setSalePrice(String((existingProduct.salePrice ?? 0) * displayFactor));
+    setLowStockThreshold(existingProduct.lowStockThreshold == null ? '' : String(existingProduct.lowStockThreshold / displayFactor));
+    setUnit(existingProduct.stockType === 'LIQUID' ? 'liter' : 'cm');
     setSheetWidth(existingProduct.sheetWidthCm == null ? '' : String(existingProduct.sheetWidthCm));
     setSheetHeight(existingProduct.sheetHeightCm == null ? '' : String(existingProduct.sheetHeightCm));
     setQuantity(existingProduct.stockType === 'AREA'
       ? String(existingProduct.sheetAreaCm2 ? (existingProduct.stockAreaCm2 || 0) / existingProduct.sheetAreaCm2 : 0)
       : existingProduct.stockType === 'LENGTH'
         ? String(existingProduct.stockLengthCm || 0)
+        : existingProduct.stockType === 'LIQUID'
+          ? String((existingProduct.stockVolumeMl || 0) / 1000)
         : String(existingProduct.stockQuantity || 0));
     setPackSize(existingProduct.packSize == null ? '' : String(existingProduct.packSize));
     setStockPacks(String(existingProduct.stockPacks || 0));
@@ -181,9 +185,9 @@ export default function AddProduct() {
             imageLocalUri,
             imageRemoteUrl,
             categoryId: categoryId || null,
-            purchasePrice: Number(purchasePrice),
-            salePrice: Number(salePrice),
-            lowStockThreshold: lowStockThreshold === '' ? null : Number(lowStockThreshold),
+            purchasePrice: Number(purchasePrice) / (stockType === 'LIQUID' ? 1000 : 1),
+            salePrice: Number(salePrice) / (stockType === 'LIQUID' ? 1000 : 1),
+            lowStockThreshold: lowStockThreshold === '' ? null : Number(lowStockThreshold) * (stockType === 'LIQUID' ? 1000 : 1),
             ...(stockType === 'PACK' ? {
               packPurchasePrice: packPurchasePrice === '' ? null : Number(packPurchasePrice),
               packSalePrice: packSalePrice === '' ? null : Number(packSalePrice),
@@ -244,11 +248,12 @@ export default function AddProduct() {
               { key: 'PACK', icon: Boxes, detail: 'catalog.addProduct.modePackDetail' },
               { key: 'LENGTH', icon: Ruler, detail: 'catalog.addProduct.modeLengthDetail' },
               { key: 'AREA', icon: ScanLine, detail: 'catalog.addProduct.modeAreaDetail' },
+              { key: 'LIQUID', icon: Droplets, detail: 'catalog.addProduct.modeLiquidDetail' },
             ].map((option) => {
               const Icon = option.icon;
               const selected = stockType === option.key;
               return (
-                <Pressable key={option.key} accessibilityRole="radio" accessibilityState={{ checked: selected, disabled: isEditing }} disabled={isEditing} onPress={() => setStockType(option.key)} style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.md, backgroundColor: colors.surface.raised, borderRadius: radii.md, borderWidth: selected ? 2 : 1, borderColor: selected ? colors.brand.primary : colors.surface.border, padding: spacing.md, opacity: isEditing && !selected ? 0.4 : 1 }}>
+                <Pressable key={option.key} accessibilityRole="radio" accessibilityState={{ checked: selected, disabled: isEditing }} disabled={isEditing} onPress={() => { setStockType(option.key); setUnit(option.key === 'LIQUID' ? 'liter' : option.key === 'AREA' ? 'feet' : option.key === 'LENGTH' ? 'meter' : 'cm'); }} style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.md, backgroundColor: colors.surface.raised, borderRadius: radii.md, borderWidth: selected ? 2 : 1, borderColor: selected ? colors.brand.primary : colors.surface.border, padding: spacing.md, opacity: isEditing && !selected ? 0.4 : 1 }}>
                   <View style={{ width: 42, height: 42, borderRadius: radii.md, backgroundColor: colors.brand.primary + '16', alignItems: 'center', justifyContent: 'center' }}><Icon size={21} color={colors.brand.primary} strokeWidth={1.8} /></View>
                   <View style={{ flex: 1 }}>
                     <Text style={[typography.bodyMedium, { color: colors.ink.primary, textAlign }]}>{MODES.find((mode) => mode.key === option.key)?.label}</Text>
@@ -341,14 +346,14 @@ export default function AddProduct() {
 
           <View>
             <Text style={[typography.label, { color: colors.ink.secondary, marginBottom: spacing.sm, textAlign }]}>{t('catalog.addProduct.stockMode')}</Text>
-            <View style={{ flexDirection: rowDirection, gap: spacing.xs }}>
+            <View style={{ flexDirection: rowDirection, flexWrap: 'wrap', gap: spacing.xs }}>
               {MODES.map((m) => (
                 <Chip
                   key={m.key}
                   label={m.label}
                   selected={m.key === stockType}
-                  onPress={() => { if (!isEditing) setStockType(m.key); }}
-                  style={{ flex: 1, alignItems: 'center' }}
+                  onPress={() => { if (!isEditing) { setStockType(m.key); setUnit(m.key === 'LIQUID' ? 'liter' : m.key === 'AREA' ? 'feet' : m.key === 'LENGTH' ? 'meter' : 'cm'); } }}
+                  style={{ alignItems: 'center' }}
                 />
               ))}
             </View>
@@ -395,9 +400,17 @@ export default function AddProduct() {
             <TextField label={t('catalog.addProduct.currentStock')} value={quantity} onChangeText={setQuantity} placeholder="e.g. 50" keyboardType="numeric" editable={!isEditing} style={{ textAlign }} />
           )}
 
+          {stockType === 'LIQUID' && (
+            <View style={{ backgroundColor: colors.brand.primary + '14', borderRadius: radii.md, padding: spacing.md, gap: spacing.sm }}>
+              <Text style={[typography.label, { color: colors.brand.primary, letterSpacing: 0.5, textAlign }]}>{t('catalog.addProduct.liquidFields')}</Text>
+              <TextField label={t('catalog.addProduct.liquidStock')} value={quantity} onChangeText={setQuantity} placeholder="e.g. 250" keyboardType="decimal-pad" editable={!isEditing} style={{ textAlign }} />
+              <UnitPicker unit={unit} setUnit={setUnit} options={['liter', 'ml']} disabled={isEditing} />
+            </View>
+          )}
+
           <View style={{ flexDirection: rowDirection, gap: spacing.sm }}>
             <TextField
-              label={`${t('catalog.addProduct.purchasePrice')}${stockType === 'AREA' || stockType === 'LENGTH' ? ` (${t('catalog.addProduct.perUnit').replace('{unit}', unit)})` : ''}`}
+              label={`${t('catalog.addProduct.purchasePrice')}${stockType === 'AREA' || stockType === 'LENGTH' || stockType === 'LIQUID' ? ` (${t('catalog.addProduct.perUnit').replace('{unit}', unit)})` : ''}`}
               value={purchasePrice}
               onChangeText={setPurchasePrice}
               placeholder="Rs"
@@ -405,7 +418,7 @@ export default function AddProduct() {
               style={{ flex: 1 }}
             />
             <TextField
-              label={`${t('catalog.addProduct.salePrice')}${stockType === 'AREA' || stockType === 'LENGTH' ? ` (${t('catalog.addProduct.perUnit').replace('{unit}', unit)})` : ''}`}
+              label={`${t('catalog.addProduct.salePrice')}${stockType === 'AREA' || stockType === 'LENGTH' || stockType === 'LIQUID' ? ` (${t('catalog.addProduct.perUnit').replace('{unit}', unit)})` : ''}`}
               value={salePrice}
               onChangeText={setSalePrice}
               placeholder="Rs"
@@ -415,7 +428,7 @@ export default function AddProduct() {
           </View>
 
           <TextField
-            label={`${t('catalog.addProduct.lowStockThresholdOptional')}${stockType === 'AREA' ? ` (${unit}²)` : stockType === 'LENGTH' ? ` (${unit})` : ''}`}
+            label={`${t('catalog.addProduct.lowStockThresholdOptional')}${stockType === 'AREA' ? ` (${unit}²)` : stockType === 'LENGTH' || stockType === 'LIQUID' ? ` (${unit})` : ''}`}
             value={lowStockThreshold}
             onChangeText={setLowStockThreshold}
             placeholder="e.g. 10"

@@ -16,6 +16,7 @@ function quantityLabel(item, t) {
   if (item.stockType === 'LENGTH') return `${Number(((item.lengthCm || 0) / 100).toFixed(3))} ${t('billing.meters')}`;
   if (item.stockType === 'AREA') return `${Number((item.totalArea || 0).toFixed(2))} cm²`;
   if (item.stockType === 'PACK') return `${item.packQuantity || 0} ${t('receipt.packs')} + ${item.looseQuantity || 0} ${t('receipt.units')}`;
+  if (item.stockType === 'LIQUID') return item.unit === 'ml' ? `${item.quantity || 0} mL` : `${item.quantity || 0} L`;
   return `${item.quantity || 0} ${t('receipt.units')}`;
 }
 
@@ -34,8 +35,8 @@ export function buildReceiptHtml({ shopName, bill, config: input, statement = fa
   const row = (label, amount, className = '') => `<tr class="${className}"><td>${e(label)}</td><td class="amount">${money(amount)}</td></tr>`;
   const items = (bill.items || []).map((item) => {
     // Rate units must match the printed quantity, including centimeter pricing.
-    const rate = item.stockType === 'LENGTH' ? item.pricePerUnit * 100 : item.pricePerUnit;
-    const rateLabel = item.stockType === 'AREA' ? ' / cm²' : item.stockType === 'LENGTH' ? ` / ${t('billing.meters')}` : '';
+    const rate = item.stockType === 'LENGTH' ? item.pricePerUnit * 100 : item.stockType === 'LIQUID' && item.unit !== 'ml' ? item.pricePerUnit * 1000 : item.pricePerUnit;
+    const rateLabel = item.stockType === 'AREA' ? ' / cm²' : item.stockType === 'LENGTH' ? ` / ${t('billing.meters')}` : item.stockType === 'LIQUID' ? ` / ${item.unit === 'ml' ? 'mL' : 'L'}` : '';
     return `<tr><td><strong>${e(item.productName)}</strong><div class="muted">${e(quantityLabel(item, t))}${config.showRates ? ` · ${money(rate)}${e(rateLabel)}` : ''}</div></td><td class="amount">${money(item.total)}</td></tr>`;
   }).join('');
   const width = config.paper === 'A4' ? '190mm' : `${Number(config.paper) - 6}mm`;

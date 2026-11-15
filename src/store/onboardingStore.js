@@ -6,11 +6,17 @@ export const useOnboardingStore = create(
   persist(
     (set) => ({
       hasSeenOnboarding: false,
-      completeOnboarding: () => set({ hasSeenOnboarding: true }),
+      authEntryRoute: null,
+      completeOnboarding: () =>
+        set({ hasSeenOnboarding: true, authEntryRoute: 'RegisterStep1' }),
+      consumeAuthEntryRoute: () => set({ authEntryRoute: null }),
     }),
     {
       name: 'asaankhata-onboarding',
       storage: createJSONStorage(() => AsyncStorage),
+      // The registration handoff is intentionally session-only. Once a new
+      // user has reached auth, later app launches should open Login.
+      partialize: (state) => ({ hasSeenOnboarding: state.hasSeenOnboarding }),
     }
   )
 );

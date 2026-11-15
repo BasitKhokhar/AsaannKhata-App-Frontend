@@ -31,3 +31,11 @@ export function getAreaConversionFactor(unit) {
 export function getLengthConversionFactor(unit) {
   return convertToCm(1, unit);
 }
+
+export function convertToMl(value, unit) {
+  return unit === 'liter' || unit === 'litre' ? value * 1000 : value;
+}
+
+export function getVolumeConversionFactor(unit) {
+  return unit === 'liter' || unit === 'litre' ? 1000 : 1;
+}

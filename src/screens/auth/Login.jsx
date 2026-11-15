@@ -78,12 +78,17 @@ export default function Login() {
 
             <View style={{ flex: 1, minHeight: spacing.xxl }} />
 
-            <Pressable onPress={() => navigation.navigate('RegisterStep1')} style={{ alignSelf: 'center' }}>
-              <Text style={[typography.caption, { color: colors.ink.secondary }]}>
-                {t('auth.login.newToApp')}{' '}
-                <Text style={{ color: colors.brand.accentDark, fontFamily: typography.bodyMedium.fontFamily }}>{t('auth.login.register')}</Text>
+            <View style={{ alignItems: 'center', gap: spacing.sm }}>
+              <Text style={[typography.bodyMedium, { color: colors.ink.secondary, textAlign: 'center' }]}>
+                {t('auth.login.newToApp')}
               </Text>
-            </Pressable>
+              <Button
+                title={t('auth.register.createAccount')}
+                variant="outline"
+                onPress={() => navigation.navigate('RegisterStep1')}
+                style={{ alignSelf: 'stretch' }}
+              />
+            </View>
           </KeyboardAwareScrollView>
         </KeyboardAwareView>
       </SafeAreaView>

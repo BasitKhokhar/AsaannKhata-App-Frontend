@@ -23,6 +23,10 @@ import { useDbMigrations } from './src/db/migrator';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { useAuthStore } from './src/store/authStore';
 import { useCoinsStore } from './src/store/coinsStore';
+import { useLanguageStore } from './src/store/languageStore';
+import { useOnboardingStore } from './src/store/onboardingStore';
+import { useShopStore } from './src/store/shopStore';
+import { useThemeStore } from './src/store/themeStore';
 import * as secureSession from './src/services/secureSession';
 import { useSyncTriggers } from './src/sync/triggers';
 import { initAds } from './src/services/adsService';
@@ -55,21 +59,39 @@ export default function App() {
   const [sessionChecked, setSessionChecked] = useState(false);
 
   useEffect(() => {
-    secureSession
-      .loadSession()
-      .then(async (session) => {
-        if (session) {
-          await useCoinsStore.persist.rehydrate();
-          useCoinsStore.getState().setOwner(session.adminId);
-          setSession(session);
-          // Billing/network availability must not block offline startup.
-          loginRevenueCat(session.adminId).catch(() => {});
-        }
-      })
-      .finally(() => {
+    let mounted = true;
+
+    async function restoreStartupState() {
+      // Zustand's AsyncStorage persistence hydrates asynchronously. Make every
+      // preference that affects the first frame explicit startup work so the
+      // native splash stays visible until the selected shop palette, mode,
+      // language and onboarding state are already available to React.
+      const sessionPromise = secureSession.loadSession().catch(() => null);
+      await Promise.all([
+        useThemeStore.persist.rehydrate(),
+        useShopStore.persist.rehydrate(),
+        useLanguageStore.persist.rehydrate(),
+        useOnboardingStore.persist.rehydrate(),
+      ].map((promise) => promise.catch(() => undefined)));
+
+      const session = await sessionPromise;
+      if (!session) return;
+      await useCoinsStore.persist.rehydrate().catch(() => undefined);
+      if (!mounted) return;
+      useCoinsStore.getState().setOwner(session.adminId);
+      setSession(session);
+      // Billing/network availability must not block offline startup.
+      loginRevenueCat(session.adminId).catch(() => {});
+    }
+
+    restoreStartupState().finally(() => {
+      if (mounted) {
         setHydrated(true);
         setSessionChecked(true);
-      });
+      }
+    });
+
+    return () => { mounted = false; };
   }, []);
 
   const ready = fontsLoaded && migrationsReady && sessionChecked && isHydrated;

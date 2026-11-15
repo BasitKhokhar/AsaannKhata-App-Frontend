@@ -114,6 +114,7 @@ async function pushPendingProducts(shopId, deviceId) {
       sheetHeightCm: row.sheetHeightCm,
       sheetAreaCm2: row.sheetAreaCm2,
       stockLengthCm: row.stockLengthCm,
+      stockVolumeMl: row.stockVolumeMl,
       packSize: row.packSize,
       stockPacks: row.stockPacks,
       stockLooseUnits: row.stockLooseUnits,

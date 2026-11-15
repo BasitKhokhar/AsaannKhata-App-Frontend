@@ -15,6 +15,7 @@ import { paymentTime } from '../../db/repositories/billSettlementRepository';
 import { formatCurrency } from '../../utils/money';
 import { paymentMethodLabelKey } from '../../utils/paymentMethod';
 import { useT, useIsUrdu } from '../../store/languageStore';
+import { formatBillItemQuantity } from '../../utils/billItems';
 
 export default function RecordDetail() {
   const navigation = useNavigation();
@@ -65,7 +66,7 @@ export default function RecordDetail() {
                 <View key={item.id} style={{ flexDirection: direction, alignItems: 'center', gap: spacing.sm, padding: spacing.md, borderTopWidth: index ? 1 : 0, borderTopColor: colors.surface.border }}>
                   <View style={{ flex: 1 }}>
                     <Text style={[typography.bodyMedium, { color: colors.ink.primary, textAlign: align }]}>{item.productName}</Text>
-                    <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: align }]}>{item.quantity ?? item.totalArea ?? item.lengthCm ?? item.packQuantity ?? 0}</Text>
+                    <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: align }]}>{formatBillItemQuantity(item, t)}</Text>
                   </View>
                   <Text style={[typography.bodyMedium, { color: colors.ink.primary }]}>{formatCurrency(item.total)}</Text>
                 </View>

@@ -15,6 +15,8 @@ export function formatStockLabel(product) {
       return t('stock.lengthInStock').replace('{count}', round((product.stockLengthCm || 0) / 100));
     case 'PACK':
       return t('stock.packInStock').replace('{count}', round(product.stockPacks || 0)).replace('{loose}', round(product.stockLooseUnits || 0));
+    case 'LIQUID':
+      return t('stock.liquidInStock').replace('{count}', round((product.stockVolumeMl || 0) / 1000));
     default:
       return t('stock.unitsLeft').replace('{count}', round(product.stockQuantity || 0));
   }
@@ -38,6 +40,8 @@ function primaryStockValue(product) {
       return product.stockLengthCm || 0;
     case 'PACK':
       return (product.stockPacks || 0) + (product.stockLooseUnits || 0);
+    case 'LIQUID':
+      return product.stockVolumeMl || 0;
     default:
       return product.stockQuantity || 0;
   }

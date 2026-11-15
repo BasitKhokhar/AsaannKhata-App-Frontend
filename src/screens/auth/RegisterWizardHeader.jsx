@@ -15,10 +15,18 @@ export function RegisterWizardHeader({ step }) {
   const isUrdu = useIsUrdu();
   const rowDirection = isUrdu ? 'row-reverse' : 'row';
 
+  function handleBack() {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate('Login');
+    }
+  }
+
   return (
     <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.sm }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-        <IconButton icon={ArrowLeft} accessibilityLabel={t('common.back')} onPress={() => navigation.goBack()} style={{ marginLeft: -spacing.sm }} />
+        <IconButton icon={ArrowLeft} accessibilityLabel={t('common.back')} onPress={handleBack} style={{ marginLeft: -spacing.sm }} />
         <Text style={[typography.h3, { color: colors.ink.primary }]}>{t('auth.register.createAccount')}</Text>
       </View>
 

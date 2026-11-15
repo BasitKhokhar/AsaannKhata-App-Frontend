@@ -15,6 +15,7 @@ import { formatCurrency } from '../../utils/money';
 import { ReceiptActions } from '../../components/ui/ReceiptActions';
 import { paymentMethodLabelKey } from '../../utils/paymentMethod';
 import { useT, useIsUrdu } from '../../store/languageStore';
+import { formatBillItemQuantity } from '../../utils/billItems';
 import { adsService } from '../../services/adsService';
 
 export default function BillDetail() {
@@ -76,7 +77,7 @@ export default function BillDetail() {
               {(bill.items || []).map((item) => (
                 <View key={item.id} style={{ flexDirection: rowDirection, justifyContent: 'space-between' }}>
                   <Text style={[typography.caption, { flex: 1, color: colors.ink.primary }]}>
-                    {item.productName} × {item.quantity ?? item.totalArea ?? item.lengthCm ?? item.packQuantity ?? ''}
+                    {item.productName} · {formatBillItemQuantity(item, t)}
                   </Text>
                   <Text style={[typography.caption, { color: colors.ink.primary }]}>{formatCurrency(item.total)}</Text>
                 </View>

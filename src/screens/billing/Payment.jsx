@@ -33,6 +33,14 @@ function lineQuantity(line) {
   return line.quantity || 1;
 }
 
+function lineDetail(line, t) {
+  if (line.stockType === 'AREA') return `${line.width} × ${line.height} ${line.unit} · ${line.quantity} ${t('billing.pieces')}`;
+  if (line.stockType === 'LENGTH') return `${line.quantity} ${t('billing.meters')}`;
+  if (line.stockType === 'LIQUID') return `${line.quantity} ${line.unit === 'ml' ? t('billing.milliliterShort') : t('billing.literShort')}`;
+  if (line.stockType === 'PACK') return `${lineQuantity(line)} ${line.unit === 'loose' ? t('barcode.loose') : t('receipt.packs')}`;
+  return `${line.quantity} ${t('receipt.units')}`;
+}
+
 function recalculate(line, quantity) {
   if (line.stockType === 'AREA') {
     const totalArea = (line.unitArea || 0) * quantity;
@@ -43,6 +51,10 @@ function recalculate(line, quantity) {
     return { quantity, lengthCm, total: round2(lengthCm * line.pricePerUnit) };
   }
   if (line.stockType === 'PACK') return { quantity, packQuantity: line.unit === 'loose' ? 0 : quantity, looseQuantity: line.unit === 'loose' ? quantity : 0, total: round2(quantity * line.pricePerUnit) };
+  if (line.stockType === 'LIQUID') {
+    const volumeMl = line.unit === 'liter' ? quantity * 1000 : quantity;
+    return { quantity, volumeMl, total: round2(volumeMl * line.pricePerUnit) };
+  }
   return { quantity, total: round2(quantity * line.pricePerUnit) };
 }
 
@@ -179,7 +191,7 @@ export default function Payment() {
           <Card style={{ padding: 0, overflow: 'hidden' }} level="none">
             {cart.lines.map((line, index) => (
               <View key={`${line.productId}-${index}`} style={{ flexDirection: direction, alignItems: 'center', gap: spacing.sm, padding: spacing.sm, borderBottomWidth: index === cart.lines.length - 1 ? 0 : 1, borderBottomColor: colors.surface.border }}>
-                <View style={{ flex: 1 }}><Text numberOfLines={1} style={[typography.bodyMedium, { color: colors.ink.primary, textAlign: align }]}>{line.productName}</Text><Text style={[typography.caption, { color: colors.ink.secondary, textAlign: align }]}>{formatCurrency(line.total)}</Text></View>
+                <View style={{ flex: 1 }}><Text numberOfLines={1} style={[typography.bodyMedium, { color: colors.ink.primary, textAlign: align }]}>{line.productName}</Text><Text style={[typography.caption, { color: colors.ink.secondary, textAlign: align }]}>{lineDetail(line, t)} · {formatCurrency(line.total)}</Text></View>
                 <View style={{ flexDirection: direction, alignItems: 'center', gap: spacing.xs }}>
                   <MiniStep icon={Minus} onPress={() => updateQuantity(index, line, -1)} colors={colors} radii={radii} />
                   <Text style={[typography.label, { minWidth: 24, textAlign: 'center', color: colors.ink.primary }]}>{lineQuantity(line)}</Text>

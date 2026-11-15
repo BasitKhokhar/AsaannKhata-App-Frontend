@@ -1,5 +1,7 @@
 require("dotenv").config();
 const withKotlinSkipMetadataVersionCheck = require("./plugins/withKotlinSkipMetadataVersionCheck");
+const withAndroidLargeScreenSupport = require("./plugins/withAndroidLargeScreenSupport");
+const withAndroidReleaseHardening = require("./plugins/withAndroidReleaseHardening");
 
 // Falls back to the Android emulator alias when EXPO_PUBLIC_API_BASE_URL
 // isn't set. Set the real value in the EAS "development"/"preview"/
@@ -22,7 +24,9 @@ module.exports = ({ config }) => ({
     name: "Asaan Dukaan",
     slug: "asaandukaan",
     version: "1.0.0",
-    orientation: "portrait",
+    // Do not lock orientation. Android 16 ignores orientation restrictions on
+    // large screens, so the app must remain resizable on tablets/foldables.
+    orientation: "default",
     icon: "./assets/icon.png",
     owner: "basit5000",
     userInterfaceStyle: "automatic",
@@ -42,6 +46,7 @@ module.exports = ({ config }) => ({
       // AsyncStorage, which could otherwise leak business data to a Google
       // Drive backup outside our control.
       allowBackup: false,
+      edgeToEdgeEnabled: true,
       // Camera and Bluetooth permissions are merged by their native modules.
       // USB permission is requested per attached device. BLE discovery requires location permission only on Android 11 and older.
       permissions: ["INTERNET", "POST_NOTIFICATIONS"],
@@ -56,6 +61,7 @@ module.exports = ({ config }) => ({
       favicon: "./assets/favicon.png",
     },
     plugins: [
+      withAndroidLargeScreenSupport,
       "expo-asset",
       "@react-native-community/datetimepicker",
       "./modules/expo-usb-printer/app.plugin.js",
@@ -98,7 +104,21 @@ module.exports = ({ config }) => ({
           androidAppId: process.env.GOOGLE_ADMOB_ANDROID_APP_ID,
         },
       ],
+      [
+        "expo-build-properties",
+        {
+          android: {
+            compileSdkVersion: 36,
+            targetSdkVersion: 36,
+            enableMinifyInReleaseBuilds: true,
+            enableShrinkResourcesInReleaseBuilds: true,
+          },
+        },
+      ],
       withKotlinSkipMetadataVersionCheck,
+      // Keep last so it cleans the final generated theme and switches release
+      // R8 from its compatibility rules to the optimizing ruleset.
+      withAndroidReleaseHardening,
     ],
     extra: {
       apiBaseUrl,

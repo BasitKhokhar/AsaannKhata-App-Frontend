@@ -79,6 +79,7 @@ function createBillWithItems({ shopId, customerId, customerName, customerPhone, 
         unitArea: item.unitArea ?? null,
         totalArea: item.totalArea ?? null,
         lengthCm: item.lengthCm ?? null,
+        volumeMl: item.volumeMl ?? null,
         pricePerUnit: item.pricePerUnit,
         total: item.total,
         createdAt: timestamp,
@@ -130,6 +131,10 @@ function stockPatchForSale(product, item) {
         stockLooseUnits: Math.max(0, (product.stockLooseUnits || 0) - (item.looseQuantity || 0)),
       };
     }
+    case 'LIQUID': {
+      if ((item.volumeMl || 0) > (product.stockVolumeMl || 0)) throw new Error(`Insufficient stock for ${product.name}`);
+      return { stockVolumeMl: Math.max(0, (product.stockVolumeMl || 0) - (item.volumeMl || 0)) };
+    }
     default: {
       if ((item.quantity || 0) > (product.stockQuantity || 0)) throw new Error(`Insufficient stock for ${product.name}`);
       return { stockQuantity: Math.max(0, (product.stockQuantity || 0) - (item.quantity || 0)) };
@@ -141,6 +146,7 @@ function quantityForLog(item) {
   if (item.stockType === 'AREA') return item.totalArea || 0;
   if (item.stockType === 'LENGTH') return item.lengthCm || 0;
   if (item.stockType === 'PACK') return item.packQuantity || 0;
+  if (item.stockType === 'LIQUID') return item.volumeMl || 0;
   return item.quantity || 0;
 }
 

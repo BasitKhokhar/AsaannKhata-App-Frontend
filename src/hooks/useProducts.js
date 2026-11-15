@@ -4,7 +4,7 @@ import { productRepository } from '../db/repositories/productRepository';
 import { stockRepository } from '../db/repositories/stockRepository';
 import { expoDb } from '../db/client';
 import { useShopStore } from '../store/shopStore';
-import { convertToCm, calculateAreaCm2, getAreaConversionFactor, getLengthConversionFactor } from '../utils/unitConverter';
+import { convertToCm, calculateAreaCm2, getAreaConversionFactor, getLengthConversionFactor, convertToMl, getVolumeConversionFactor } from '../utils/unitConverter';
 
 // Mirrors Backend/controllers/productsController.js's createProduct exactly —
 // raw human-entered values (sheetWidth/sheetHeight/quantity/unit) come in,
@@ -16,7 +16,8 @@ function normalizeProductFields(raw) {
   const salePrice = parseFloat(raw.salePrice) || 0;
   const threshold = raw.lowStockThreshold == null ? null : Number(raw.lowStockThreshold);
   const thresholdFactor = stockType === 'AREA' ? getAreaConversionFactor(raw.unit)
-    : stockType === 'LENGTH' ? getLengthConversionFactor(raw.unit) : 1;
+    : stockType === 'LENGTH' ? getLengthConversionFactor(raw.unit)
+      : stockType === 'LIQUID' ? getVolumeConversionFactor(raw.unit) : 1;
   const data = {
     name: raw.name.trim(),
     barcode: raw.barcode,
@@ -55,6 +56,13 @@ function normalizeProductFields(raw) {
     data.stockLooseUnits = parseFloat(raw.stockLooseUnits) || 0;
     data.packPurchasePrice = raw.packPurchasePrice ? parseFloat(raw.packPurchasePrice) : null;
     data.packSalePrice = raw.packSalePrice ? parseFloat(raw.packSalePrice) : null;
+  } else if (stockType === 'LIQUID') {
+    const volumeFactor = getVolumeConversionFactor(raw.unit);
+    data.stockVolumeMl = convertToMl(parseFloat(raw.quantity) || 0, raw.unit);
+    if (volumeFactor > 1) {
+      data.purchasePrice = purchasePrice / volumeFactor;
+      data.salePrice = salePrice / volumeFactor;
+    }
   } else {
     data.stockQuantity = parseFloat(raw.quantity) || 0;
   }
@@ -191,6 +199,8 @@ function initialStockQuantityFor(product) {
       return product.stockLengthCm || 0;
     case 'PACK':
       return (product.stockPacks || 0) * (product.packSize || 1) + (product.stockLooseUnits || 0);
+    case 'LIQUID':
+      return product.stockVolumeMl || 0;
     default:
       return product.stockQuantity || 0;
   }
@@ -204,6 +214,8 @@ function patchForStockType(product, signedQty) {
       return { stockLengthCm: Math.max(0, (product.stockLengthCm || 0) + signedQty) };
     case 'PACK':
       return { stockPacks: Math.max(0, (product.stockPacks || 0) + signedQty) };
+    case 'LIQUID':
+      return { stockVolumeMl: Math.max(0, (product.stockVolumeMl || 0) + signedQty) };
     default:
       return { stockQuantity: Math.max(0, (product.stockQuantity || 0) + signedQty) };
   }

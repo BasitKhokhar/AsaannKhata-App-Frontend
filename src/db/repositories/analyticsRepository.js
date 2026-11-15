@@ -42,7 +42,10 @@ function lineCost(item, { purchasePrice, packPurchasePrice, packSize }) {
     const packCost = packPurchasePrice ?? purchasePrice * (packSize || 1);
     return (item.packQuantity || 0) * packCost + (item.looseQuantity || 0) * purchasePrice;
   }
-  return purchasePrice * (item.quantity ?? item.totalArea ?? item.lengthCm ?? 0);
+  return purchasePrice * (item.stockType === 'AREA' ? item.totalArea || 0
+    : item.stockType === 'LENGTH' ? item.lengthCm || 0
+      : item.stockType === 'LIQUID' ? item.volumeMl || 0
+        : item.quantity || 0);
 }
 
 // Sales Report screen. The caller supplies the same explicit range used by
@@ -119,6 +122,8 @@ export function computeLocalDashboardStats(shopId, range) {
         return sum + p.stockAreaCm2 * p.salePrice;
       case 'LENGTH':
         return sum + p.stockLengthCm * p.salePrice;
+      case 'LIQUID':
+        return sum + p.stockVolumeMl * p.salePrice;
       default:
         return sum + p.stockQuantity * p.salePrice;
     }
@@ -141,7 +146,7 @@ export function computeLocalDashboardStats(shopId, range) {
   const lowStockAlerts = allProducts
     .filter(isLowStock)
     .slice(0, 5)
-    .map((p) => ({ id: p.id, name: p.name, stock: p.stockType === 'AREA' ? p.stockAreaCm2 : p.stockType === 'LENGTH' ? p.stockLengthCm : p.stockType === 'PACK' ? (p.stockPacks || 0) + (p.stockLooseUnits || 0) : p.stockQuantity }));
+    .map((p) => ({ id: p.id, name: p.name, stock: p.stockType === 'AREA' ? p.stockAreaCm2 : p.stockType === 'LENGTH' ? p.stockLengthCm : p.stockType === 'PACK' ? (p.stockPacks || 0) + (p.stockLooseUnits || 0) : p.stockType === 'LIQUID' ? p.stockVolumeMl : p.stockQuantity }));
 
   const recentInvoices = db
     .select()

@@ -120,6 +120,24 @@ test('cart stock checks include earlier scans and separate packs from loose unit
   assert.throws(() => assertCartStock(product, [pack, pack], pack), /quantityExceedsStock/);
 });
 
+test('area and liquid cart lines normalize measurements and enforce stock', () => {
+  const { lineFor, assertCartStock } = load('src/utils/cartLines.js');
+  const glass = { id: 'glass', name: 'Glass', stockType: 'AREA', stockAreaCm2: 20000, salePrice: 0.5 };
+  const cut = lineFor(glass, 2, 'default', { width: 1, height: 0.5, unit: 'meter' });
+  assert.equal(cut.unitArea, 5000);
+  assert.equal(cut.totalArea, 10000);
+  assert.equal(cut.total, 5000);
+  assert.throws(() => lineFor(glass, 1), /areaMeasurementsRequired/);
+  assert.throws(() => assertCartStock(glass, [cut], lineFor(glass, 3, 'default', { width: 1, height: 0.5, unit: 'meter' })), /quantityExceedsStock/);
+
+  const oil = { id: 'oil', name: 'Oil', stockType: 'LIQUID', stockVolumeMl: 5000, salePrice: 0.2 };
+  const litres = lineFor(oil, 2.5, 'liter');
+  assert.equal(litres.volumeMl, 2500);
+  assert.equal(litres.total, 500);
+  assertCartStock(oil, [], litres);
+  assert.throws(() => assertCartStock(oil, [litres], lineFor(oil, 2600, 'ml')), /quantityExceedsStock/);
+});
+
 test('receipts escape owner/customer text, use frozen branding and original vs updated payments', () => {
   const { buildReceiptHtml } = load('src/utils/receiptHtml.js');
   const bill = { id: 'bill', createdAt: '2026-11-06T10:00:00Z', customerName: '<script>alert(1)</script>', subtotal: 100, discount: 0, totalAmount: 100, totalReceived: 100, remainingDue: 0, paymentMethod: 'CASH', receiptSnapshot: { displayName: 'Original shop', paper: '58', receivedAtIssue: 20, dueAtIssue: 80 }, items: [{ productName: '<img onerror="bad">', stockType: 'QUANTITY', quantity: 1, pricePerUnit: 100, total: 100 }] };

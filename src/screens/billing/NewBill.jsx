@@ -32,7 +32,26 @@ function availableUnits(product) {
   if (product.stockType === 'AREA') return Math.floor((product.stockAreaCm2 || 0) / Math.max(1, product.sheetAreaCm2 || 1));
   if (product.stockType === 'LENGTH') return Math.floor((product.stockLengthCm || 0) / 100);
   if (product.stockType === 'PACK') return Math.floor(product.stockPacks || 0);
+  if (product.stockType === 'LIQUID') return (product.stockVolumeMl || 0) / 1000;
   return Math.floor(product.stockQuantity || 0);
+}
+
+function displaySalePrice(product, saleUnit = 'default', measurementUnit = 'feet') {
+  if (product.stockType === 'PACK' && saleUnit !== 'loose') return product.packSalePrice ?? product.salePrice * (product.packSize || 1);
+  if (product.stockType === 'LIQUID' && saleUnit !== 'ml') return product.salePrice * 1000;
+  if (product.stockType === 'LENGTH') return product.salePrice * 100;
+  if (product.stockType === 'AREA') {
+    const factor = measurementUnit === 'meter' ? 100 : measurementUnit === 'feet' ? 30.48 : measurementUnit === 'inch' ? 2.54 : 1;
+    return product.salePrice * factor * factor;
+  }
+  return product.salePrice;
+}
+
+function displayPriceUnit(product, saleUnit, measurementUnit, t) {
+  if (product.stockType === 'AREA') return `${t(`billing.unit.${measurementUnit}`)}²`;
+  if (product.stockType === 'LENGTH') return t('billing.meters');
+  if (product.stockType === 'LIQUID') return saleUnit === 'ml' ? t('billing.milliliterShort') : t('billing.literShort');
+  return null;
 }
 
 export default function NewBill() {
@@ -56,6 +75,9 @@ export default function NewBill() {
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState(null);
   const [quantity, setQuantity] = useState(1);
+  const [measurementUnit, setMeasurementUnit] = useState('feet');
+  const [width, setWidth] = useState('');
+  const [height, setHeight] = useState('');
   const [error, setError] = useState('');
 
   const { rows: products, loadMore, isError, refetch } = useProductPages({ search });
@@ -77,7 +99,7 @@ export default function NewBill() {
     try {
       const product = productRepository.findByBarcode(shopId, code);
       if (!product) { setUnknown(code); return; }
-      if (product.stockType === 'AREA' || product.stockType === 'LENGTH') { openProduct(product); return; }
+      if (product.stockType === 'AREA' || product.stockType === 'LENGTH' || product.stockType === 'LIQUID') { openProduct(product); return; }
       const store = useCartStore.getState();
       store.bindShop(shopId);
       const line = lineFor(product, 1, product.barcodeUnit);
@@ -92,7 +114,10 @@ export default function NewBill() {
 
   function openProduct(product) {
     if (isOutOfStock(product)) return;
-    setSaleUnit(product.barcodeUnit || (product.stockType === 'PACK' && !product.stockPacks ? 'loose' : 'default'));
+    setSaleUnit(product.stockType === 'LIQUID' ? 'liter' : product.barcodeUnit || (product.stockType === 'PACK' && !product.stockPacks ? 'loose' : 'default'));
+    setMeasurementUnit('feet');
+    setWidth('');
+    setHeight('');
     setSelected(product);
     setQuantity(product.stockType === 'LENGTH' ? Math.min(1, product.stockLengthCm / 100) : 1);
     setError('');
@@ -103,12 +128,21 @@ export default function NewBill() {
     try {
       const fresh = productRepository.getById(selected.id);
       if (!fresh || fresh.shopId !== shopId || fresh.isDeleted) throw new Error('barcode.notFound');
-      const line = lineFor(fresh, quantity, saleUnit);
+      const line = lineFor(fresh, quantity, saleUnit, { width, height, unit: measurementUnit });
       assertCartStock(fresh, useCartStore.getState().lines, line);
       cart.addLine(line);
     } catch (cause) { setError(t(cause.message)); return; }
     setSelected(null);
     setError('');
+  }
+
+  function lineTotal() {
+    if (!selected) return 0;
+    try {
+      return lineFor(selected, quantity, saleUnit, { width, height, unit: measurementUnit }).total;
+    } catch {
+      return 0;
+    }
   }
 
   function checkout() {
@@ -174,7 +208,7 @@ export default function NewBill() {
               </View>
               {inCart ? <View style={{ position: 'absolute', top: spacing.xs, right: spacing.xs, minWidth: 24, height: 24, borderRadius: 12, paddingHorizontal: 6, backgroundColor: colors.brand.primary, alignItems: 'center', justifyContent: 'center' }}><Text style={[typography.caption, { color: colors.ink.onBrand }]}>{inCart}×</Text></View> : null}
               <Text numberOfLines={2} style={[typography.bodyMedium, { color: colors.ink.primary, textAlign: align }]}>{product.name}</Text>
-              <Text style={[typography.caption, { color: colors.ink.secondary }]}>{formatCurrency(product.stockType === 'PACK' ? (product.packSalePrice ?? product.salePrice * (product.packSize || 1)) : product.salePrice)}</Text>
+              <Text style={[typography.caption, { color: colors.ink.secondary }]}>{formatCurrency(displaySalePrice(product))}{displayPriceUnit(product, 'liter', 'feet', t) ? ` / ${displayPriceUnit(product, 'liter', 'feet', t)}` : ''}</Text>
             </Pressable>;
           }} />
         <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.md, borderTopWidth: 1, borderTopColor: colors.surface.border, backgroundColor: colors.surface.bg }}>
@@ -192,20 +226,40 @@ export default function NewBill() {
                   {selected.imageLocalUri || selected.imageRemoteUrl ? <Image source={{ uri: selected.imageLocalUri || selected.imageRemoteUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" /> : <Text style={[typography.h1, { color: colors.brand.primary }]}>{selected.name.trim().charAt(0).toLocaleUpperCase()}</Text>}
                 </View>
                 <Text style={[typography.h2, { color: colors.ink.primary, textAlign: 'center' }]}>{selected.name}</Text>
-                <Text style={[typography.h2, { color: colors.brand.primary }]}>{formatCurrency(selected.stockType === 'PACK' && saleUnit !== 'loose' ? (selected.packSalePrice ?? selected.salePrice * (selected.packSize || 1)) : selected.salePrice)}</Text>
+                <Text style={[typography.h2, { color: colors.brand.primary }]}>{formatCurrency(displaySalePrice(selected, saleUnit, measurementUnit))}{displayPriceUnit(selected, saleUnit, measurementUnit, t) ? ` / ${displayPriceUnit(selected, saleUnit, measurementUnit, t)}` : ''}</Text>
                 <Text style={[typography.caption, { color: colors.ink.secondary }]}>{formatStockLabel(selected)}</Text>
               </View>
               {selected.stockType === 'PACK' ? <View style={{ flexDirection: direction, gap: spacing.sm }}>
                 <Chip label={t('barcode.defaultUnit')} selected={saleUnit !== 'loose'} onPress={() => { setSaleUnit('default'); setQuantity(1); }} />
                 <Chip label={t('barcode.loose')} selected={saleUnit === 'loose'} onPress={() => { setSaleUnit('loose'); setQuantity(1); }} />
               </View> : null}
-              {selected.stockType === 'LENGTH' || selected.stockType === 'AREA' ? <TextField label={t(selected.stockType === 'LENGTH' ? 'billing.meters' : 'billing.quantity')} value={String(quantity)} keyboardType="decimal-pad" onChangeText={(value) => setQuantity(value)} /> : null}
-              <View style={{ flexDirection: direction, alignItems: 'center', justifyContent: 'center', gap: spacing.lg }}>
+              {selected.stockType === 'LIQUID' ? <View style={{ gap: spacing.sm }}>
+                <Text style={[typography.label, { color: colors.ink.secondary, textAlign: align }]}>{t('billing.liquidUnit')}</Text>
+                <View style={{ flexDirection: direction, gap: spacing.sm }}>
+                  <Chip label={t('billing.liters')} selected={saleUnit === 'liter'} onPress={() => { setSaleUnit('liter'); setQuantity(1); }} />
+                  <Chip label={t('billing.milliliters')} selected={saleUnit === 'ml'} onPress={() => { setSaleUnit('ml'); setQuantity(500); }} />
+                </View>
+                <TextField label={t('billing.volume')} value={String(quantity)} keyboardType="decimal-pad" onChangeText={setQuantity} />
+              </View> : null}
+              {selected.stockType === 'AREA' ? <View style={{ gap: spacing.sm }}>
+                <Text style={[typography.label, { color: colors.ink.secondary, textAlign: align }]}>{t('billing.measurementUnit')}</Text>
+                <View style={{ flexDirection: direction, flexWrap: 'wrap', gap: spacing.xs }}>
+                  {['cm', 'inch', 'feet', 'meter'].map((unit) => <Chip key={unit} label={t(`billing.unit.${unit}`)} selected={measurementUnit === unit} onPress={() => setMeasurementUnit(unit)} />)}
+                </View>
+                <View style={{ flexDirection: direction, gap: spacing.sm }}>
+                  <TextField label={t('billing.width')} value={width} keyboardType="decimal-pad" onChangeText={setWidth} style={{ flex: 1 }} />
+                  <TextField label={t('billing.height')} value={height} keyboardType="decimal-pad" onChangeText={setHeight} style={{ flex: 1 }} />
+                </View>
+                <TextField label={t('billing.pieces')} value={String(quantity)} keyboardType="decimal-pad" onChangeText={setQuantity} />
+                <View style={{ flexDirection: direction, justifyContent: 'space-between' }}><Text style={[typography.body, { color: colors.ink.secondary }]}>{t('billing.calculatedArea')}</Text><Text style={[typography.bodyMedium, { color: colors.ink.primary }]}>{Number(width) > 0 && Number(height) > 0 ? `${Number((Number(width) * Number(height) * Number(quantity || 0)).toFixed(3))} ${t(`billing.unit.${measurementUnit}`)}²` : '—'}</Text></View>
+              </View> : null}
+              {selected.stockType === 'LENGTH' ? <TextField label={t('billing.meters')} value={String(quantity)} keyboardType="decimal-pad" onChangeText={setQuantity} /> : null}
+              {selected.stockType !== 'LENGTH' && selected.stockType !== 'LIQUID' ? <View style={{ flexDirection: direction, alignItems: 'center', justifyContent: 'center', gap: spacing.lg }}>
                 <QuantityButton icon={Minus} onPress={() => setQuantity((value) => Math.max(1, value - 1))} colors={colors} radii={radii} />
-                <View style={{ minWidth: 72, alignItems: 'center' }}><Text style={[typography.h1, { color: colors.ink.primary }]}>{quantity}</Text><Text style={[typography.caption, { color: colors.ink.secondary }]}>{selected.stockType === 'LENGTH' ? t('billing.meters') : saleUnit === 'loose' ? t('barcode.loose') : t('billing.quantity')}</Text></View>
-                <QuantityButton icon={Plus} onPress={() => setQuantity((value) => Math.max(value, Math.min(saleUnit === 'loose' ? selected.stockLooseUnits : availableUnits(selected), Number(value) + 1)))} colors={colors} radii={radii} />
-              </View>
-              <View style={{ flexDirection: direction, justifyContent: 'space-between' }}><Text style={[typography.body, { color: colors.ink.secondary }]}>{t('billing.lineTotal')}</Text><Text style={[typography.h3, { color: colors.ink.primary }]}>{formatCurrency(Number(quantity) > 0 ? lineFor(selected, quantity, saleUnit).total : 0)}</Text></View>
+                <View style={{ minWidth: 72, alignItems: 'center' }}><Text style={[typography.h1, { color: colors.ink.primary }]}>{quantity}</Text><Text style={[typography.caption, { color: colors.ink.secondary }]}>{selected.stockType === 'AREA' ? t('billing.pieces') : saleUnit === 'loose' ? t('barcode.loose') : t('billing.quantity')}</Text></View>
+                <QuantityButton icon={Plus} onPress={() => setQuantity((value) => selected.stockType === 'AREA' ? Number(value) + 1 : Math.max(value, Math.min(saleUnit === 'loose' ? selected.stockLooseUnits : availableUnits(selected), Number(value) + 1)))} colors={colors} radii={radii} />
+              </View> : null}
+              <View style={{ flexDirection: direction, justifyContent: 'space-between' }}><Text style={[typography.body, { color: colors.ink.secondary }]}>{t('billing.lineTotal')}</Text><Text style={[typography.h3, { color: colors.ink.primary }]}>{formatCurrency(lineTotal())}</Text></View>
               {error ? <Text style={[typography.caption, { color: colors.semantic.danger, textAlign: align }]}>{error}</Text> : null}
               <Button title={t('billing.addToCart')} onPress={addToCart} />
               <Button title={t('common.cancel')} variant="ghost" compact onPress={() => setSelected(null)} />

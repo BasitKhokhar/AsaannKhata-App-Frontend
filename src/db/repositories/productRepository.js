@@ -78,7 +78,7 @@ async function searchPage(shopId, { search = '', categoryId, lowStock = false, c
     if (tokens) args.push(tokens);
   }
   if (categoryId) { where.push('p.category_id = ?'); args.push(categoryId); }
-  if (lowStock) where.push(`p.low_stock_threshold IS NOT NULL AND (CASE p.stock_type WHEN 'AREA' THEN p.stock_area_cm2 WHEN 'LENGTH' THEN p.stock_length_cm WHEN 'PACK' THEN p.stock_packs + p.stock_loose_units ELSE p.stock_quantity END) <= p.low_stock_threshold`);
+  if (lowStock) where.push(`p.low_stock_threshold IS NOT NULL AND (CASE p.stock_type WHEN 'AREA' THEN p.stock_area_cm2 WHEN 'LENGTH' THEN p.stock_length_cm WHEN 'PACK' THEN p.stock_packs + p.stock_loose_units WHEN 'LIQUID' THEN p.stock_volume_ml ELSE p.stock_quantity END) <= p.low_stock_threshold`);
   if (cursor) { where.push('(p.name, p.id) > (?, ?)'); args.push(cursor.name, cursor.id); }
   const rows = await expoDb.getAllAsync(`SELECT ${projection} FROM products p WHERE ${where.join(' AND ')} ORDER BY p.name, p.id LIMIT ?`, ...args, size + 1);
   const hasMore = rows.length > size;
@@ -105,7 +105,7 @@ export const productRepository = {
   },
   async counts(shopId) {
     return expoDb.getFirstAsync(`SELECT COUNT(*) AS total, COALESCE(SUM(CASE WHEN low_stock_threshold IS NOT NULL AND
-      (CASE stock_type WHEN 'AREA' THEN stock_area_cm2 WHEN 'LENGTH' THEN stock_length_cm WHEN 'PACK' THEN stock_packs + stock_loose_units ELSE stock_quantity END) <= low_stock_threshold
+      (CASE stock_type WHEN 'AREA' THEN stock_area_cm2 WHEN 'LENGTH' THEN stock_length_cm WHEN 'PACK' THEN stock_packs + stock_loose_units WHEN 'LIQUID' THEN stock_volume_ml ELSE stock_quantity END) <= low_stock_threshold
       THEN 1 ELSE 0 END), 0) AS lowStock FROM products WHERE shop_id = ? AND is_deleted = 0`, String(shopId));
   },
   findByBarcode,

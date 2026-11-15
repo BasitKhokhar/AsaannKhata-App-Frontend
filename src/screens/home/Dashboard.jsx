@@ -15,6 +15,7 @@ import { BottomNav } from '../../components/ui/BottomNav';
 import { ManualSyncSheet } from '../../components/sync/ManualSyncSheet';
 import { DateFilterSection } from '../../components/ui/DateFilterSection';
 import { DateFilterSheet } from '../../components/ui/DateFilterSheet';
+import { HomeAnnouncement } from '../../components/engagement/HomeAnnouncement';
 import { useTheme } from '../../theme';
 import { useDashboardStats, useSalesByProduct } from '../../hooks/useDashboard';
 import { useShops } from '../../hooks/useShops';
@@ -333,6 +334,7 @@ export default function Dashboard() {
           setDateRangeId(label);
         }}
       />
+      <HomeAnnouncement />
     </AnimatedScreen>
   );
 }

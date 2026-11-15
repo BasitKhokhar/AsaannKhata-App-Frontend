@@ -1,6 +1,6 @@
 # AsaanKhata frontend project context
 
-Last repository review: 2026-11-11
+Last repository review: 2026-11-15
 
 This is the durable project map for coding agents. Read this before scanning the repository. Inspect only the files relevant to the current task after reading it, and update this document whenever an architectural change makes it inaccurate.
 
@@ -12,7 +12,7 @@ This is the durable project map for coding agents. Read this before scanning the
 
 ## Product in one paragraph
 
-AsaanKhata is a portrait mobile bookkeeping/POS app for small shops. It supports multiple shops, products and categories, four stock modes, bills/receipts, credit-customer ledgers, stock adjustments, dashboards/reports, cloud synchronization, subscriptions, ads/reward coins, notifications, light/dark themes, and English/Urdu/Hindi. Core business writes are offline-first: the UI commits to local SQLite immediately and the sync engine later reconciles eligible accounts with the backend.
+AsaanKhata is a portrait mobile bookkeeping/POS app for small shops. It supports multiple shops, products and categories, five stock modes, bills/receipts, credit-customer ledgers, stock adjustments, dashboards/reports, cloud synchronization, subscriptions, ads/reward coins, notifications, light/dark themes, and English/Urdu/Hindi. Core business writes are offline-first: the UI commits to local SQLite immediately and the sync engine later reconciles eligible accounts with the backend.
 
 ## Stack and runtime shape
 
@@ -32,7 +32,7 @@ AsaanKhata is a portrait mobile bookkeeping/POS app for small shops. It supports
 
 `index.js` -> `App.jsx` -> `RootNavigator`.
 
-`App.jsx` does not render the application tree until fonts, SQLite migrations, and secure-session hydration all finish. Migration failure is fatal. Once ready, provider nesting is:
+`App.jsx` does not render the application tree until fonts, SQLite migrations, secure-session hydration, and first-frame Zustand preferences (theme, active shop, language, and onboarding) all finish. Keeping the native splash mounted through preference restoration prevents the default palette or language from flashing before the user's persisted selection. Migration failure is fatal. Once ready, provider nesting is:
 
 1. `GestureHandlerRootView`
 2. `SafeAreaProvider`
@@ -44,14 +44,14 @@ AsaanKhata is a portrait mobile bookkeeping/POS app for small shops. It supports
 
 - Authenticated -> `AppDrawer`
 - Not authenticated and onboarding unseen -> `OnboardingStack`
-- Not authenticated and onboarding complete -> `AuthStack`
+- Not authenticated and onboarding complete -> `AuthStack`. The first onboarding handoff opens registration; later signed-out launches and Settings logout open Login.
 
 Firebase Analytics screen views are emitted on navigation route changes.
 
 ## Navigation map
 
 - Onboarding: `Splash` -> `Onboarding1` -> `Onboarding2` -> `Onboarding3` -> `Onboarding4`.
-- Auth: `Login`, three registration steps (business type, shop details, account), `ForgotPassword`, `OtpVerification`. Registration still creates the account and first shop in one backend call, with a free trial; paid plan selection is available after sign-in. ForgotPassword requests a 6-digit email code; OtpVerification confirms the code and sets a new password through backend auth endpoints.
+- Auth: `Login`, three registration steps (business type, shop details, account), `ForgotPassword`, `OtpVerification`. Finishing or skipping first-run onboarding enters the business-type registration step, which has a prominent existing-account Login action. Later signed-out launches and explicit logout enter Login, where account creation is also a full-width action. Registration still creates the account and first shop in one backend call, with a free trial; paid plan selection is available after sign-in. ForgotPassword requests a 6-digit email code; OtpVerification confirms the code and sets a new password through backend auth endpoints.
 - Drawer routes:
   - `HomeStack`: `Dashboard`
   - `BillingStack`: `NewBill`, `Payment`, `BillDetail`, `CreditCustomers`, `CustomerDetail`, `RecordDetail`, `RecordPayment`, `AddProduct`
@@ -129,17 +129,19 @@ After a free-tier account uses its server-configured daily free-bill allowance, 
 
 ### Products and stock
 
-Stock types are `QUANTITY`, `AREA`, `LENGTH`, and `PACK`.
+Stock types are `QUANTITY`, `AREA`, `LENGTH`, `PACK`, and `LIQUID`.
 
 - AREA and LENGTH are normalized to centimeters/cm² before local insertion.
+- AREA sales require width, height, measurement unit, and piece count; bill lines preserve the entered dimensions while stock and pricing use normalized cm².
 - PACK tracks full packs and loose units separately.
+- LIQUID stock and bill lines are normalized to millilitres; product and sale forms accept litres or millilitres while prices are stored per mL.
 - Product creation also writes an initial `IN` stock transaction when initial stock is positive.
 - Selecting a product opens a shop-scoped detail screen. `AddProduct` is the shared create/edit form: `EditProduct` routes to it with a product ID, preloads the existing values, and updates metadata, category, prices, image and low-stock threshold locally. Inventory fields are visible but locked while editing; quantity changes remain in the dedicated Stock Adjustment flow so every change retains an audit row.
 - Product photos are resized/compressed to JPEGs no larger than 50 KiB and stored under app document storage; SQLite keeps separate local-file and remote-URL fields. Sync uploads local photos to the backend bucket before pushing product rows, and downloads/compresses remote photos before advancing the pull cursor so restored products retain offline images.
 - Every stock adjustment changes counters on `products` and appends a stock transaction.
 - The Stock History screen pages SQLite transactions by selected shop and type (100 per page); cloud changes arrive through sync rather than a second unbounded history request.
 - Unit-conversion logic in `src/utils/unitConverter.js` must continue matching the backend contract.
-- Product low-stock thresholds are optional and synchronized to Prisma. AREA/LENGTH thresholds entered in the selected form unit are normalized to cm²/cm; alerts compare against the stored stock counter. PACK compares full packs plus loose units. An unset threshold suppresses that product's low-stock alert.
+- Product low-stock thresholds are optional and synchronized to Prisma. AREA/LENGTH/LIQUID thresholds entered in the selected form unit are normalized to cm²/cm/mL; alerts compare against the stored stock counter. PACK compares full packs plus loose units. An unset threshold suppresses that product's low-stock alert.
 
 ### Credit customers
 
@@ -192,6 +194,8 @@ The backend base URL has no `/api` prefix. Resolution order is Expo config `extr
 
 Most core domain reads/writes use repositories. Notable online/server paths include auth, shop creation, subscription offerings/verification, notifications, remote dashboard analytics, rewarded ads, and sync endpoints. `useDashboardStats` falls back to local analytics; the detailed product/category/profit trend hooks are cloud-only. Notifications have no SQLite cache.
 
+Home popup campaigns are also online-only. After Home is active for 1.2 seconds, `HomeAnnouncement` requests authenticated `GET /engagement/home-popup`; it never displays stale cached campaign content. The native modal accepts only the versioned image/image-link/video contract, validates HTTPS media/actions, stores a shared five-minute cooldown in SecureStore, and keeps close locked for five seconds. Superadmins manage the single-active campaign through `/superadmin/app-popups` in the platform dashboard. `ENGAGEMENT_SETUP.md` documents deployment order and the API contract.
+
 ## Subscriptions, ads, coins, and push
 
 - Entitlement is cached in SQLite so `canWrite`/`cloudEnabled` can be checked offline.
@@ -229,13 +233,14 @@ Most core domain reads/writes use repositories. Notable online/server paths incl
 
 - Expo project slug `asaandukaan`, matching the EAS project referenced by `EXPO_ID`
 - Android/iOS identity `com.asaandukaan.app`
-- portrait orientation, automatic system UI style, icons, and Android keyboard resize mode
+- unrestricted orientation/resizability for Android large screens, automatic system UI style, icons, and Android keyboard resize mode
 - a branded native splash using the transparent AsaanDukaan monogram/wordmark asset on the Emerald deep background (`#064B42`), with the same image/background in dark mode and a short native fade into React
 - SQLite, SecureStore, fonts, image picker, sharing/file system
 - Firebase app, Sentry, Google Mobile Ads
 - Android `allowBackup: false`
 - Explicit Android `INTERNET` and `POST_NOTIFICATIONS` permissions
 - a local Kotlin compiler workaround plugin
+- Android release hardening plugins that keep generated manifests resizable, strip deprecated edge-to-edge theme attributes, enable R8 minification/resource shrinking, and use the optimizing ProGuard profile
 
 `babel.config.js` uses `inline-import` for `.sql` migrations and keeps `react-native-worklets/plugin` last. `metro.config.js` uses Sentry's Expo config and treats `.sql` as source. Do not reorder/remove these casually.
 

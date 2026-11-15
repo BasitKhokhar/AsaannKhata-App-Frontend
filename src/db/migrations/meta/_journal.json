@@ -57,6 +57,13 @@
       "when": 1793946498178,
       "tag": "0007_barcode_receipts",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1794763273460,
+      "tag": "0008_liquid_stock",
+      "breakpoints": true
     }
   ]
 }

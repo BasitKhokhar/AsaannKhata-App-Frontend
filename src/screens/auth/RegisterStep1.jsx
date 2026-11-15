@@ -79,7 +79,14 @@ export default function RegisterStep1() {
             {!isLoading && !isError && !visible.length ? <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: 'center' }]}>{t('auth.businessType.empty')}</Text> : null}
             {error ? <Text style={[typography.caption, { color: colors.semantic.danger }]}>{error}</Text> : null}
           </KeyboardAwareScrollView>
-          <View style={{ padding: spacing.lg }}><Button title={t('common.next')} onPress={next} /></View>
+          <View style={{ padding: spacing.lg, gap: spacing.sm }}>
+            <Button title={t('common.next')} onPress={next} />
+            <Button
+              title={t('auth.register.existingAccount')}
+              variant="outline"
+              onPress={() => navigation.navigate('Login')}
+            />
+          </View>
         </KeyboardAwareView>
       </SafeAreaView>
     </AnimatedScreen>

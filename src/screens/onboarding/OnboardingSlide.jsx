@@ -30,8 +30,8 @@ export function OnboardingSlide({ index, illustration, title, description, isLas
   function finishOnboarding() {
     tapHaptic();
     completeOnboarding();
-    // RootNavigator swaps to AuthStack automatically once hasSeenOnboarding
-    // flips — no explicit navigation call needed here.
+    // RootNavigator swaps to AuthStack automatically. The onboarding store
+    // provides a one-time registration entry route for this first handoff.
   }
 
   function handleNext() {

@@ -22,6 +22,8 @@ function currentStockValue(product) {
       return product.stockLengthCm || 0;
     case 'PACK':
       return product.stockPacks || 0;
+    case 'LIQUID':
+      return product.stockVolumeMl || 0;
     default:
       return product.stockQuantity || 0;
   }
@@ -40,6 +42,7 @@ export default function StockAdjustment() {
 
   const [direction, setDirection] = useState('IN');
   const [quantity, setQuantity] = useState('');
+  const [unit, setUnit] = useState('unit');
   const [reason, setReason] = useState('');
   const [note, setNote] = useState('');
   const [error, setError] = useState(null);
@@ -48,9 +51,17 @@ export default function StockAdjustment() {
     adsService.preloadInterstitialAd();
   }, []);
 
+  React.useEffect(() => {
+    if (!product) return;
+    setUnit(product.stockType === 'AREA' ? 'ft2' : product.stockType === 'LENGTH' ? 'meter' : product.stockType === 'LIQUID' ? 'liter' : product.stockType === 'PACK' ? 'pack' : 'unit');
+  }, [product?.id]);
+
   const qtyNum = parseFloat(quantity) || 0;
+  const unitOptions = adjustmentUnits(product?.stockType, t);
+  const unitOption = unitOptions.find((option) => option.key === unit) || unitOptions[0];
+  const normalizedQty = qtyNum * (unitOption?.factor || 1);
   const current = currentStockValue(product);
-  const preview = direction === 'IN' ? current + qtyNum : Math.max(0, current - qtyNum);
+  const preview = direction === 'IN' ? current + normalizedQty : Math.max(0, current - normalizedQty);
 
   function handleSave() {
     if (!product || qtyNum <= 0) {
@@ -59,7 +70,7 @@ export default function StockAdjustment() {
     }
     setError(null);
     adjustStock.mutate(
-      { productId: product.id, type: direction, quantity: qtyNum, description: [reason, note].filter(Boolean).join(' — ') || undefined },
+      { productId: product.id, type: direction, quantity: normalizedQty, description: [reason, note].filter(Boolean).join(' — ') || undefined },
       { onSuccess: () => adsService.showInterstitialThenContinue(() => navigation.goBack(), { requirePriorShow: true }) }
     );
   }
@@ -108,7 +119,10 @@ export default function StockAdjustment() {
           </View>
 
           <View>
-            <Text style={[typography.label, { color: colors.ink.secondary, marginBottom: spacing.xs, textAlign }]}>{t('stock.adjustment.quantity')}</Text>
+            <Text style={[typography.label, { color: colors.ink.secondary, marginBottom: spacing.xs, textAlign }]}>{t('stock.adjustment.quantity')} ({unitOption?.label})</Text>
+            {unitOptions.length > 1 ? <View style={{ flexDirection: rowDirection, flexWrap: 'wrap', gap: spacing.xs, marginBottom: spacing.sm }}>
+              {unitOptions.map((option) => <Pressable key={option.key} onPress={() => setUnit(option.key)} style={{ paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radii.md, borderWidth: 1, borderColor: unit === option.key ? colors.brand.primary : colors.surface.border, backgroundColor: unit === option.key ? colors.brand.primary : colors.surface.raised }}><Text style={[typography.caption, { color: unit === option.key ? colors.ink.onBrand : colors.ink.secondary }]}>{option.label}</Text></Pressable>)}
+            </View> : null}
             <View
               style={{
                 height: 46,
@@ -129,7 +143,7 @@ export default function StockAdjustment() {
                 keyboardType="numeric"
                 style={[typography.h3, { flex: 1, color: colors.ink.primary, paddingVertical: 0, textAlign }]}
               />
-              <Text style={[typography.caption, { color: colors.ink.secondary, marginLeft: spacing.sm }]}>{t('stock.adjustment.newValue').replace('{value}', round(preview))}</Text>
+              <Text style={[typography.caption, { color: colors.ink.secondary, marginLeft: spacing.sm }]}>{t('stock.adjustment.newValue').replace('{value}', `${round(preview / (unitOption?.factor || 1))} ${unitOption?.label}`)}</Text>
             </View>
           </View>
 
@@ -150,4 +164,19 @@ export default function StockAdjustment() {
 
 function round(n) {
   return Math.round(n * 10) / 10;
+}
+
+function adjustmentUnits(stockType, t) {
+  switch (stockType) {
+    case 'AREA':
+      return [{ key: 'ft2', label: t('billing.squareFeet'), factor: 929.0304 }, { key: 'm2', label: t('billing.squareMeters'), factor: 10000 }, { key: 'cm2', label: t('billing.squareCentimeters'), factor: 1 }];
+    case 'LENGTH':
+      return [{ key: 'meter', label: t('billing.meters'), factor: 100 }, { key: 'feet', label: t('billing.unit.feet'), factor: 30.48 }, { key: 'cm', label: t('billing.unit.cm'), factor: 1 }];
+    case 'LIQUID':
+      return [{ key: 'liter', label: t('billing.liters'), factor: 1000 }, { key: 'ml', label: t('billing.milliliters'), factor: 1 }];
+    case 'PACK':
+      return [{ key: 'pack', label: t('receipt.packs'), factor: 1 }];
+    default:
+      return [{ key: 'unit', label: t('receipt.units'), factor: 1 }];
+  }
 }

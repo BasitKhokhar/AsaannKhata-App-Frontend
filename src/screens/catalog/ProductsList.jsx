@@ -23,7 +23,7 @@ import { formatStockLabel, isLowStock, isOutOfStock } from '../../utils/stock';
 import { formatCurrency } from '../../utils/money';
 import { useT, useIsUrdu } from '../../store/languageStore';
 
-const MODE_BADGE = { QUANTITY: 'QTY', AREA: 'AREA', LENGTH: 'LENGTH', PACK: 'PACK' };
+const MODE_BADGE = { QUANTITY: 'QTY', AREA: 'AREA', LENGTH: 'LENGTH', PACK: 'PACK', LIQUID: 'LITRE' };
 
 export default function ProductsList() {
   const navigation = useNavigation();
@@ -162,7 +162,7 @@ export default function ProductsList() {
                   }
                   trailing={
                     <View style={{ alignItems: isUrdu ? 'flex-start' : 'flex-end', gap: spacing.xs }}>
-                      <Text style={[typography.bodyMedium, { color: colors.ink.primary }]}>{formatCurrency(item.stockType === 'PACK' ? (item.packSalePrice ?? item.salePrice * (item.packSize || 1)) : item.salePrice)}</Text>
+                      <Text style={[typography.bodyMedium, { color: colors.ink.primary }]}>{formatCurrency(item.stockType === 'PACK' ? (item.packSalePrice ?? item.salePrice * (item.packSize || 1)) : item.stockType === 'LIQUID' ? item.salePrice * 1000 : item.salePrice)}</Text>
                       <Badge label={MODE_BADGE[item.stockType] || 'QTY'} tone={item.stockType === 'AREA' || item.stockType === 'PACK' ? 'warning' : 'brand'} />
                     </View>
                   }
