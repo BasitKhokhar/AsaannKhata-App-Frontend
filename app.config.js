@@ -46,7 +46,6 @@ module.exports = ({ config }) => ({
       // AsyncStorage, which could otherwise leak business data to a Google
       // Drive backup outside our control.
       allowBackup: false,
-      edgeToEdgeEnabled: true,
       // Camera and Bluetooth permissions are merged by their native modules.
       // USB permission is requested per attached device. BLE discovery requires location permission only on Android 11 and older.
       permissions: ["INTERNET", "POST_NOTIFICATIONS"],
