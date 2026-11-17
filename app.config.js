@@ -76,15 +76,15 @@ module.exports = ({ config }) => ({
       [
         "expo-splash-screen",
         {
-          // Match the first frame of the branded in-app Splash screen so the
-          // native-to-React transition does not flash a different color.
+          // Match the restored in-app splash's 96-point badge. The source PNG
+          // is a 1024px transparent canvas; imageWidth controls display size.
           backgroundColor: "#064B42",
-          image: "./assets/icon.png",
-          imageWidth: 280,
+          image: "./assets/splash-icon.png",
+          imageWidth: 96,
           resizeMode: "contain",
           dark: {
             backgroundColor: "#064B42",
-            image: "./assets/icon.png",
+            image: "./assets/splash-icon.png",
           },
         },
       ],
