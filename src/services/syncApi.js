@@ -4,8 +4,12 @@ import { apiClient } from './apiClient';
 // registered via registerDevice() — enforced by the backend's
 // requireDeviceRegistered middleware.
 export const syncApi = {
-  registerDevice: ({ shopId, deviceId, deviceName, platform }) =>
-    apiClient.post('/sync/devices/register', { deviceId, deviceName, platform }, { headers: { 'X-Shop-Id': String(shopId) } }).then((r) => r.data),
+  registerDevice: ({ shopId, deviceId, deviceName, platform, replaceExisting = false }) =>
+    apiClient.post(
+      '/sync/devices/register',
+      { deviceId, deviceName, platform, replaceExisting },
+      { headers: { 'X-Shop-Id': String(shopId) } }
+    ).then((r) => r.data),
   status: () => apiClient.get('/sync/status').then((r) => r.data),
   pull: ({ shopId, since, deviceId }) =>
     apiClient.get('/sync/pull', { params: { since }, headers: { 'X-Shop-Id': String(shopId), 'X-Device-Id': deviceId } }).then((r) => r.data),

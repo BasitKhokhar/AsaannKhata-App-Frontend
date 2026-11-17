@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, ScrollView } from 'react-native';
+import { ActivityIndicator, View, Text, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { User, Bell, Cloud, Coins, HelpCircle, Info, Trash2, LogOut, Check, Users, Store, CreditCard, Printer } from 'lucide-react-native';
@@ -28,6 +28,8 @@ import { useShops } from '../../hooks/useShops';
 import { suggestedPresetForShopType } from '../../theme/colors';
 import { useEntitlement } from '../../hooks/useEntitlement';
 import { hasSyncEntitlement, isAdSupportedEntitlement } from '../../utils/entitlements';
+import { clearAllLocalBusinessData } from '../../db/clearLocalData';
+import { useSyncStore } from '../../store/syncStore';
 
 function rows(t, showEarnCoins, showSync) {
   return [
@@ -77,6 +79,8 @@ export default function Settings() {
   const setLang = useLanguageStore((s) => s.setLang);
   const rowDirection = isUrdu ? 'row-reverse' : 'row';
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isDeletingLocalData, setIsDeletingLocalData] = useState(false);
+  const isSyncing = useSyncStore((s) => s.isSyncing);
 
   async function handleLogout() {
     if (isLoggingOut) return;
@@ -100,17 +104,38 @@ export default function Settings() {
   }
 
   async function handleDeleteLocalData() {
+    if (isDeletingLocalData) return;
+    if (isSyncing) {
+      showToast(t('settings.deleteLocalDataSyncInProgress'), 'warning');
+      return;
+    }
     const confirmed = await showConfirm({
-      title: t('settings.deleteAccountConfirmTitle'),
-      message: t('settings.deleteAccountConfirmMessage'),
-      confirmLabel: t('settings.confirmSignOut'),
+      title: t('settings.deleteLocalDataConfirmTitle'),
+      message: t('settings.deleteLocalDataConfirmMessage'),
+      confirmLabel: t('settings.deleteLocalDataConfirmAction'),
       cancelLabel: t('common.cancel'),
       isUrgent: true,
     });
-    if (confirmed) {
-      // No server-side account-deletion endpoint exists yet — this clears
-      // the session and signs out. Full server-side deletion is a follow-up item.
-      await handleLogout();
+    if (!confirmed) return;
+
+    setIsDeletingLocalData(true);
+    try {
+      clearAllLocalBusinessData();
+      const localQueryRoots = new Set([
+        'bill', 'bills', 'categories', 'customer', 'customers', 'dashboardStats',
+        'expenses', 'product', 'products', 'profitMarginTrend', 'receiptProfile',
+        'salesByCategory', 'salesByProduct', 'salesReport', 'salesTrend',
+        'stockTransactions', 'syncStatus',
+      ]);
+      queryClient.removeQueries({ predicate: (query) => localQueryRoots.has(query.queryKey[0]) });
+      showToast(t('settings.localDataDeleted'), 'success');
+    } catch (error) {
+      const key = error.code === 'SYNC_IN_PROGRESS'
+        ? 'settings.deleteLocalDataSyncInProgress'
+        : 'settings.localDataDeleteFailed';
+      showToast(t(key), 'danger');
+    } finally {
+      setIsDeletingLocalData(false);
     }
   }
 
@@ -266,8 +291,11 @@ export default function Settings() {
                   <Trash2 size={18} color={colors.semantic.danger} strokeWidth={1.8} />
                 </View>
               }
-              title={t('settings.deleteAccount')}
+              title={t('settings.deleteLocalData')}
+              subtitle={t('settings.deleteLocalDataDesc')}
               titleStyle={{ color: colors.semantic.danger, textAlign: isUrdu ? 'right' : 'left' }}
+              subtitleStyle={{ textAlign: isUrdu ? 'right' : 'left' }}
+              trailing={isDeletingLocalData ? <ActivityIndicator size="small" color={colors.semantic.danger} /> : null}
             />
           </Card>
 

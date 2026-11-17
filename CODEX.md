@@ -1,6 +1,6 @@
 # AsaanKhata frontend project context
 
-Last repository review: 2026-11-15
+Last repository review: 2026-11-17
 
 This is the durable project map for coding agents. Read this before scanning the repository. Inspect only the files relevant to the current task after reading it, and update this document whenever an architectural change makes it inaccurate.
 
@@ -51,16 +51,16 @@ Firebase Analytics screen views are emitted on navigation route changes.
 ## Navigation map
 
 - Onboarding: `Splash` -> `Onboarding1` -> `Onboarding2` -> `Onboarding3` -> `Onboarding4`.
-- Auth: `Login`, three registration steps (business type, shop details, account), `ForgotPassword`, `OtpVerification`. Finishing or skipping first-run onboarding enters the business-type registration step, which has a prominent existing-account Login action. Later signed-out launches and explicit logout enter Login, where account creation is also a full-width action. Registration still creates the account and first shop in one backend call, with a free trial; paid plan selection is available after sign-in. ForgotPassword requests a 6-digit email code; OtpVerification confirms the code and sets a new password through backend auth endpoints.
+- Auth: `Login`, three registration steps (business type, shop details, account), `ForgotPassword`, `OtpVerification`. Finishing or skipping first-run onboarding enters the business-type registration step, which has a prominent existing-account Login action. Later signed-out launches and explicit logout enter Login, where account creation is also a full-width action. Registration creates the account, first shop, and free entitlement in one backend call; login and registration responses both include the resolved entitlement. The frontend writes shop/entitlement state into SQLite and React Query before switching from Auth to the app navigator, so Free-plan surfaces exist on Dashboard's first frame. Paid plan selection is available after sign-in. ForgotPassword requests a 6-digit email code; OtpVerification confirms the code and sets a new password through backend auth endpoints.
 - Drawer routes:
   - `HomeStack`: `Dashboard`
   - `BillingStack`: `NewBill`, `Payment`, `BillDetail`, `CreditCustomers`, `CustomerDetail`, `RecordDetail`, `RecordPayment`, `AddProduct`
   - `CatalogStack`: `ProductsList`, `ProductDetail`, `EditProduct`, `AddProduct`, `StockAdjustment`
   - `StockStack`: `StockOverview`, `StockAdjustment`
   - `ShopsStack`: `ShopsList`, `AddShop`
-  - Direct drawer screens: `SalesReport`, `Expenses`, `Notifications`, `SubscriptionPlans`, `EarnCoins`
+  - Direct drawer screens: `SalesReport`, `Expenses`, `Notifications` (server-backed inbox opened by the Home bell), `SubscriptionPlans`, `EarnCoins`
   - `RecordsStack`: `RecordsList`, `RecordDetail`, `RecordPayment` (shop-scoped invoice table with full-screen bill detail and later-payment entry)
-  - `SettingsStack`: `Settings`, `ScannerSettings`, `ReceiptSettings`, `PrinterSettings`, `SyncStatus`, `Profile`, `StaffManagement`, `Notifications`, `HelpSupport`, `About`
+  - `SettingsStack`: `Settings`, `ScannerSettings`, `ReceiptSettings`, `PrinterSettings`, `SyncStatus`, `Profile`, `StaffManagement`, `Notifications` (device-local alert preferences), `HelpSupport`, `About`
 - `AddProduct` exists in both Billing and Catalog stacks so a product created during billing returns to `NewBill`; `StockAdjustment` deliberately exists in both Catalog and Stock stacks so each stack can navigate locally.
 - Customer-history bill taps open `RecordDetail`, the same invoice details used by Records. `RecordDetail` and `RecordPayment` are also registered in Billing so the detail/payment flow stays in the customer's stack and Back returns to customer history. `BillDetail` remains the post-checkout screen.
 - Cross-drawer navigation usually uses `navigation.navigate('SomeStack', { screen: 'SomeScreen' })`.
@@ -154,13 +154,13 @@ The Records stack uses `billSettlementRepository` to associate later customer pa
 
 ## Synchronization contract
 
-All triggers call `runSync()` in `src/sync/syncEngine.js`. Triggers are app startup, foreground, offline-to-online transition, every five minutes while foregrounded, and manual Sync Now actions. Free accounts and cloud-enabled Basic/Pro accounts sync without a coin unlock. Paid Lifetime Offline remains local-only and does not attempt cloud sync.
+All triggers call `runSync()` in `src/sync/syncEngine.js`. Triggers are app startup, foreground, offline-to-online transition, every five minutes while foregrounded, and manual Sync Now actions. Cloud-enabled Basic/Pro accounts sync directly. Free accounts use rewarded coins to open the backend's short sync window from the manual sheet; automatic triggers sync only while that cached window is active and otherwise skip without reporting an error. Paid Lifetime Offline remains local-only and does not attempt cloud sync.
 
 Sync sequence:
 
-1. Reconcile pending account-level coin usage for every tier.
+1. Reconcile pending account-level coin usage for every tier. Manual Free-plan sync first uses the existing rewarded-coin endpoint to open the backend's short sync window; cloud-enabled plans do not spend coins.
 2. Stop unless the cached entitlement is Free or has `cloudEnabled`; Lifetime Offline intentionally stops here. Otherwise fetch the signed-in admin's authoritative shop list from the backend; the active shop is only a UI selection.
-3. For each owned shop, send an explicit `X-Shop-Id`, upsert this install's stable device UUID for that shop (server registration is shop-scoped), and pull all pages using the server-issued `nextSince`. Persist the watermark per shop after every page. Pulled rows are checked against the requested shop and pending/conflict local edits are preserved. Product image URLs are downloaded and cached as <=50 KiB local JPEGs before their page cursor is persisted.
+3. For each owned shop, send an explicit `X-Shop-Id`, upsert this install's stable device UUID for that shop (server registration is shop-scoped), and pull all pages using the server-issued `nextSince`. Reinstalling the app creates a new install UUID; when that reaches the plan's device limit, manual sync preserves the backend `DEVICE_LIMIT_REACHED` code, asks the owner before replacing the least-recent active registration for each affected shop, and retries with an explicit `replaceExisting` flag. Background sync never replaces a device. Persist the watermark per shop after every page. Pulled rows are checked against the requested shop and pending/conflict local edits are preserved. Product image URLs are downloaded and cached as <=50 KiB local JPEGs before their page cursor is persisted.
 4. Push that shop's pending records in FK-safe order: categories -> products -> stock adjustments -> customers -> bills -> customer payments -> expenses. Pending product image files are uploaded to `/sync/images/upload` first and their returned bucket URLs are included in product operations; uploads use the same device, shop, and sync-entitlement checks as pushes. Push requests are capped at 100 operations. Product stock counters are the snapshot sent to the server; synced adjustment and bill operations record audit rows without applying those stock movements again. Bill sale logs are sent with their parent bill and matched by client ID on the next pull.
 5. Mark successes synced, conflicts conflict, and leave errors pending for retry. A failure in one shop does not stop attempts for the remaining shops; the overall sync reports failure until all shops succeed.
 
@@ -179,12 +179,14 @@ Do not bypass this design by writing remote-first mutations for a domain that is
 - `StaffManagement` shows the owner account and an explicit unavailable state. Staff identity, invite, and role permissions do not exist in the backend; no staff actions are enabled.
 - `languageStore`: persisted `en`/`ur`/`hi`, `t()` helper, and Urdu RTL signal.
 - `notificationPrefsStore`: persisted in-app preference flags; not system push registration.
-- `coinsStore`: persisted ad/coin snapshot and rewarded-ad pacing.
+- `coinsStore`: persisted ad/coin snapshot and rewarded-ad pacing. Snapshots record whether server usage has loaded; a newly signed-in Free account renders the Daily Usage card immediately with stable skeleton values until `/ads/config` returns, while returning accounts can show their owner-tagged cached snapshot instantly.
 - Coin snapshots are tagged with an admin ID and reset when a different account signs in. Cached shops are filtered by admin ID. Full account-scoped SQLite/device isolation remains required before release.
 - `cartStore`: ephemeral checkout cart.
 - `registerStore`: ephemeral multi-step registration data.
 - `syncStore`: ephemeral live sync status.
 - `toastStore` and `confirmStore`: global imperative UI.
+
+Settings includes an urgent, confirmed **Delete Local Data** action for testing or device cleanup. It transactionally clears local business rows, sync watermarks, cached product images, and the active cart, while preserving authentication, cached shops, device identity, and entitlement. Unsynced changes are permanently lost; server data is not deleted and can be downloaded by a later sync.
 
 Auth tokens must stay in `expo-secure-store`, not AsyncStorage. Axios reads current auth and active shop directly from Zustand, adds `Authorization` and `X-Shop-Id`, serializes concurrent refresh attempts, and clears only the session (not SQLite data) when refresh fails.
 
@@ -192,7 +194,7 @@ Auth tokens must stay in `expo-secure-store`, not AsyncStorage. Axios reads curr
 
 The backend base URL has no `/api` prefix. Resolution order is Expo config `extra.apiBaseUrl`, `EXPO_PUBLIC_API_BASE_URL`, then Android emulator `http://10.0.2.2:5000`.
 
-Most core domain reads/writes use repositories. Notable online/server paths include auth, shop creation, subscription offerings/verification, notifications, remote dashboard analytics, rewarded ads, and sync endpoints. `useDashboardStats` falls back to local analytics; the detailed product/category/profit trend hooks are cloud-only. Notifications have no SQLite cache.
+Most core domain reads/writes use repositories. Notable online/server paths include auth, shop creation, subscription offerings/verification, notifications, remote dashboard analytics, rewarded ads, and sync endpoints. `useDashboardStats` falls back to local analytics; the detailed product/category/profit trend hooks are cloud-only. Notifications have no SQLite cache: the Home bell opens a shop-scoped paginated inbox backed by the backend `Notification` table, while Settings owns only device-local in-app alert preferences.
 
 Home popup campaigns are also online-only. After Home is active for 1.2 seconds, `HomeAnnouncement` requests authenticated `GET /engagement/home-popup`; it never displays stale cached campaign content. The native modal accepts only the versioned image/image-link/video contract, validates HTTPS media/actions, stores a shared five-minute cooldown in SecureStore, and keeps close locked for five seconds. Superadmins manage the single-active campaign through `/superadmin/app-popups` in the platform dashboard. `ENGAGEMENT_SETUP.md` documents deployment order and the API contract.
 
@@ -221,7 +223,7 @@ Home popup campaigns are also online-only. After Home is active for 1.2 seconds,
 - Use `useTheme()` and tokens from `src/theme`; do not add raw hex colors outside `src/theme/colors.js`. `colors.js` provides Emerald, Ocean, Indigo, Amber, Rose, Slate, and Classic presets in light/dark modes. The app's default is Emerald, while existing navy/gold remains available as Classic.
 - Brand headings use Outfit; body text uses IBM Plex Sans. Font keys must match `App.jsx` loading keys.
 - Use components from `src/components/ui` and motion primitives before duplicating patterns.
-- Full-page forms use `KeyboardAwareView` with `KeyboardAwareScrollView`; input sheets inherit the same keyboard-safe behavior from the shared `Sheet`. Android is explicitly configured with `softwareKeyboardLayoutMode: resize`.
+- Full-page forms use `KeyboardAwareView` with `KeyboardAwareScrollView`; input sheets inherit the same keyboard-safe behavior from the shared `Sheet`. The shared native-modal sheet is anchored to the modal window bottom so it overlays the app's custom bottom navigation; footer actions apply their own system safe-area padding. Android is explicitly configured with `softwareKeyboardLayoutMode: resize`.
 - Use `showToast()` for transient feedback and `await showConfirm()` for confirmation prompts.
 - English is the i18n source of truth. Add every new key to `en.js`, `ur.js`, and `hi.js`; missing translations fall back to English.
 - Urdu RTL is implemented manually per screen with flex direction/text alignment. Do not enable global `I18nManager.forceRTL()` without redesigning that behavior.

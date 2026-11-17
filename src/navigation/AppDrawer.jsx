@@ -10,7 +10,7 @@ import SalesReport from '../screens/reports/SalesReport';
 import Expenses from '../screens/expenses/Expenses';
 import SubscriptionPlans from '../screens/subscription/SubscriptionPlans';
 import EarnCoins from '../screens/subscription/EarnCoins';
-import Notifications from '../screens/shared/Notifications';
+import NotificationInbox from '../screens/shared/NotificationInbox';
 import { RecordsStack } from './stacks/RecordsStack';
 import { SidebarContent } from '../components/drawer/SidebarContent';
 
@@ -34,7 +34,7 @@ export function AppDrawer() {
       <Drawer.Screen name="ShopsStack" component={ShopsStack} />
       <Drawer.Screen name="SalesReport" component={SalesReport} />
       <Drawer.Screen name="Expenses" component={Expenses} />
-      <Drawer.Screen name="Notifications" component={Notifications} />
+      <Drawer.Screen name="Notifications" component={NotificationInbox} />
       <Drawer.Screen name="SubscriptionPlans" component={SubscriptionPlans} />
       <Drawer.Screen name="EarnCoins" component={EarnCoins} />
       <Drawer.Screen name="SettingsStack" component={SettingsStack} />

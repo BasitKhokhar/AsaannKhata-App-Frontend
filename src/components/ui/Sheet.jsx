@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable, Modal, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { X } from 'lucide-react-native';
 import { useTheme } from '../../theme';
 import { IconButton } from './IconButton';
@@ -12,8 +12,6 @@ import { IconButton } from './IconButton';
 // and looks the same.
 export function Sheet({ visible, onClose, title, children, footer, scrollable = true }) {
   const { colors, radii, typography, spacing, elevation } = useTheme();
-  const insets = useSafeAreaInsets();
-  const bottomOffset = Math.max(insets.bottom + 64, 72);
 
   const Body = scrollable ? ScrollView : View;
   const bodyProps = scrollable
@@ -28,9 +26,11 @@ export function Sheet({ visible, onClose, title, children, footer, scrollable = 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={{ flex: 1, backgroundColor: colors.surface.overlay }} onPress={onClose} />
+      {/* The native Modal already overlays BottomNav. Footer safe-area padding
+          protects actions from system UI without leaving a navigation-sized gap. */}
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ position: 'absolute', left: 0, right: 0, bottom: bottomOffset, maxHeight: '88%' }}
+        style={{ position: 'absolute', left: 0, right: 0, bottom: 0, maxHeight: '88%' }}
       >
         <View
           style={[

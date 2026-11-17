@@ -220,6 +220,9 @@ export const en = {
   'dashboard.syncModal.coinsEarned': 'Coins added. You can now continue syncing.',
   'dashboard.syncModal.success': 'Cloud sync completed successfully.',
   'dashboard.syncModal.failed': 'Could not complete cloud sync. Check your connection and try again.',
+  'dashboard.syncModal.deviceLimitTitle': 'Replace the linked device?',
+  'dashboard.syncModal.deviceLimitMessage': 'This plan has reached its device limit. Replacing the previously linked device will disable cloud sync on that installation and connect this one.',
+  'dashboard.syncModal.replaceDevice': 'Replace device',
   'dashboard.billsToday': 'Bills today',
   'dashboard.adsWatchedToday': 'Ads watched today',
   'dashboard.revenueThisWeek': 'Revenue this week',
@@ -269,20 +272,25 @@ export const en = {
   'settings.themePreset.rose': 'Rose',
   'settings.themePreset.slate': 'Slate',
   'settings.themePreset.classic': 'Classic',
-  'settings.deleteAccount': 'Delete Account & Data',
-  'settings.deleteAccountConfirmTitle': 'Delete Account & Data',
-  'settings.deleteAccountConfirmMessage':
-    "This removes your session from this device and signs you out. Full server-side account deletion isn't available yet — contact support if you need your account permanently erased.",
-  'settings.confirmSignOut': 'Sign Out & Clear Session',
+  'settings.deleteLocalData': 'Delete Local Data',
+  'settings.deleteLocalDataDesc': 'Clear this device without deleting your account',
+  'settings.deleteLocalDataConfirmTitle': 'Delete all local data?',
+  'settings.deleteLocalDataConfirmMessage':
+    'This permanently deletes products, bills, customers, expenses, stock history, receipt settings, and unsynced changes from this device. Your account and cloud data are not deleted. Cloud data may download again the next time you sync.',
+  'settings.deleteLocalDataConfirmAction': 'Delete Local Data',
+  'settings.localDataDeleted': 'Local data was deleted from this device.',
+  'settings.localDataDeleteFailed': 'Could not delete local data. Please try again.',
+  'settings.deleteLocalDataSyncInProgress': 'Wait for cloud sync to finish, then try again.',
   'settings.logout': 'Log Out',
   'settings.logoutFailed': 'Could not log out. Please try again.',
 
   // ---------------------------------------------------------------------
-  // Notifications (push inbox + in-app alert prefs, same screen)
+  // Notifications inbox + separate in-app alert preferences
   // ---------------------------------------------------------------------
   'notifications.inboxTitle': 'Notifications',
   'notifications.inboxSubtitle': 'Updates from your account',
   'notifications.markAllRead': 'Mark all read',
+  'notifications.unreadCount': '{count} unread',
   'notifications.empty': "You're all caught up — no notifications yet.",
   'notifications.loadMore': 'Load more',
   'notifications.couldntLoad': "Couldn't load notifications — check your connection.",

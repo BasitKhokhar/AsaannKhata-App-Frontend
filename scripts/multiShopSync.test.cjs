@@ -12,7 +12,7 @@ const compiled = babel.transformSync(source, {
   plugins: ['@babel/plugin-transform-modules-commonjs'],
 }).code;
 
-function setup({ failShop, conflictShop, entitlement = { cloudEnabled: true } } = {}) {
+function setup({ failShop, deviceLimitShop, conflictShop, entitlement = { cloudEnabled: true }, syncUnlockExpiresAt = null } = {}) {
   const calls = [];
   const statuses = {};
   const cursors = new Map();
@@ -28,9 +28,14 @@ function setup({ failShop, conflictShop, entitlement = { cloudEnabled: true } } 
   const shops = [{ id: 1, name: 'Grocery' }, { id: 2, name: 'Milk' }];
   const mocks = {
     '../services/syncApi': { syncApi: {
-      async registerDevice({ shopId }) {
-        calls.push(['register', shopId]);
+      async registerDevice({ shopId, replaceExisting }) {
+        calls.push(['register', shopId, !!replaceExisting]);
         if (String(shopId) === String(failShop)) throw new Error('registration failed');
+        if (String(shopId) === String(deviceLimitShop) && !replaceExisting) {
+          const error = new Error('Request failed with status code 403');
+          error.response = { data: { code: 'DEVICE_LIMIT_REACHED', message: 'Device limit reached for this plan' } };
+          throw error;
+        }
       },
       async pull({ shopId }) {
         calls.push(['pull', shopId]);
@@ -44,13 +49,16 @@ function setup({ failShop, conflictShop, entitlement = { cloudEnabled: true } } 
     } },
     '../db/repositories/shopRepository': { shopRepository: { upsertMany() {} } },
     '../db/repositories/entitlementRepository': { entitlementRepository: { get: () => entitlement } },
-    '../utils/entitlements': { hasSyncEntitlement: (value) => !!value?.cloudEnabled || ['FREE', 'FREE_TRIAL'].includes(value?.tier) },
+    '../utils/entitlements': {
+      hasSyncEntitlement: (value) => !!value?.cloudEnabled || ['FREE', 'FREE_TRIAL'].includes(value?.tier),
+      isFreeEntitlement: (value) => ['FREE', 'FREE_TRIAL'].includes(value?.tier),
+    },
     '../db/repositories/syncMetaRepository': { syncMetaRepository: {
       get: (key) => cursors.get(key), set: (key, value) => cursors.set(key, value),
     } },
     '../store/shopStore': { useShopStore: { getState: () => ({ activeShopId: '1' }) } },
     '../store/syncStore': { useSyncStore: { getState: () => syncState } },
-    '../store/coinsStore': { useCoinsStore: { getState: () => ({}) } },
+    '../store/coinsStore': { useCoinsStore: { getState: () => ({ syncUnlockExpiresAt }) } },
     '../store/authStore': { useAuthStore: { getState: () => ({ accessToken: 'token', adminId: 5 }) } },
     '../services/fcmService': { registerCurrentToken: async () => null },
     './receiptProfiles': { syncReceiptProfile: async (shopId) => { calls.push(['receipt', shopId]); return { conflict: shopId === conflictShop }; } },
@@ -90,6 +98,20 @@ test('one shop failure does not prevent another shop from syncing', async () => 
   assert.match(syncState.lastError, /Grocery: registration failed/);
 });
 
+test('device-limit responses retain their code and an explicit replacement retries registration', async () => {
+  const { runSync, calls, statuses, syncState } = setup({ deviceLimitShop: '1' });
+  const first = await runSync();
+  assert.equal(first.ok, false);
+  assert.equal(first.code, 'DEVICE_LIMIT_REACHED');
+  assert.match(first.message, /Grocery: Device limit reached for this plan/);
+  assert.equal(syncState.lastError, first.message);
+
+  const second = await runSync({ replaceExistingDevices: true });
+  assert.equal(second.ok, true);
+  assert.deepEqual(statuses, { 1: 'synced', 2: 'synced' });
+  assert.ok(calls.some(([kind, shopId, replaceExisting]) => kind === 'register' && shopId === '1' && replaceExisting));
+});
+
 test('receipt design conflict does not block business writes for either shop', async () => {
   const { runSync, calls, statuses, syncState } = setup({ conflictShop: '1' });
   await runSync();
@@ -98,8 +120,19 @@ test('receipt design conflict does not block business writes for either shop', a
   assert.match(syncState.lastError, /receipt.conflict/);
 });
 
-test('free accounts sync without a coin unlock', async () => {
+test('free accounts skip background sync outside an unlock window', async () => {
   const { runSync, calls, syncState } = setup({ entitlement: { tier: 'FREE', cloudEnabled: false } });
+  const result = await runSync();
+  assert.equal(result.reason, 'SYNC_UNLOCK_REQUIRED');
+  assert.deepEqual(calls.filter(([kind]) => kind === 'push'), []);
+  assert.equal(syncState.lastError, null);
+});
+
+test('free accounts sync while the manual unlock window is active', async () => {
+  const { runSync, calls, syncState } = setup({
+    entitlement: { tier: 'FREE', cloudEnabled: false },
+    syncUnlockExpiresAt: '2099-01-01T00:00:00.000Z',
+  });
   await runSync();
   assert.deepEqual(calls.filter(([kind]) => kind === 'push'), [['push', '1'], ['push', '2']]);
   assert.equal(syncState.lastError, null);

@@ -8,6 +8,7 @@ import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { PulseFab } from '../../components/motion/PulseFab';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
+import { Skeleton } from '../../components/ui/Skeleton';
 import { SectionHeader } from '../../components/ui/SectionHeader';
 import { ListRow } from '../../components/ui/ListRow';
 import { AdBanner } from '../../components/ui/AdBanner';
@@ -32,6 +33,7 @@ import { isLowStock, isOutOfStock } from '../../utils/stock';
 import { formatRelativeTime } from '../../utils/dates';
 import { dateRangeForPreset, dateRangeLabel } from '../../utils/dateRanges';
 import { hasSyncEntitlement, isAdSupportedEntitlement } from '../../utils/entitlements';
+import { useUnreadNotificationCount } from '../../hooks/useNotifications';
 
 export default function Dashboard() {
   const navigation = useNavigation();
@@ -61,20 +63,24 @@ export default function Dashboard() {
   const adSupported = isAdSupportedEntitlement(entitlement);
   const syncEnabled = hasSyncEntitlement(entitlement);
   const [syncOpen, setSyncOpen] = useState(false);
+  const { data: unreadNotificationData } = useUnreadNotificationCount();
+  const unreadNotificationCount = unreadNotificationData?.unreadCount ?? unreadNotificationData?.count ?? 0;
 
   function handleRefresh() {
     refetch();
     refetchTopProducts();
+    if (adSupported) useCoinsStore.getState().refresh().catch(() => {});
   }
   const lastSyncAt = useSyncStore((s) => s.lastSyncAt);
   const lowStockAlertsEnabled = useNotificationPrefsStore((s) => s.lowStockAlerts);
-  const syncStatusAlertsEnabled = useNotificationPrefsStore((s) => s.syncStatusAlerts);
 
   const billsUsedToday = useCoinsStore((s) => s.billsUsedToday);
   const adCoins = useCoinsStore((s) => s.adCoins);
   const freeDailyRecordLimit = useCoinsStore((s) => s.freeDailyRecordLimit);
   const adsWatchedToday = useCoinsStore((s) => s.adsWatchedToday);
   const maxRewardAdsPerDay = useCoinsStore((s) => s.maxRewardAdsPerDay);
+  const usageSnapshotReady = useCoinsStore((s) => s.usageSnapshotReady);
+  const usageLoading = useCoinsStore((s) => s.usageLoading);
 
   // "Daily usage" only means anything on the free tier — cloud-enabled plans
   // have no bill/ad-coin limits, so the card (and its refresh) is skipped
@@ -129,28 +135,20 @@ export default function Dashboard() {
               <ChevronDown size={14} color={colors.ink.secondary} strokeWidth={1.8} />
             </Pressable>
             <View style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.sm }}>
-              <Pressable onPress={() => navigation.navigate('Notifications')} hitSlop={8}><Bell size={20} color={colors.ink.primary} strokeWidth={1.8} /></Pressable>
+              <Pressable onPress={() => navigation.getParent()?.navigate('Notifications')} hitSlop={8} style={{ position: 'relative' }}>
+                <Bell size={20} color={colors.ink.primary} strokeWidth={1.8} />
+                {unreadNotificationCount > 0 ? <View style={{ position: 'absolute', top: -2, right: -2, width: 7, height: 7, borderRadius: 4, backgroundColor: colors.semantic.danger }} /> : null}
+              </Pressable>
               <Pressable onPress={() => navigation.dispatch(DrawerActions.openDrawer())} hitSlop={8}><Menu size={20} color={colors.ink.primary} strokeWidth={1.8} /></Pressable>
             </View>
           </View>
-          {syncEnabled && syncStatusAlertsEnabled ? (
-            <Pressable
-              onPress={() => navigation.navigate('SettingsStack', { screen: 'SyncStatus' })}
-              style={{ flexDirection: rowDirection, alignItems: 'center', gap: 6, paddingHorizontal: spacing.md, paddingBottom: spacing.sm }}
-            >
-              <Cloud size={12} color={colors.ink.secondary} strokeWidth={1.8} />
-              <Text style={[typography.caption, { color: colors.ink.secondary, fontSize: 11 }]}>
-                {lastSyncAt ? t('dashboard.syncedRelative').replace('{time}', formatRelativeTime(lastSyncAt)) : t('dashboard.notSyncedYet')}
-              </Text>
-            </Pressable>
-          ) : null}
           </SafeAreaView>
         </View>
 
         <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={{ padding: spacing.md, paddingBottom: 96, gap: spacing.md }}
-          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={handleRefresh} tintColor={colors.brand.primary} />}
+          refreshControl={<RefreshControl refreshing={isRefetching || usageLoading} onRefresh={handleRefresh} tintColor={colors.brand.primary} />}
         >
         {adSupported ? (
           <Card style={{ padding: spacing.md, gap: spacing.md }} level="sm">
@@ -163,18 +161,18 @@ export default function Dashboard() {
               </View>
               <View style={{ flexDirection: rowDirection, alignItems: 'center', gap: 5, backgroundColor: colors.semantic.warningBg, paddingHorizontal: 10, paddingVertical: 6, borderRadius: radii.pill }}>
                 <Coins size={15} color={colors.semantic.warning} strokeWidth={2} />
-                <Text style={[typography.label, { color: colors.semantic.warning }]}>{adCoins}</Text>
+                {usageSnapshotReady ? <Text style={[typography.label, { color: colors.semantic.warning }]}>{adCoins}</Text> : <Skeleton width={18} height={12} />}
               </View>
             </View>
             <View style={{ flexDirection: rowDirection, alignItems: 'center' }}>
               <View style={{ flex: 1, alignItems: 'center', gap: 3 }}>
                 <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: 'center' }]}>{t('dashboard.billsToday')}</Text>
-                <Text style={[typography.h2, { color: colors.ink.primary, fontSize: 20 }]}>{billsUsedToday}/{freeDailyRecordLimit}</Text>
+                {usageSnapshotReady ? <Text style={[typography.h2, { color: colors.ink.primary, fontSize: 20 }]}>{billsUsedToday}/{freeDailyRecordLimit}</Text> : <Skeleton width={52} height={20} />}
               </View>
               <View style={{ width: 1, height: 38, backgroundColor: colors.surface.border }} />
               <View style={{ flex: 1, alignItems: 'center', gap: 3 }}>
                 <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: 'center' }]}>{t('dashboard.adsWatchedToday')}</Text>
-                <Text style={[typography.h2, { color: colors.ink.primary, fontSize: 20 }]}>{adsWatchedToday}/{maxRewardAdsPerDay}</Text>
+                {usageSnapshotReady ? <Text style={[typography.h2, { color: colors.ink.primary, fontSize: 20 }]}>{adsWatchedToday}/{maxRewardAdsPerDay}</Text> : <Skeleton width={52} height={20} />}
               </View>
             </View>
             <Pressable
@@ -267,7 +265,6 @@ export default function Dashboard() {
         <Card>
           <View style={{ flexDirection: rowDirection, alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm }}>
             <Text style={[typography.h3, { color: colors.ink.primary }]}>{t('dashboard.topProducts')}</Text>
-            <Badge label={t('dashboard.syncedData')} tone="brand" />
           </View>
           {topProductsError ? (
             <Text style={[typography.caption, { color: colors.ink.secondary, textAlign }]}>{t('dashboard.couldntLoad')}</Text>
@@ -324,6 +321,7 @@ export default function Dashboard() {
         visible={syncOpen}
         onClose={() => setSyncOpen(false)}
         shopIds={shops.length ? shops.map((shop) => shop.id) : [activeShopId]}
+        cloudEnabled={!!entitlement?.cloudEnabled}
       />
       <DateFilterSheet
         visible={dateFilterOpen}

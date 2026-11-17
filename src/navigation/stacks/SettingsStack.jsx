@@ -6,7 +6,7 @@ import Profile from '../../screens/settings/Profile';
 import HelpSupport from '../../screens/settings/HelpSupport';
 import About from '../../screens/settings/About';
 import StaffManagement from '../../screens/settings/StaffManagement';
-import Notifications from '../../screens/shared/Notifications';
+import NotificationSettings from '../../screens/settings/NotificationSettings';
 
 import ReceiptSettings from '../../screens/settings/ReceiptSettings';
 import ScannerSettings from '../../screens/settings/ScannerSettings';
@@ -24,7 +24,7 @@ export function SettingsStack() {
       <Stack.Screen name="ScannerSettings" component={ScannerSettings} />
       <Stack.Screen name="SyncStatus" component={SyncStatus} />
       <Stack.Screen name="Profile" component={Profile} />
-      <Stack.Screen name="Notifications" component={Notifications} />
+      <Stack.Screen name="Notifications" component={NotificationSettings} />
       <Stack.Screen name="HelpSupport" component={HelpSupport} />
       <Stack.Screen name="About" component={About} />
       <Stack.Screen name="StaffManagement" component={StaffManagement} />

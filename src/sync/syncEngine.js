@@ -12,15 +12,22 @@ import { applyPullPage, cachePulledProductImages } from './pull';
 import { pushAllPending, pushPendingCoinUsage } from './push';
 import { queryClient } from '../services/queryClient';
 import { entitlementRepository } from '../db/repositories/entitlementRepository';
-import { hasSyncEntitlement } from '../utils/entitlements';
+import { hasSyncEntitlement, isFreeEntitlement } from '../utils/entitlements';
+import { useCoinsStore } from '../store/coinsStore';
 
 const sinceKey = (shopId) => `lastSyncSince:${shopId}`;
 
-async function ensureDeviceRegistered(shopId) {
+async function ensureDeviceRegistered(shopId, replaceExisting) {
   const device = deviceRepository.getOrCreate();
   // Registration is shop-scoped on the server, even though the UUID belongs
   // to this installation. Register it for each shop before pull and push.
-  await syncApi.registerDevice({ shopId, deviceId: device.deviceId, deviceName: 'AsaanKhata device', platform: 'android' });
+  await syncApi.registerDevice({
+    shopId,
+    deviceId: device.deviceId,
+    deviceName: 'AsaanKhata device',
+    platform: 'android',
+    replaceExisting,
+  });
   deviceRepository.markRegistered({ platform: 'android' });
   if (String(useShopStore.getState().activeShopId) === String(shopId)) registerCurrentToken().catch(() => {});
   return device.deviceId;
@@ -52,22 +59,38 @@ function invalidateShopQueries(shopId) {
 
 // All sync triggers use this entry point. The active shop is only a UI
 // selection; every shop owned by the signed-in admin must be reconciled.
-export async function runSync() {
+function syncFailure(error) {
+  const response = error?.response?.data;
+  const responseError = typeof response?.error === 'string' ? response.error : null;
+  return {
+    code: response?.code || responseError || error?.code || 'SYNC_FAILED',
+    message: response?.message || responseError || error?.message || 'Cloud sync failed',
+  };
+}
+
+export async function runSync({ replaceExistingDevices = false } = {}) {
   const { accessToken, adminId } = useAuthStore.getState();
-  if (!accessToken || !adminId) return;
+  if (!accessToken || !adminId) return { ok: false, code: 'NOT_AUTHENTICATED', message: 'Sign in to sync' };
   const syncStore = useSyncStore.getState();
-  if (syncStore.isSyncing) return;
+  if (syncStore.isSyncing) return { ok: false, code: 'SYNC_IN_PROGRESS', message: 'Cloud sync is already running' };
   syncStore.syncStarted();
 
   try {
     // Account-level coin usage is reconciled even for offline-only plans.
     await pushPendingCoinUsage();
 
-    // Free accounts include sync. Lifetime Offline remains intentionally
-    // local-only, while Basic/Pro use their cloudEnabled entitlement.
-    if (!hasSyncEntitlement(entitlementRepository.get())) {
+    // Lifetime Offline remains local-only. Free accounts can sync during the
+    // short server unlock opened by manual sync; background triggers quietly
+    // skip outside that window instead of producing an expected 402 error.
+    const entitlement = entitlementRepository.get();
+    if (!hasSyncEntitlement(entitlement)) {
       syncStore.syncFinished(syncStore.lastSyncAt);
-      return;
+      return { ok: true, skipped: true };
+    }
+    const syncUnlockExpiresAt = useCoinsStore.getState().syncUnlockExpiresAt;
+    if (isFreeEntitlement(entitlement) && (!syncUnlockExpiresAt || Date.parse(syncUnlockExpiresAt) <= Date.now())) {
+      syncStore.syncFinished(syncStore.lastSyncAt);
+      return { ok: true, skipped: true, reason: 'SYNC_UNLOCK_REQUIRED' };
     }
 
     // The server is authoritative for which shops this admin owns. A cached
@@ -87,25 +110,36 @@ export async function runSync() {
       const shopId = String(shop.id);
       syncStore.setShopStatus(shopId, 'syncing');
       try {
-        const deviceId = await ensureDeviceRegistered(shopId);
+        const deviceId = await ensureDeviceRegistered(shopId, replaceExistingDevices);
         await pullAll(deviceId, shopId);
         const profileResult = await syncReceiptProfile(shopId, deviceId);
         await pushAllPending(shopId, deviceId);
         if (profileResult?.conflict) throw new Error('receipt.conflict');
         syncStore.setShopStatus(shopId, 'synced');
       } catch (err) {
-        failures.push(`${shop.name || shopId}: ${err.message}`);
+        const failure = syncFailure(err);
+        failures.push({ shop: shop.name || shopId, ...failure });
         syncStore.setShopStatus(shopId, 'error');
       } finally {
         invalidateShopQueries(shopId);
       }
     }
 
-    if (failures.length) throw new Error(failures.join('; '));
+    if (failures.length) {
+      const error = new Error(failures.map((failure) => `${failure.shop}: ${failure.message}`).join('; '));
+      error.code = failures.some((failure) => failure.code === 'DEVICE_LIMIT_REACHED')
+        ? 'DEVICE_LIMIT_REACHED'
+        : failures[0].code;
+      throw error;
+    }
     deviceRepository.markSynced();
-    syncStore.syncFinished(new Date().toISOString());
+    const syncedAt = new Date().toISOString();
+    syncStore.syncFinished(syncedAt);
+    return { ok: true, syncedAt };
   } catch (err) {
-    syncStore.syncFailed(err.message);
+    const failure = syncFailure(err);
+    syncStore.syncFailed(failure.message);
+    return { ok: false, ...failure };
   } finally {
     for (const key of ['bill', 'customer', 'product']) {
       queryClient.invalidateQueries({ queryKey: [key] });

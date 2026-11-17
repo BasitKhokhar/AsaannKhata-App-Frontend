@@ -13,6 +13,12 @@ export const useSyncStore = create((set) => ({
   syncFinished: (lastSyncAt) => set({ isSyncing: false, lastSyncAt }),
   syncFailed: (lastError) => set({ isSyncing: false, lastError }),
   setPendingCount: (pendingCount) => set({ pendingCount }),
+  resetAfterLocalDataClear: () => set({
+    lastSyncAt: null,
+    lastError: null,
+    pendingCount: 0,
+    perShopStatus: {},
+  }),
   setShopStatus: (shopId, status) =>
     set((s) => ({ perShopStatus: { ...s.perShopStatus, [shopId]: status } })),
 }));

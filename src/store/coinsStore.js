@@ -25,6 +25,8 @@ export const useCoinsStore = create(
       syncUnlockExpiresAt: null,
       rewardAdCoinValue: 0,
       cloudEnabled: false,
+      usageSnapshotReady: false,
+      usageLoading: false,
 
       setOwner: (adminId) => set((state) => {
         if (String(state.ownerAdminId) === String(adminId)) return {};
@@ -41,6 +43,8 @@ export const useCoinsStore = create(
           syncUnlockExpiresAt: null,
           rewardAdCoinValue: 0,
           cloudEnabled: false,
+          usageSnapshotReady: false,
+          usageLoading: false,
           consecutiveRewardedAds: 0,
           rewardedCooldownUntil: null,
           lastInterstitialShownAt: 0,
@@ -57,24 +61,30 @@ export const useCoinsStore = create(
       // mount/focus and after EarnCoins actions; safe to call while offline —
       // callers should let the request fail and keep showing cached values.
       refresh: async () => {
-        const config = await adsApi.getConfig();
-        const watchedToday = Math.max(0, config.adsWatchedToday ?? 0);
-        const serverDailyCap = Math.max(0, config.maxRewardAdsPerDay ?? MAX_REWARDED_ADS_PER_DAY);
-        const dailyCap = Math.min(MAX_REWARDED_ADS_PER_DAY, serverDailyCap);
-        set({
-          adCoins: config.adCoins ?? 0,
-          adsWatchedToday: watchedToday,
-          adsRemainingToday: Math.min(config.adsRemainingToday ?? 0, Math.max(0, dailyCap - watchedToday)),
-          maxRewardAdsPerDay: dailyCap,
-          syncCoinCost: config.syncCoinCost ?? 0,
-          freeDailyRecordLimit: config.freeDailyRecordLimit ?? 0,
-          billCoinCost: config.billCoinCost ?? get().billCoinCost,
-          billsUsedToday: config.billsUsedToday ?? 0,
-          syncUnlockExpiresAt: config.syncUnlockExpiresAt ?? null,
-          rewardAdCoinValue: config.rewardAdCoinValue ?? 0,
-          cloudEnabled: !!config.cloudEnabled,
-        });
-        return config;
+        set({ usageLoading: true });
+        try {
+          const config = await adsApi.getConfig();
+          const watchedToday = Math.max(0, config.adsWatchedToday ?? 0);
+          const serverDailyCap = Math.max(0, config.maxRewardAdsPerDay ?? MAX_REWARDED_ADS_PER_DAY);
+          const dailyCap = Math.min(MAX_REWARDED_ADS_PER_DAY, serverDailyCap);
+          set({
+            adCoins: config.adCoins ?? 0,
+            adsWatchedToday: watchedToday,
+            adsRemainingToday: Math.min(config.adsRemainingToday ?? 0, Math.max(0, dailyCap - watchedToday)),
+            maxRewardAdsPerDay: dailyCap,
+            syncCoinCost: config.syncCoinCost ?? 0,
+            freeDailyRecordLimit: config.freeDailyRecordLimit ?? 0,
+            billCoinCost: config.billCoinCost ?? get().billCoinCost,
+            billsUsedToday: config.billsUsedToday ?? 0,
+            syncUnlockExpiresAt: config.syncUnlockExpiresAt ?? null,
+            rewardAdCoinValue: config.rewardAdCoinValue ?? 0,
+            cloudEnabled: !!config.cloudEnabled,
+            usageSnapshotReady: true,
+          });
+          return config;
+        } finally {
+          set({ usageLoading: false });
+        }
       },
 
       // Merges the response from POST /ads/reward — the only place adCoins

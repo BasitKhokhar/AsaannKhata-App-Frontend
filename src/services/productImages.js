@@ -88,6 +88,10 @@ export function deleteLocalProductImage(uri) {
   if (file.exists) file.delete();
 }
 
+export function clearLocalProductImages() {
+  if (productImageDirectory.exists) productImageDirectory.delete();
+}
+
 function hashUrl(value) {
   let hash = 2166136261;
   for (let index = 0; index < value.length; index += 1) {
