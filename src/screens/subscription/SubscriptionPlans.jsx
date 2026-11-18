@@ -18,6 +18,46 @@ import { showToast } from '../../store/toastStore';
 import { useT, useIsUrdu, useLanguageStore } from '../../store/languageStore';
 
 const CYCLE_ORDER = { MONTHLY: 0, SEMIANNUAL: 1, YEARLY: 2 };
+const CYCLE_MONTHS = { MONTHLY: 1, SEMIANNUAL: 6, YEARLY: 12 };
+
+function formatStoreAmount(amount, product, lang) {
+  if (!Number.isFinite(amount)) return null;
+  const locale = lang === 'ur' ? 'ur-PK' : lang === 'hi' ? 'hi-IN' : 'en-PK';
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: product?.currencyCode,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  } catch {
+    return `${product?.currencyCode || ''} ${amount.toLocaleString('en-US', { maximumFractionDigits: 2 })}`.trim();
+  }
+}
+
+function recurringPricing(plans, offering, selectedPlan, lang) {
+  const selectedProduct = packageFor(offering, selectedPlan)?.product;
+  const months = CYCLE_MONTHS[selectedPlan?.billingCycle];
+  if (!selectedProduct || !months || !Number.isFinite(selectedProduct.price)) return null;
+
+  const monthlyPlan = plans.find((plan) => plan.billingCycle === 'MONTHLY');
+  const monthlyProduct = packageFor(offering, monthlyPlan)?.product;
+  const effectiveMonthly = selectedProduct.price / months;
+  const baselineTotal = Number.isFinite(monthlyProduct?.price) ? monthlyProduct.price * months : null;
+  const savingsPercent = baselineTotal > 0 && selectedProduct.price < baselineTotal
+    ? Math.round((1 - selectedProduct.price / baselineTotal) * 100)
+    : 0;
+
+  return {
+    total: formatStoreAmount(selectedProduct.price, selectedProduct, lang) || selectedProduct.priceString,
+    effectiveMonthly: formatStoreAmount(effectiveMonthly, selectedProduct, lang)
+      || selectedProduct.pricePerMonthString,
+    regularMonthly: monthlyProduct
+      ? formatStoreAmount(monthlyProduct.price, monthlyProduct, lang) || monthlyProduct.priceString
+      : null,
+    savingsPercent,
+  };
+}
 
 function suppliedFeatures(plan) {
   if (Array.isArray(plan.features)) return plan.features;
@@ -47,10 +87,17 @@ function planFamily(plan) {
     .replace(/:(monthly|six-month|semiannual|yearly)$/i, '');
 }
 
+function isFreePlan(plan) {
+  return ['FREE', 'FREE_TRIAL'].includes(plan.tier) || /^FREE(?:_|$)/i.test(plan.code || '');
+}
+
 function buildPlanCards(plans) {
-  const cards = plans.filter((plan) => plan.tier !== 'CLOUD_SYNC').map((plan) => ({ kind: 'single', key: plan.code, plan }));
+  const paidPlans = plans.filter((plan) => !isFreePlan(plan));
+  const cards = paidPlans
+    .filter((plan) => plan.tier !== 'CLOUD_SYNC')
+    .map((plan) => ({ kind: 'single', key: plan.code, plan }));
   const groups = new Map();
-  plans.filter((plan) => plan.tier === 'CLOUD_SYNC').forEach((plan) => {
+  paidPlans.filter((plan) => plan.tier === 'CLOUD_SYNC').forEach((plan) => {
     const key = planFamily(plan);
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(plan);
@@ -80,7 +127,7 @@ function timeRemaining(expiryDate, now, t) {
 }
 
 export default function SubscriptionPlans() {
-  const { mode, colors, radii, typography, spacing } = useTheme();
+  const { colors, radii, typography, spacing } = useTheme();
   const queryClient = useQueryClient();
   const adminId = useAuthStore((s) => s.adminId);
   const { data: entitlement } = useEntitlement();
@@ -115,7 +162,6 @@ export default function SubscriptionPlans() {
   const plans = (Array.isArray(plansData) ? plansData : plansData?.plans || []).filter((p) => p.isActive !== false);
   const cards = buildPlanCards(plans);
   const currentPlanCode = entitlement?.planCode;
-  const selectedTint = colors.brand.accentLight + (mode === 'dark' ? '29' : '1A');
 
   async function handlePurchase(plan) {
     if (!plan || plan.tier === 'FREE_TRIAL') return;
@@ -183,21 +229,23 @@ export default function SubscriptionPlans() {
 
   function priceFor(plan) {
     if (plan.tier === 'FREE_TRIAL') return t('subscription.plans.free');
-    return packageFor(offering, plan)?.product?.priceString || t('subscription.plans.priceUnavailable');
+    const product = packageFor(offering, plan)?.product;
+    if (!product) return t('subscription.plans.priceUnavailable');
+    return formatStoreAmount(product.price, product, lang) || product.priceString;
   }
 
   return <AnimatedScreen><SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1 }}>
     <Header title={t('subscription.plans.title')} />
     <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
-      {entitlement?.planCode ? <Card style={{ backgroundColor: colors.brand.accentLight }}>
-        <Text style={[typography.label, { color: colors.brand.accentDark, textAlign }]}>{t('subscription.plans.currentPlan')}</Text>
-        <Text style={[typography.h3, { color: colors.ink.primary, marginTop: spacing.xs, textAlign }]}>
+      {entitlement?.planCode ? <Card bordered={false} level="md" style={{ backgroundColor: colors.brand.primaryDark }}>
+        <Text style={[typography.label, { color: colors.ink.onBrand, opacity: 0.72, textAlign }]}>{t('subscription.plans.currentPlan')}</Text>
+        <Text style={[typography.h3, { color: colors.ink.onBrand, marginTop: spacing.xs, textAlign }]}>
           {plans.find((p) => p.code === currentPlanCode)?.name || entitlement.planName || currentPlanCode}
         </Text>
-        <Text style={[typography.body, { color: colors.ink.secondary, marginTop: spacing.xs, textAlign }]}>
+        <Text style={[typography.body, { color: colors.ink.onBrand, opacity: 0.82, marginTop: spacing.xs, textAlign }]}>
           {entitlement.expiryDate ? timeRemaining(entitlement.expiryDate, now, t) : t('subscription.plans.lifetimeAccess')}
         </Text>
-        {entitlement.expiryDate ? <Text style={[typography.caption, { color: colors.ink.secondary, marginTop: spacing.xs, textAlign }]}>
+        {entitlement.expiryDate ? <Text style={[typography.caption, { color: colors.ink.onBrand, opacity: 0.72, marginTop: spacing.xs, textAlign }]}>
           {t('subscription.plans.endsOn').replace('{date}', new Date(entitlement.expiryDate).toLocaleDateString())}
         </Text> : null}
       </Card> : null}
@@ -212,6 +260,7 @@ export default function SubscriptionPlans() {
         const isCurrent = isCloud ? card.plans.some((p) => p.code === currentPlanCode) : plan.code === currentPlanCode;
         const recommended = isCloud && /(^|_)PRO($|_)/i.test(card.key);
         const purchasable = selectedVariant.tier !== 'FREE_TRIAL' && !!packageFor(offering, selectedVariant);
+        const selectedPricing = isCloud ? recurringPricing(card.plans, offering, selectedVariant, lang) : null;
         return <Card key={card.key} level={recommended ? 'md' : 'sm'} style={{ padding: 0, overflow: 'hidden', borderWidth: isCurrent ? 2 : 1,
           borderColor: isCurrent ? colors.semantic.success : recommended ? colors.brand.accentDark : colors.surface.border }}>
           <View style={{ backgroundColor: recommended ? colors.brand.accentLight : colors.surface.card, padding: spacing.lg }}>
@@ -227,15 +276,29 @@ export default function SubscriptionPlans() {
           <View style={{ padding: spacing.lg }}>
             {isCloud ? <View>
               <Text style={[typography.label, { color: colors.ink.secondary, marginBottom: spacing.sm, textAlign }]}>{t('subscription.plans.chooseBillingPeriod')}</Text>
-              <View style={{ flexDirection: rowDirection, gap: spacing.xs }}>
-                {card.plans.map((variant) => {
+              <View style={{ flexDirection: rowDirection, marginTop: 5, padding: 3, minHeight: 50, borderRadius: radii.md,
+                borderWidth: 1, borderColor: colors.surface.border, backgroundColor: colors.surface.card }}>
+                {card.plans.map((variant, index) => {
                   const active = selectedVariant.code === variant.code;
+                  const variantPricing = recurringPricing(card.plans, offering, variant, lang);
+                  const savingsPercent = variantPricing?.savingsPercent || 0;
+                  const hasDivider = index > 0;
                   return <Pressable key={variant.code} onPress={() => setSelectedCodes((value) => ({ ...value, [card.key]: variant.code }))} accessibilityRole="radio"
-                    accessibilityState={{ checked: active }} style={{ flex: 1, minHeight: 48, alignItems: 'center', justifyContent: 'center',
-                      paddingHorizontal: spacing.xs, borderRadius: radii.md, borderWidth: active ? 2 : 1,
-                      borderColor: active ? colors.brand.primary : colors.surface.border,
-                      backgroundColor: active ? selectedTint : colors.surface.card }}>
-                    <Text numberOfLines={2} style={[typography.label, { color: active ? colors.brand.primary : colors.ink.secondary, textAlign: 'center' }]}>
+                    accessibilityLabel={`${t(`subscription.plans.cycle.${variant.billingCycle}`)}${savingsPercent ? `, ${t('subscription.plans.savePercent').replace('{percent}', savingsPercent)}` : ''}`}
+                    accessibilityState={{ checked: active }} style={{ flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center',
+                      paddingHorizontal: spacing.xs, borderRadius: radii.sm,
+                      ...(hasDivider && !active ? (isUrdu ? { borderRightWidth: 1 } : { borderLeftWidth: 1 }) : {}),
+                      borderColor: colors.surface.border,
+                      backgroundColor: active ? colors.brand.primary : 'transparent' }}>
+                    {savingsPercent ? <View style={{ position: 'absolute', top: -12, zIndex: 2, borderRadius: radii.pill,
+                      paddingHorizontal: 6, paddingVertical: 2, backgroundColor: colors.semantic.successBg,
+                      borderWidth: 2, borderColor: colors.surface.raised }}>
+                      <Text style={[typography.label, { color: colors.semantic.success, fontSize: 9, lineHeight: 11 }]}>
+                        {t('subscription.plans.savePercent').replace('{percent}', savingsPercent)}
+                      </Text>
+                    </View> : null}
+                    <Text numberOfLines={1} style={[typography.label, { color: active ? colors.ink.onBrand : colors.ink.secondary,
+                      fontSize: active ? 13 : 12, textAlign: 'center' }]}>
                       {t(`subscription.plans.cycle.${variant.billingCycle}`)}
                     </Text>
                   </Pressable>;
@@ -243,12 +306,32 @@ export default function SubscriptionPlans() {
               </View>
             </View> : null}
 
-            <View style={{ flexDirection: rowDirection, alignItems: 'baseline', gap: spacing.xs, marginTop: isCloud ? spacing.lg : 0 }}>
+            {selectedPricing ? <View style={{ marginTop: isCloud ? spacing.lg : 0 }}>
+              <Text style={[typography.label, { color: colors.ink.secondary, textAlign }]}>{t('subscription.plans.effectiveMonthlyPrice')}</Text>
+              <View style={{ flexDirection: rowDirection, alignItems: 'baseline', flexWrap: 'wrap', gap: spacing.xs, marginTop: 2 }}>
+                <Text style={[typography.numericLarge, { color: colors.brand.primary, fontSize: 30 }]}>{selectedPricing.effectiveMonthly}</Text>
+                <Text style={[typography.bodyMedium, { color: colors.ink.secondary }]}>{t('subscription.plans.perMonth')}</Text>
+              </View>
+              {selectedPricing.savingsPercent && selectedPricing.regularMonthly ? <View style={{ flexDirection: rowDirection, alignItems: 'center',
+                flexWrap: 'wrap', gap: spacing.xs, marginTop: spacing.xs }}>
+                <Text style={[typography.caption, { color: colors.ink.secondary }]}>{t('subscription.plans.regularMonthlyPrice')}</Text>
+                <Text style={[typography.caption, { color: colors.ink.secondary, textDecorationLine: 'line-through' }]}>{selectedPricing.regularMonthly}</Text>
+                <Badge label={t('subscription.plans.savePercent').replace('{percent}', selectedPricing.savingsPercent)} tone="success" />
+              </View> : null}
+              <View style={{ flexDirection: rowDirection, alignItems: 'center', justifyContent: 'space-between', gap: spacing.md,
+                marginTop: spacing.md, padding: spacing.md, borderRadius: radii.md, backgroundColor: colors.surface.card,
+                borderWidth: 1, borderColor: colors.surface.border }}>
+                <Text style={[typography.bodyMedium, { color: colors.ink.secondary, flex: 1, textAlign }]}>
+                  {t('subscription.plans.termTotal').replace('{cycle}', t(`subscription.plans.cycle.${selectedVariant.billingCycle}`))}
+                </Text>
+                <Text style={[typography.numeric, { color: colors.ink.primary }]}>{selectedPricing.total}</Text>
+              </View>
+            </View> : <View style={{ flexDirection: rowDirection, alignItems: 'baseline', gap: spacing.xs, marginTop: isCloud ? spacing.lg : 0 }}>
               <Text style={[typography.numericLarge, { color: colors.brand.primary, fontSize: 30 }]}>{priceFor(selectedVariant)}</Text>
               {selectedVariant.billingCycle ? <Text style={[typography.caption, { color: colors.ink.secondary }]}>
                 {t('subscription.plans.billedCycle').replace('{cycle}', t(`subscription.plans.cycle.${selectedVariant.billingCycle}`).toLocaleLowerCase())}
               </Text> : null}
-            </View>
+            </View>}
 
             <View style={{ height: 1, backgroundColor: colors.surface.border, marginVertical: spacing.lg }} />
             {featureRows(selectedVariant)}
@@ -259,6 +342,7 @@ export default function SubscriptionPlans() {
               loading={busy}
               disabled={!purchasable || selectedVariant.code === currentPlanCode}
               variant={recommended ? 'accent' : 'primary'}
+              foregroundColor={recommended ? colors.ink.inverse : undefined}
               style={{ marginTop: spacing.lg }}
             />
           </View>

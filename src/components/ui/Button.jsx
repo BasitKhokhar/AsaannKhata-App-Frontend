@@ -8,7 +8,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const PRESS_SPRING = { damping: 14, stiffness: 260 };
 
 // variant: 'primary' (navy gradient), 'accent' (gold gradient), 'outline', 'ghost', 'danger'
-export function Button({ title, onPress, variant = 'primary', disabled, loading, style, icon, compact = false }) {
+export function Button({ title, onPress, variant = 'primary', disabled, loading, style, icon, compact = false, foregroundColor }) {
   const { colors, radii, typography, spacing } = useTheme();
   const isGradient = variant === 'primary' || variant === 'accent';
   const gradientColors = variant === 'accent' ? colors.gradient.accent : colors.gradient.primary;
@@ -26,11 +26,11 @@ export function Button({ title, onPress, variant = 'primary', disabled, loading,
       {loading ? (
         <ActivityIndicator
           color={
-            variant === 'accent'
+            foregroundColor || (variant === 'accent'
               ? colors.ink.primary
               : variant === 'danger'
               ? colors.semantic.danger
-              : colors.ink.inverse
+              : colors.ink.inverse)
           }
         />
       ) : (
@@ -43,7 +43,7 @@ export function Button({ title, onPress, variant = 'primary', disabled, loading,
             style={[
               compact ? typography.label : typography.h3,
               {
-                color: textColorFor(variant, colors),
+                color: foregroundColor || textColorFor(variant, colors),
                 marginLeft: icon ? spacing.sm : 0,
               },
             ]}

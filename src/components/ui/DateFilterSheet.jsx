@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Platform, Pressable, Text, View } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, ArrowRight } from 'lucide-react-native';
 import { Sheet } from './Sheet';
 import { Button } from './Button';
@@ -14,6 +15,7 @@ export function DateFilterSheet({ visible, onClose, onSelect, showAllTime = fals
   const { colors, radii, typography, spacing } = useTheme();
   const t = useT();
   const isUrdu = useIsUrdu();
+  const insets = useSafeAreaInsets();
   const direction = isUrdu ? 'row-reverse' : 'row';
   const [startDate, setStartDate] = useState(() => value?.startDate ? new Date(value.startDate) : new Date());
   const [endDate, setEndDate] = useState(() => value?.endDate ? new Date(value.endDate) : new Date());
@@ -52,7 +54,7 @@ export function DateFilterSheet({ visible, onClose, onSelect, showAllTime = fals
       {startDate > endDate ? <Text style={[typography.caption, { color: colors.semantic.danger, textAlign: isUrdu ? 'right' : 'left' }]}>{t('dateFilter.invalidRange')}</Text> : null}
       <Button title={t('dateFilter.showReport')} onPress={showCustomRange} disabled={startDate > endDate} />
 
-      <View style={{ gap: spacing.sm }}>
+      <View style={{ gap: spacing.sm, paddingBottom: Math.max(insets.bottom, spacing.xl) }}>
         {rows.map((row) => (
           <View key={row.join('-')} style={{ flexDirection: direction, gap: spacing.sm }}>
             {row.map((id) => (
