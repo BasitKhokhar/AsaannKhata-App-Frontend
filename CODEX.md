@@ -154,7 +154,7 @@ The Records stack uses `billSettlementRepository` to associate later customer pa
 
 ## Synchronization contract
 
-All triggers call `runSync()` in `src/sync/syncEngine.js`. Triggers are app startup, foreground, offline-to-online transition, every five minutes while foregrounded, and manual Sync Now actions. Cloud-enabled Basic/Pro accounts sync directly. Free accounts use rewarded coins to open the backend's short sync window from the manual sheet; automatic triggers sync only while that cached window is active and otherwise skip without reporting an error. Paid Lifetime Offline remains local-only and does not attempt cloud sync.
+All triggers call `runSync()` in `src/sync/syncEngine.js`. Triggers are app startup, foreground, offline-to-online transition, every five minutes while foregrounded, and manual Sync Now actions. Cloud-enabled Basic/Pro accounts sync directly. Free accounts use rewarded coins to open the backend's short sync window from a centered manual-sync modal; the modal reads the shared live coin store, stays busy through the sync response and authoritative coin refresh, and automatic triggers skip quietly when no cached unlock window is active. Paid Lifetime Offline remains local-only and does not attempt cloud sync.
 
 Sync sequence:
 
