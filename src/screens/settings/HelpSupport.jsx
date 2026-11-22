@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, Linking } from 'react-native';
+import { View, Text, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronDown, Mail } from 'lucide-react-native';
+import { useNavigation } from '@react-navigation/native';
+import { ChevronDown, MessageCircle } from 'lucide-react-native';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { Header } from '../../components/ui/Header';
 import { Card } from '../../components/ui/Card';
@@ -9,8 +10,6 @@ import { ListRow } from '../../components/ui/ListRow';
 import { SectionHeader } from '../../components/ui/SectionHeader';
 import { useTheme } from '../../theme';
 import { useT, useIsUrdu } from '../../store/languageStore';
-
-const SUPPORT_EMAIL = process.env.EXPO_PUBLIC_SUPPORT_EMAIL?.trim();
 
 function FaqRow({ question, answer }) {
   const { colors, radii, typography, spacing } = useTheme();
@@ -40,6 +39,7 @@ function FaqRow({ question, answer }) {
 }
 
 export default function HelpSupport() {
+  const navigation = useNavigation();
   const { colors, radii, typography, spacing } = useTheme();
   const t = useT();
   const isUrdu = useIsUrdu();
@@ -69,9 +69,9 @@ export default function HelpSupport() {
 
           <View>
             <SectionHeader title={t('settings.helpSupport.contactUs')} style={{ flexDirection: rowDirection }} />
-            {SUPPORT_EMAIL ? <Card bordered={false} style={{ padding: spacing.xs }}>
+            <Card bordered={false} style={{ padding: spacing.xs }}>
               <ListRow
-                onPress={() => Linking.openURL(`mailto:${SUPPORT_EMAIL}`)}
+                onPress={() => navigation.navigate('ContactSupport')}
                 style={{ flexDirection: rowDirection }}
                 leading={
                   <View
@@ -84,15 +84,15 @@ export default function HelpSupport() {
                       justifyContent: 'center',
                     }}
                   >
-                    <Mail size={18} color={colors.brand.primary} strokeWidth={1.8} />
+                    <MessageCircle size={18} color={colors.brand.primary} strokeWidth={1.8} />
                   </View>
                 }
-                title={t('settings.helpSupport.emailSupport')}
-                subtitle={SUPPORT_EMAIL}
+                title={t('settings.helpSupport.form.title')}
+                subtitle={t('settings.helpSupport.form.subtitle')}
                 titleStyle={{ textAlign: isUrdu ? 'right' : 'left' }}
                 showChevron
               />
-            </Card> : <Text style={[typography.body, { color: colors.ink.secondary, paddingHorizontal: spacing.md, textAlign: isUrdu ? 'right' : 'left' }]}>{t('settings.helpSupport.contactUnavailable')}</Text>}
+            </Card>
             <Text style={[typography.caption, { color: colors.ink.secondary, marginTop: spacing.sm, paddingHorizontal: spacing.md, textAlign: isUrdu ? 'right' : 'left' }]}>
               {t('settings.helpSupport.noPhoneSupport')}
             </Text>

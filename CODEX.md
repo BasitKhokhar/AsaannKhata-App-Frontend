@@ -51,7 +51,7 @@ Firebase Analytics screen views are emitted on navigation route changes.
 ## Navigation map
 
 - Onboarding: `Splash` -> `Onboarding1` -> `Onboarding2` -> `Onboarding3` -> `Onboarding4`.
-- Auth: `Login`, three registration steps (business type, shop details, account), `ForgotPassword`, `OtpVerification`. Finishing or skipping first-run onboarding enters the business-type registration step, which has a prominent existing-account Login action. Later signed-out launches and explicit logout enter Login, where account creation is also a full-width action. Registration creates the account, first shop, and free entitlement in one backend call; login and registration responses both include the resolved entitlement. The frontend writes shop/entitlement state into SQLite and React Query before switching from Auth to the app navigator, so Free-plan surfaces exist on Dashboard's first frame. Paid plan selection is available after sign-in. ForgotPassword requests a 6-digit email code; OtpVerification confirms the code and sets a new password through backend auth endpoints.
+- Auth: `Login`, three registration steps (business type, shop details, account), `ForgotPassword`, `OtpVerification`, and `LegalWebPage` for opening Privacy Policy and Terms before registration. Finishing or skipping first-run onboarding enters the business-type registration step, which has a prominent existing-account Login action. Later signed-out launches and explicit logout enter Login, where account creation is also a full-width action. Registration creates the account, first shop, and free entitlement in one backend call; login and registration responses both include the resolved entitlement. The frontend writes shop/entitlement state into SQLite and React Query before switching from Auth to the app navigator, so Free-plan surfaces exist on Dashboard's first frame. Paid plan selection is available after sign-in. ForgotPassword requests a 6-digit email code; OtpVerification confirms the code and sets a new password through backend auth endpoints.
 - Drawer routes:
   - `HomeStack`: `Dashboard`
   - `BillingStack`: `NewBill`, `Payment`, `BillDetail`, `CreditCustomers`, `CustomerDetail`, `RecordDetail`, `RecordPayment`, `AddProduct`
@@ -60,7 +60,7 @@ Firebase Analytics screen views are emitted on navigation route changes.
   - `ShopsStack`: `ShopsList`, `AddShop`
   - Direct drawer screens: `SalesReport`, `Expenses`, `Notifications` (server-backed inbox opened by the Home bell), `SubscriptionPlans`, `EarnCoins`
   - `RecordsStack`: `RecordsList`, `RecordDetail`, `RecordPayment` (shop-scoped invoice table with full-screen bill detail and later-payment entry)
-  - `SettingsStack`: `Settings`, `ScannerSettings`, `ReceiptSettings`, `PrinterSettings`, `SyncStatus`, `Profile`, `StaffManagement`, `Notifications` (device-local alert preferences), `HelpSupport`, `About`
+  - `SettingsStack`: `Settings`, `ScannerSettings`, `ReceiptSettings`, `PrinterSettings`, `SyncStatus`, `Profile`, `StaffManagement`, `Notifications` (device-local alert preferences), `HelpSupport`, `ContactSupport`, `About`, `LegalWebPage`
 - `AddProduct` exists in both Billing and Catalog stacks so a product created during billing returns to `NewBill`; `StockAdjustment` deliberately exists in both Catalog and Stock stacks so each stack can navigate locally.
 - Customer-history bill taps open `RecordDetail`, the same invoice details used by Records. `RecordDetail` and `RecordPayment` are also registered in Billing so the detail/payment flow stays in the customer's stack and Back returns to customer history. `BillDetail` remains the post-checkout screen.
 - Cross-drawer navigation usually uses `navigation.navigate('SomeStack', { screen: 'SomeScreen' })`.
@@ -176,7 +176,8 @@ Do not bypass this design by writing remote-first mutations for a domain that is
 - `shopStore`: persisted active shop ID.
 - `onboardingStore`: persisted onboarding completion.
 - `themeStore`: persisted `system`/`light`/`dark` preference plus a palette preset and per-admin/per-shop palette overrides. `ThemeProvider` suggests a preset from the active shop type when no override exists. Palette preferences are currently device-local, not synced to the backend.
-- `StaffManagement` shows the owner account and an explicit unavailable state. Staff identity, invite, and role permissions do not exist in the backend; no staff actions are enabled.
+- `StaffManagement` remains registered as a retained future route but is hidden from the Settings list in production. Its screen shows the owner account and an explicit unavailable state if opened during development. Staff identity, invite, and role permissions do not exist in the backend; no staff actions are enabled.
+- Legal documents use a shared allowlisted `LegalWebPage` WebView for `https://asaandukaannlegalpages.netlify.app`. Privacy and Terms are available both during registration and under About; About also exposes the public Legal Center and account-deletion information. Settings has a prominent account-deletion request entry. `ContactSupport` collects a categorized request and contact email, then opens a user-confirmed email draft to the published support address; it does not silently transmit form data.
 - `languageStore`: persisted `en`/`ur`/`hi`, `t()` helper, and Urdu RTL signal.
 - `notificationPrefsStore`: persisted in-app preference flags; not system push registration.
 - `coinsStore`: persisted ad/coin snapshot and rewarded-ad pacing. Snapshots record whether server usage has loaded; a newly signed-in Free account renders the Daily Usage card immediately with stable skeleton values until `/ads/config` returns, while returning accounts can show their owner-tagged cached snapshot instantly.
@@ -253,7 +254,7 @@ Environment variable names currently used:
 
 - `EXPO_ID`
 - `EXPO_PUBLIC_API_BASE_URL`
-- `EXPO_PUBLIC_SUPPORT_EMAIL` (optional; Help & Support shows an email action only when configured)
+- `EXPO_PUBLIC_SUPPORT_EMAIL` (optional override for the published `support@asaankhata.app` address used by Contact Support)
 - `GOOGLE_ADMOB_ANDROID_APP_ID`
 - `BANNER_AD_UNIT_ID`
 - `INTERSTITIAL_AD_UNIT_ID`
@@ -296,7 +297,6 @@ EAS profiles are `development`, `development-simulator`, `preview`, and `product
 - There is no dedicated migration-recovery UI; migration errors currently throw at the root.
 - Local bill, product creation and stock-adjustment writes use Expo SQLite synchronous transactions. The snapshot/ledger double-application path was removed for synced bills and adjustments, but concurrent edits from multiple devices and older pending rows still require end-to-end reconciliation against a migrated backend before release.
 - Password recovery uses `POST /auth/admin/password-reset/request` and `POST /auth/admin/password-reset/confirm`; SMTP stays on the backend. Keep reviewer credentials out of Expo environment variables and app bundles.
-- Help & Support requires `EXPO_PUBLIC_SUPPORT_EMAIL` for a contact action; otherwise it explains that contact is unavailable.
 - RevenueCat API keys are placeholders.
 - Low-stock thresholds are optional; products with no threshold do not appear in low-stock lists. The backend must deploy the matching Prisma migration before its product/sync/dashboard paths use this field.
 - Local profit uses each product's current purchase cost as its cost basis. Historic margin can change after cost edits; a sale-time cost snapshot is still required for audited profit reports.

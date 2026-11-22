@@ -7,6 +7,8 @@ import HelpSupport from '../../screens/settings/HelpSupport';
 import About from '../../screens/settings/About';
 import StaffManagement from '../../screens/settings/StaffManagement';
 import NotificationSettings from '../../screens/settings/NotificationSettings';
+import ContactSupport from '../../screens/settings/ContactSupport';
+import LegalWebPage from '../../screens/settings/LegalWebPage';
 
 import ReceiptSettings from '../../screens/settings/ReceiptSettings';
 import ScannerSettings from '../../screens/settings/ScannerSettings';
@@ -26,6 +28,8 @@ export function SettingsStack() {
       <Stack.Screen name="Profile" component={Profile} />
       <Stack.Screen name="Notifications" component={NotificationSettings} />
       <Stack.Screen name="HelpSupport" component={HelpSupport} />
+      <Stack.Screen name="ContactSupport" component={ContactSupport} />
+      <Stack.Screen name="LegalWebPage" component={LegalWebPage} />
       <Stack.Screen name="About" component={About} />
       <Stack.Screen name="StaffManagement" component={StaffManagement} />
     </Stack.Navigator>

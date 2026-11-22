@@ -6,6 +6,7 @@ import RegisterStep2 from '../screens/auth/RegisterStep2';
 import RegisterStep3 from '../screens/auth/RegisterStep3';
 import ForgotPassword from '../screens/auth/ForgotPassword';
 import OtpVerification from '../screens/auth/OtpVerification';
+import LegalWebPage from '../screens/settings/LegalWebPage';
 import { useOnboardingStore } from '../store/onboardingStore';
 
 const Stack = createNativeStackNavigator();
@@ -30,6 +31,7 @@ export function AuthStack() {
       <Stack.Screen name="RegisterStep3" component={RegisterStep3} />
       <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
       <Stack.Screen name="OtpVerification" component={OtpVerification} />
+      <Stack.Screen name="LegalWebPage" component={LegalWebPage} />
     </Stack.Navigator>
   );
 }

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { Check } from 'lucide-react-native';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { RegisterWizardHeader } from './RegisterWizardHeader';
@@ -13,6 +14,7 @@ import { useRegisterMutation } from '../../hooks/useAuth';
 import { useT, useIsUrdu } from '../../store/languageStore';
 
 export default function RegisterStep3() {
+  const navigation = useNavigation();
   const { colors, radii, typography, spacing } = useTheme();
   const store = useRegisterStore();
   const t = useT();
@@ -79,14 +81,19 @@ export default function RegisterStep3() {
             <TextField label={t('auth.register1.phone')} value={phone} onChangeText={setPhone} placeholder={t('auth.shopDetails.phonePlaceholder')} keyboardType="phone-pad" />
             <TextField label={t('auth.register1.password')} value={password} onChangeText={setPassword} placeholder={t('auth.account.passwordPlaceholder')} secureTextEntry />
             <TextField label={t('auth.register1.confirmPassword')} value={confirmPassword} onChangeText={setConfirmPassword} placeholder={t('auth.account.confirmPlaceholder')} secureTextEntry />
-            <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: agreed }} onPress={() => setAgreed((value) => !value)} style={{ flexDirection: isUrdu ? 'row-reverse' : 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.sm }}>
-              <View style={{ width: 19, height: 19, borderRadius: radii.sm / 2, borderWidth: 1.5, borderColor: agreed ? colors.brand.primary : colors.surface.border, backgroundColor: agreed ? colors.brand.primary : colors.surface.raised, alignItems: 'center', justifyContent: 'center' }}>
+            <View style={{ flexDirection: isUrdu ? 'row-reverse' : 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.sm }}>
+              <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: agreed }} onPress={() => setAgreed((value) => !value)} hitSlop={8} style={{ width: 28, height: 28, alignItems: 'center', justifyContent: 'center' }}>
+                <View style={{ width: 19, height: 19, borderRadius: radii.sm / 2, borderWidth: 1.5, borderColor: agreed ? colors.brand.primary : colors.surface.border, backgroundColor: agreed ? colors.brand.primary : colors.surface.raised, alignItems: 'center', justifyContent: 'center' }}>
                 {agreed ? <Check size={13} color={colors.ink.onBrand} strokeWidth={2.4} /> : null}
-              </View>
+                </View>
+              </Pressable>
               <Text style={[typography.caption, { color: colors.ink.secondary, flex: 1, textAlign: isUrdu ? 'right' : 'left' }]}>
-                {t('auth.register3.agreePrefix')} {t('auth.register3.termsOfService')} {t('auth.register3.and')} {t('auth.register3.privacyPolicy')}
+                {t('auth.register3.agreePrefix')}{' '}
+                <Text style={{ color: colors.brand.primary, textDecorationLine: 'underline' }} onPress={() => navigation.navigate('LegalWebPage', { page: 'terms' })}>{t('auth.register3.termsOfService')}</Text>
+                {' '}{t('auth.register3.and')}{' '}
+                <Text style={{ color: colors.brand.primary, textDecorationLine: 'underline' }} onPress={() => navigation.navigate('LegalWebPage', { page: 'privacy' })}>{t('auth.register3.privacyPolicy')}</Text>
               </Text>
-            </Pressable>
+            </View>
             {error ? <Text style={[typography.caption, { color: colors.semantic.danger }]}>{error}</Text> : null}
           </KeyboardAwareScrollView>
           <View style={{ padding: spacing.lg }}><Button title={t('auth.register3.createAccount')} onPress={submit} loading={register.isPending} /></View>

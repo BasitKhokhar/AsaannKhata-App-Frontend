@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ActivityIndicator, View, Text, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { User, Bell, Cloud, Coins, HelpCircle, Info, Trash2, LogOut, Check, Users, Store, CreditCard, Printer } from 'lucide-react-native';
+import { User, Bell, Cloud, Coins, HelpCircle, Info, Trash2, LogOut, Check, Store, CreditCard, Printer, UserRoundX } from 'lucide-react-native';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -34,7 +34,7 @@ import { useSyncStore } from '../../store/syncStore';
 function rows(t, showEarnCoins, showSync) {
   return [
     { key: 'Profile', label: t('settings.profile'), description: t('settings.profileDesc'), icon: User },
-    { key: 'StaffManagement', label: t('settings.staff.title'), description: t('settings.staff.subtitle'), icon: Users },
+    { key: 'DeleteAccountRequest', route: 'ContactSupport', params: { category: 'deleteAccount' }, label: t('settings.about.deleteAccount'), description: t('settings.about.deleteAccountRequestDesc'), icon: UserRoundX },
     { key: 'Notifications', label: t('settings.notifications'), description: t('settings.notificationsDesc'), icon: Bell },
     { key: 'SyncStatus', label: t('settings.syncStatus'), description: t('settings.syncStatusDesc'), icon: Cloud },
     { key: 'EarnCoins', label: t('settings.earnCoins'), description: t('settings.earnCoinsDesc'), icon: Coins },
@@ -156,7 +156,7 @@ export default function Settings() {
             {rows(t, isAdSupportedEntitlement(entitlement), hasSyncEntitlement(entitlement)).map((row) => (
               <ListRow
                 key={row.key}
-                onPress={() => navigation.navigate(row.key)}
+                onPress={() => navigation.navigate(row.route || row.key, row.params)}
                 style={{ flexDirection: rowDirection }}
                 leading={
                   <View
