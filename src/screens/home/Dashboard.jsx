@@ -13,7 +13,7 @@ import { SectionHeader } from '../../components/ui/SectionHeader';
 import { ListRow } from '../../components/ui/ListRow';
 import { AdBanner } from '../../components/ui/AdBanner';
 import { BottomNav } from '../../components/ui/BottomNav';
-import { ManualSyncSheet } from '../../components/sync/ManualSyncSheet';
+import { ManualSyncModal } from '../../components/sync/ManualSyncModal';
 import { DateFilterSection } from '../../components/ui/DateFilterSection';
 import { DateFilterSheet } from '../../components/ui/DateFilterSheet';
 import { HomeAnnouncement } from '../../components/engagement/HomeAnnouncement';
@@ -317,7 +317,7 @@ export default function Dashboard() {
         </View>
       </View>
       <BottomNav active="home" />
-      <ManualSyncSheet
+      <ManualSyncModal
         visible={syncOpen}
         onClose={() => setSyncOpen(false)}
         shopIds={shops.length ? shops.map((shop) => shop.id) : [activeShopId]}

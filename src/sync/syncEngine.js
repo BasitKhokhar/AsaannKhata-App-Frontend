@@ -144,5 +144,13 @@ export async function runSync({ replaceExistingDevices = false } = {}) {
     for (const key of ['bill', 'customer', 'product']) {
       queryClient.invalidateQueries({ queryKey: [key] });
     }
+
+    const finalEntitlement = entitlementRepository.get();
+    if (isFreeEntitlement(finalEntitlement)) {
+      const coinState = useCoinsStore.getState();
+      if (typeof coinState.refresh === 'function') {
+        await coinState.refresh().catch(() => {});
+      }
+    }
   }
 }

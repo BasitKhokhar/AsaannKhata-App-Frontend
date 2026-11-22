@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -10,11 +10,11 @@ import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { SectionHeader } from '../../components/ui/SectionHeader';
 import { ListRow } from '../../components/ui/ListRow';
+import { ManualSyncModal } from '../../components/sync/ManualSyncModal';
 import { useTheme } from '../../theme';
 import { useSyncStore } from '../../store/syncStore';
 import { useShops } from '../../hooks/useShops';
 import { useSyncStatus } from '../../hooks/useSyncStatus';
-import { runSync } from '../../sync/syncEngine';
 import { formatRelativeTime } from '../../utils/dates';
 import { useT, useIsUrdu } from '../../store/languageStore';
 import { useEntitlement } from '../../hooks/useEntitlement';
@@ -27,6 +27,7 @@ export default function SyncStatus() {
   const { isSyncing, lastSyncAt, lastError, perShopStatus } = useSyncStore();
   const { data: syncStatusData } = useSyncStatus();
   const { data: entitlement } = useEntitlement();
+  const [syncOpen, setSyncOpen] = useState(false);
   const t = useT();
   const isUrdu = useIsUrdu();
   const rowDirection = isUrdu ? 'row-reverse' : 'row';
@@ -129,8 +130,15 @@ export default function SyncStatus() {
         </View>
 
         <View style={{ marginTop: 'auto', paddingTop: spacing.xl }}>
-          <Button title={t('settings.syncStatus.syncNow')} variant="outline" onPress={runSync} loading={isSyncing} />
+          <Button title={t('settings.syncStatus.syncNow')} variant="outline" onPress={() => setSyncOpen(true)} disabled={isSyncing} />
         </View>
+
+        <ManualSyncModal
+          visible={syncOpen}
+          onClose={() => setSyncOpen(false)}
+          shopIds={shops.map((shop) => shop.id)}
+          cloudEnabled={!!entitlement?.cloudEnabled}
+        />
       </SafeAreaView>
     </AnimatedScreen>
   );
