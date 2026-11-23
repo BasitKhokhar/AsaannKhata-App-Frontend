@@ -177,7 +177,7 @@ Do not bypass this design by writing remote-first mutations for a domain that is
 - `onboardingStore`: persisted onboarding completion.
 - `themeStore`: persisted `system`/`light`/`dark` preference plus a palette preset and per-admin/per-shop palette overrides. `ThemeProvider` suggests a preset from the active shop type when no override exists. Palette preferences are currently device-local, not synced to the backend.
 - `StaffManagement` remains registered as a retained future route but is hidden from the Settings list in production. Its screen shows the owner account and an explicit unavailable state if opened during development. Staff identity, invite, and role permissions do not exist in the backend; no staff actions are enabled.
-- Legal documents use a shared allowlisted `LegalWebPage` WebView for `https://asaandukaannlegalpages.netlify.app`. Privacy and Terms are available both during registration and under About; About also exposes the public Legal Center and account-deletion information. Settings has a prominent account-deletion request entry. `ContactSupport` collects a categorized request and contact email, then opens a user-confirmed email draft to the published support address; it does not silently transmit form data.
+- Legal documents use a shared allowlisted `LegalWebPage` WebView for `https://asaandukaannlegalpages.netlify.app`. Privacy and Terms are available both during registration and under About; About also exposes the public Legal Center and account-deletion information. Settings has a prominent account-deletion request entry. `ContactSupport` collects a categorized request, contact email, subject, and message and submits it to the authenticated backend support-request endpoint for the superadmin dashboard.
 - `languageStore`: persisted `en`/`ur`/`hi`, `t()` helper, and Urdu RTL signal.
 - `notificationPrefsStore`: persisted in-app preference flags; not system push registration.
 - `coinsStore`: persisted ad/coin snapshot and rewarded-ad pacing. Snapshots record whether server usage has loaded; a newly signed-in Free account renders the Daily Usage card immediately with stable skeleton values until `/ads/config` returns, while returning accounts can show their owner-tagged cached snapshot instantly.
@@ -195,7 +195,7 @@ Auth tokens must stay in `expo-secure-store`, not AsyncStorage. Axios reads curr
 
 The backend base URL has no `/api` prefix. Resolution order is Expo config `extra.apiBaseUrl`, `EXPO_PUBLIC_API_BASE_URL`, then Android emulator `http://10.0.2.2:5000`.
 
-Most core domain reads/writes use repositories. Notable online/server paths include auth, shop creation, subscription offerings/verification, notifications, remote dashboard analytics, rewarded ads, and sync endpoints. `useDashboardStats` falls back to local analytics; the detailed product/category/profit trend hooks are cloud-only. Notifications have no SQLite cache: the Home bell opens a shop-scoped paginated inbox backed by the backend `Notification` table, while Settings owns only device-local in-app alert preferences.
+Most core domain reads/writes use repositories. Notable online/server paths include auth, shop creation, subscription offerings/verification, notifications, remote dashboard analytics, rewarded ads, and sync endpoints. `useDashboardStats` falls back to local analytics; the detailed product/category/profit trend hooks are cloud-only. The Home bell opens a shop-scoped paginated inbox backed by the backend `Notification` table. Settings owns device-local alert preferences, including repeating Notifee low-stock notifications that are scheduled per product and work without network access.
 
 Home popup campaigns are also online-only. After Home is active for 1.2 seconds, `HomeAnnouncement` requests authenticated `GET /engagement/home-popup`; it never displays stale cached campaign content. The native modal accepts only the versioned image/image-link/video contract, validates HTTPS media/actions, stores a shared five-minute cooldown in SecureStore, and keeps close locked for five seconds. Superadmins manage the single-active campaign through `/superadmin/app-popups` in the platform dashboard. `ENGAGEMENT_SETUP.md` documents deployment order and the API contract.
 
@@ -208,13 +208,14 @@ Home popup campaigns are also online-only. After Home is active for 1.2 seconds,
 - The Plans screen fetches active backend `SubscriptionPlan` rows and the RevenueCat current offering on focus. Free plans are omitted from the purchase catalog but a Free entitlement still appears in the current-plan summary. It groups Cloud Sync billing variants into separate family cards by the plan-code prefix before `_MONTHLY`/`_SEMIANNUAL`/`_YEARLY` (for example, Basic and Pro). Each family card contains billing-period tabs, the selected RevenueCat total and effective monthly price, backend-provided description/features, and its own purchase button; Pro-family cards receive the recommended treatment. Six-month/yearly savings are calculated at render time against that family's current monthly store price, so prices and percentages follow Play/App Store changes without hardcoded discounts. `features` may arrive as parsed JSON or a JSON string. Missing offering packages leave the matching purchase button disabled. The current subscription and remaining days/hours/minutes come from `/subscriptions/me` (or its offline entitlement cache).
 - Backend seed upserts the nine-row Free/Lifetime/Basic/Pro catalog with localized feature arrays and RevenueCat product IDs (overrideable through `REVENUECAT_*_PRODUCT_ID` server environment variables). It migrates the legacy generic Lifetime and Cloud Sync codes to equivalent non-downgrading plans. Matching Play base plans use `subscriptionId:basePlanId` identifiers, and the backend subscriber reconciler resolves the base plan before selecting the plan row.
 - Only Free/Free Trial (and expired) entitlements see ads. Paid Lifetime Offline is ad-free even though `cloudEnabled` is false; ad checks must use `src/utils/entitlements.js`, not `cloudEnabled` alone.
+- Expired paid subscriptions remain in backend history, but `getActiveEntitlement()` and the frontend entitlement cache expose the effective `FREE_TRIAL` entitlement after expiry. The app refreshes `/subscriptions/me` on foreground, on entitlement-screen focus, and periodically while active; the local cache also switches at the stored `expiryDate` if the app stays open or is offline.
 - Development builds use Google's test ad unit IDs.
 - Reward coins are granted only after the SDK emits `EARNED_REWARD` and the backend accepts `/ads/reward`.
 - Rewarded ads are limited by the backend and a client-side ceiling of 10 per day. After three consecutive rewarded ads, the persisted 30-minute cooldown displays a live countdown and disables the watch button.
 - Adaptive banners are mounted only on Dashboard and Sales Report.
 - Interstitials are eligible only at completed workflow breaks: leaving a newly created bill receipt, product save, stock adjustment, or later bill payment. A persisted 90-second cooldown applies across all placements; ordinary navigation never triggers an interstitial.
 - Interstitial navigation has a watchdog and must never block navigation indefinitely.
-- FCM uses `@react-native-firebase/messaging`, not `expo-notifications`.
+- Backend FCM reception uses `@react-native-firebase/messaging`; Notifee displays backend FCM and device-local scheduled notifications.
 - Firebase Messaging and Analytics use the named modular APIs from React Native Firebase 26; those packages no longer export callable defaults.
 - The background message handler must remain registered in `index.js` before the app root.
 - FCM token registration reuses the sync device UUID and currently skips registration until that device has been registered with the backend.
@@ -254,7 +255,6 @@ Environment variable names currently used:
 
 - `EXPO_ID`
 - `EXPO_PUBLIC_API_BASE_URL`
-- `EXPO_PUBLIC_SUPPORT_EMAIL` (optional override for the published `support@asaankhata.app` address used by Contact Support)
 - `GOOGLE_ADMOB_ANDROID_APP_ID`
 - `BANNER_AD_UNIT_ID`
 - `INTERSTITIAL_AD_UNIT_ID`

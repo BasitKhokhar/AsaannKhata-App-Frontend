@@ -1,31 +1,33 @@
 import React, { useState } from 'react';
-import { Linking, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
+import { ChevronDown } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute } from '@react-navigation/native';
-import Constants from 'expo-constants';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { KeyboardAwareScrollView, KeyboardAwareView } from '../../components/ui/KeyboardAware';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
-import { Chip } from '../../components/ui/Chip';
 import { Header } from '../../components/ui/Header';
+import { Sheet } from '../../components/ui/Sheet';
 import { TextField } from '../../components/ui/TextField';
 import { useTheme } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
 import { showToast } from '../../store/toastStore';
 import { useIsUrdu, useT } from '../../store/languageStore';
-import { SUPPORT_EMAIL } from '../../constants/legalPages';
+import { notificationsApi } from '../../services/notificationsApi';
 
-const CATEGORY_KEYS = ['general', 'technical', 'billing', 'privacy', 'deleteAccount'];
+const CATEGORY_KEYS = ['app_bug', 'general_question', 'billing', 'account', 'feature_request', 'privacy', 'delete_account', 'other'];
 
 export default function ContactSupport() {
   const route = useRoute();
   const t = useT();
   const isUrdu = useIsUrdu();
-  const { colors, typography, spacing } = useTheme();
+  const { colors, typography, spacing, radii } = useTheme();
   const accountEmail = useAuthStore((state) => state.email) || '';
-  const initialCategory = CATEGORY_KEYS.includes(route.params?.category) ? route.params.category : 'general';
+  const requestedCategory = route.params?.category === 'deleteAccount' ? 'delete_account' : route.params?.category;
+  const initialCategory = CATEGORY_KEYS.includes(requestedCategory) ? requestedCategory : 'general_question';
   const [category, setCategory] = useState(initialCategory);
+  const [categoryOpen, setCategoryOpen] = useState(false);
   const [email, setEmail] = useState(accountEmail);
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
@@ -43,24 +45,19 @@ export default function ContactSupport() {
       return;
     }
 
-    const categoryLabel = t(`settings.helpSupport.form.category.${category}`);
-    const body = [
-      message.trim(),
-      '',
-      '---',
-      `${t('settings.helpSupport.form.categoryLabel')}: ${categoryLabel}`,
-      `${t('settings.helpSupport.form.contactEmail')}: ${normalizedEmail}`,
-      `Account ID: ${useAuthStore.getState().adminId || 'Unavailable'}`,
-      `App version: ${Constants.expoConfig?.version || 'Unknown'}`,
-    ].join('\n');
-    const mailto = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(`[${categoryLabel}] ${subject.trim()}`)}&body=${encodeURIComponent(body)}`;
-
     setSending(true);
     try {
-      await Linking.openURL(mailto);
-      showToast(t('settings.helpSupport.form.emailOpened'), 'success');
-    } catch {
-      showToast(t('settings.helpSupport.form.emailFailed').replace('{email}', SUPPORT_EMAIL), 'danger');
+      await notificationsApi.createSupportRequest({
+        email: normalizedEmail,
+        category,
+        subject: subject.trim(),
+        message: message.trim(),
+      });
+      setSubject('');
+      setMessage('');
+      showToast(t('settings.helpSupport.form.submitted'), 'success');
+    } catch (error) {
+      showToast(error.response?.data?.message || t('settings.helpSupport.form.submitFailed'), 'danger');
     } finally {
       setSending(false);
     }
@@ -73,21 +70,37 @@ export default function ContactSupport() {
         <KeyboardAwareView>
           <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.lg, paddingTop: spacing.xs, gap: spacing.lg }}>
             <Card style={{ gap: spacing.md }}>
-              <Text style={[typography.bodyMedium, { color: colors.ink.primary, textAlign }]}>{t('settings.helpSupport.form.categoryLabel')}</Text>
-              <View style={{ flexDirection: isUrdu ? 'row-reverse' : 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-                {CATEGORY_KEYS.map((key) => (
-                  <Chip key={key} label={t(`settings.helpSupport.form.category.${key}`)} selected={category === key} onPress={() => setCategory(key)} />
-                ))}
-              </View>
+              <Text style={[typography.label, { color: colors.ink.primary, textAlign }]}>{t('settings.helpSupport.form.categoryLabel')}</Text>
+              <Pressable
+                onPress={() => setCategoryOpen(true)}
+                accessibilityRole="button"
+                accessibilityLabel={t('settings.helpSupport.form.categoryLabel')}
+                style={{ minHeight: 48, borderRadius: radii.md, borderWidth: 1, borderColor: colors.surface.border, backgroundColor: colors.surface.raised, paddingHorizontal: spacing.md, flexDirection: isUrdu ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between' }}
+              >
+                <Text style={[typography.body, { color: colors.ink.primary }]}>{t(`settings.helpSupport.form.category.${category}`)}</Text>
+                <ChevronDown size={18} color={colors.ink.secondary} />
+              </Pressable>
               <TextField label={t('settings.helpSupport.form.contactEmail')} value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />
-              <TextField label={t('settings.helpSupport.form.subject')} value={subject} onChangeText={setSubject} placeholder={t('settings.helpSupport.form.subjectPlaceholder')} maxLength={120} />
-              <TextField label={t('settings.helpSupport.form.message')} value={message} onChangeText={setMessage} placeholder={t('settings.helpSupport.form.messagePlaceholder')} multiline numberOfLines={6} maxLength={2000} />
+              <TextField label={t('settings.helpSupport.form.subject')} value={subject} onChangeText={setSubject} placeholder={t('settings.helpSupport.form.subjectPlaceholder')} maxLength={160} />
+              <TextField label={t('settings.helpSupport.form.message')} value={message} onChangeText={setMessage} placeholder={t('settings.helpSupport.form.messagePlaceholder')} multiline numberOfLines={6} maxLength={5000} />
             </Card>
-            <Text style={[typography.caption, { color: colors.ink.secondary, textAlign }]}>{t('settings.helpSupport.form.emailNotice').replace('{email}', SUPPORT_EMAIL)}</Text>
-            <Button title={t('settings.helpSupport.form.send')} onPress={submit} loading={sending} disabled={sending} />
+            <Text style={[typography.caption, { color: colors.ink.secondary, textAlign }]}>{t('settings.helpSupport.form.storedNotice')}</Text>
+            <Button title={t('settings.helpSupport.form.submit')} onPress={submit} loading={sending} disabled={sending} />
           </KeyboardAwareScrollView>
         </KeyboardAwareView>
       </SafeAreaView>
+
+      <Sheet visible={categoryOpen} onClose={() => setCategoryOpen(false)} title={t('settings.helpSupport.form.categoryLabel')}>
+        {CATEGORY_KEYS.map((key) => (
+          <Pressable
+            key={key}
+            onPress={() => { setCategory(key); setCategoryOpen(false); }}
+            style={{ paddingVertical: spacing.sm, paddingHorizontal: spacing.md, borderRadius: radii.md, backgroundColor: category === key ? colors.brand.primary + '16' : 'transparent' }}
+          >
+            <Text style={[typography.bodyMedium, { color: category === key ? colors.brand.primary : colors.ink.primary, textAlign }]}>{t(`settings.helpSupport.form.category.${key}`)}</Text>
+          </Pressable>
+        ))}
+      </Sheet>
     </AnimatedScreen>
   );
 }

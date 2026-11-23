@@ -8,15 +8,15 @@ import {
 } from '@react-native-firebase/messaging';
 import { deviceRepository } from '../db/repositories/deviceRepository';
 import { notificationsApi } from './notificationsApi';
-import { showToast } from '../store/toastStore';
+import { displayFcmNotification } from './notifeeService';
 
 // FCM token lifecycle + message handling — ported to this app's own
 // conventions: deviceRepository's stable deviceId (the same one used for
 // cloud sync's POST /sync/devices/register, see src/sync/syncEngine.js) is
 // reused as the identity a push token is attached to, matching the backend's
-// /notifications/register-token contract. No expo-notifications anywhere in
-// this app — @react-native-firebase/messaging's own permission + token APIs
-// are used directly. The background/quit-state handler is registered
+// /notifications/register-token contract. Backend push uses
+// @react-native-firebase/messaging directly; Notifee is the display layer for
+// both backend and device-local notifications. The background/quit-state handler is registered
 // separately in index.js (must run before App.jsx even mounts).
 
 let unsubscribeTokenRefresh = null;
@@ -45,6 +45,7 @@ export async function registerCurrentToken() {
   if (!fcmToken) return null;
   try {
     await notificationsApi.registerToken({ deviceId: device.deviceId, fcmToken });
+    console.log('[backend-notifications] FCM token registered', { source: 'backend-fcm', deviceId: device.deviceId });
   } catch (err) {
     // Best-effort — a failed registration just means this device won't get
     // pushes until the next successful attempt (app open / token refresh).
@@ -75,14 +76,20 @@ export async function initFcm() {
       }
     });
 
-    // Foreground messages don't show a system tray notification on their
-    // own — surface them as an in-app toast using this app's existing toast
-    // queue (src/store/toastStore.js) instead of adding a new banner component.
+    // Firebase does not put foreground messages in the system tray. Use
+    // Notifee so notification/data-only messages have the same visible
+    // behavior in every app state.
     unsubscribeForegroundMessage = onMessage(getMessaging(), async (remoteMessage) => {
       const title = remoteMessage?.notification?.title;
       const body = remoteMessage?.notification?.body;
-      const message = [title, body].filter(Boolean).join(' — ') || 'You have a new notification.';
-      showToast(message, 'neutral');
+      console.log('[backend-notifications] FCM received in foreground', {
+        source: 'backend-fcm',
+        messageId: remoteMessage?.messageId,
+        title,
+        body,
+        data: remoteMessage?.data,
+      });
+      await displayFcmNotification(remoteMessage);
     });
   } catch (err) {
     // Permission denied, Play Services unavailable, etc. — push is best-effort.

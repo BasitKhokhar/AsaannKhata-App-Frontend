@@ -10,6 +10,8 @@ export const palette = {
 };
 
 export const DEFAULT_PRESET = 'emerald';
+export const NATIVE_SPLASH_BACKGROUND = '#064B42';
+export const NATIVE_SPLASH_ACCENT = '#12A66E';
 
 export const themePresets = {
   emerald: { label: 'Emerald', primary: '#07885C', deep: '#064B42', accent: '#12A66E', soft: '#E5F5ED' },

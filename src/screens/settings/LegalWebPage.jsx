@@ -57,7 +57,10 @@ export default function LegalWebPage() {
               <WebView
                 key={reloadKey}
                 source={{ uri: url }}
-                originWhitelist={[LEGAL_SITE_ORIGIN]}
+                // WebView whitelist entries are patterns, not bare origins.
+                // Keep navigation restricted in handleNavigation below while
+                // allowing the production legal site to load in native builds.
+                originWhitelist={['https://*']}
                 onShouldStartLoadWithRequest={handleNavigation}
                 onLoadStart={() => setLoading(true)}
                 onLoadEnd={() => setLoading(false)}

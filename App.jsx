@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { AppState } from 'react-native';
+import { AppState, Linking } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './src/services/queryClient';
@@ -32,7 +32,11 @@ import { useSyncTriggers } from './src/sync/triggers';
 import { initAds } from './src/services/adsService';
 import { initAnalytics } from './src/services/analyticsService';
 import { initFcm } from './src/services/fcmService';
+import { syncLocalLowStockNotifications } from './src/services/localLowStockNotifications';
+import { handleInitialNotifeeNotification, subscribeToNotifeeEvents } from './src/services/notifeeService';
+import { useNotificationPrefsStore } from './src/store/notificationPrefsStore';
 import { loginRevenueCat } from './src/services/revenueCat';
+import { refreshEntitlement } from './src/hooks/useEntitlement';
 import { Toast } from './src/components/ui/Toast';
 import { ConfirmDialog } from './src/components/ui/ConfirmDialog';
 
@@ -55,6 +59,9 @@ export default function App() {
   const setSession = useAuthStore((s) => s.setSession);
   const setHydrated = useAuthStore((s) => s.setHydrated);
   const isHydrated = useAuthStore((s) => s.isHydrated);
+  const adminId = useAuthStore((s) => s.adminId);
+  const activeShopId = useShopStore((s) => s.activeShopId);
+  const lowStockAlerts = useNotificationPrefsStore((s) => s.lowStockAlerts);
 
   const [sessionChecked, setSessionChecked] = useState(false);
 
@@ -94,6 +101,44 @@ export default function App() {
     return () => { mounted = false; };
   }, []);
 
+  useEffect(() => {
+    if (!migrationsReady || !adminId || !activeShopId) return undefined;
+    let cancelled = false;
+    const sync = () => {
+      if (!cancelled) {
+        syncLocalLowStockNotifications({ shopId: activeShopId, enabled: lowStockAlerts }).catch((error) => {
+          console.warn('[local-notifications] sync:error', { source: 'frontend-local', message: error?.message });
+        });
+      }
+    };
+    sync();
+    const interval = setInterval(sync, 5 * 60 * 1000);
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') sync();
+    });
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      subscription.remove();
+    };
+  }, [migrationsReady, adminId, activeShopId, lowStockAlerts]);
+
+  useEffect(() => {
+    const openNotificationTarget = (data = {}) => {
+      const url = data.url || data.link || data.externalUrl || data.deepLink;
+      if (typeof url !== 'string' || !/^(https?:|[a-z][a-z\d+.-]*:)/i.test(url)) return;
+      console.log('[backend-notifications] opening notification URL', { source: data.source || 'unknown', url });
+      Linking.openURL(url).catch((error) => {
+        console.warn('[backend-notifications] failed to open notification URL', { url, message: error?.message });
+      });
+    };
+    const unsubscribe = subscribeToNotifeeEvents(openNotificationTarget);
+    handleInitialNotifeeNotification(openNotificationTarget).catch((error) => {
+      console.warn('[backend-notifications] initial notification read failed', { message: error?.message });
+    });
+    return unsubscribe;
+  }, []);
+
   const ready = fontsLoaded && migrationsReady && sessionChecked && isHydrated;
 
   useSyncTriggers(migrationsReady);
@@ -101,7 +146,11 @@ export default function App() {
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (state) => {
       if (state === 'active' && useAuthStore.getState().adminId) {
-        queryClient.invalidateQueries({ queryKey: ['entitlement'] });
+        // Refresh immediately on every app resume so a Play Store renewal or
+        // backend expiry is visible before the user starts working.
+        refreshEntitlement(queryClient).catch(() => {
+          // The hook/cache still provide the last safe local entitlement while offline.
+        });
       }
     });
     return () => subscription.remove();

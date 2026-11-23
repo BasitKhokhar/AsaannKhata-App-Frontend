@@ -13,4 +13,5 @@ export const notificationsApi = {
   unreadCount: () => apiClient.get('/notifications/unread-count').then((r) => r.data),
   markRead: (id) => apiClient.put(`/notifications/${id}/read`).then((r) => r.data),
   markAllRead: () => apiClient.put('/notifications/mark-all-read').then((r) => r.data),
+  createSupportRequest: (payload) => apiClient.post('/notifications/support-requests', payload).then((r) => r.data),
 };
