@@ -49,7 +49,7 @@ export function ManualSyncModal({ visible, onClose, shopIds, cloudEnabled }) {
     setPendingRows(countPendingSyncRows(shopIds));
     if (!cloudEnabled) {
       adsService.preloadRewardedAd();
-      useCoinsStore.getState().refresh().catch(() => {});
+      useCoinsStore.getState().refresh().catch(() => { });
     }
   }, [visible, cloudEnabled, shopKey]);
 
@@ -60,7 +60,7 @@ export function ManualSyncModal({ visible, onClose, shopIds, cloudEnabled }) {
     try {
       const result = await adsService.showRewardedAd();
       if (result.earned) {
-        await useCoinsStore.getState().refresh().catch(() => {});
+        await useCoinsStore.getState().refresh().catch(() => { });
         showToast(t('dashboard.syncModal.coinsEarned'), 'success');
       }
       else if (result.reason === 'cooldown') showToast(t('subscription.earnCoins.toastCooldown'), 'warning');
@@ -104,7 +104,7 @@ export function ManualSyncModal({ visible, onClose, shopIds, cloudEnabled }) {
       if (error?.response?.status === 402) showToast(t('subscription.earnCoins.toastNotEnoughCoins'), 'warning');
       else showToast(t('dashboard.syncModal.failed'), 'danger');
     } finally {
-      if (!cloudEnabled) await useCoinsStore.getState().refresh().catch(() => {});
+      if (!cloudEnabled) await useCoinsStore.getState().refresh().catch(() => { });
       startingRef.current = false;
       setStarting(false);
       if (completed) {
@@ -117,17 +117,23 @@ export function ManualSyncModal({ visible, onClose, shopIds, cloudEnabled }) {
   const loading = starting;
 
   return (
-    <Modal visible={visible} transparent animationType="fade" statusBarTranslucent onRequestClose={loading ? () => {} : onClose}>
+    <Modal visible={visible} transparent animationType="fade" statusBarTranslucent onRequestClose={loading ? () => { } : onClose}>
       <View style={{ flex: 1 }}>
         <Pressable style={[StyleSheet.absoluteFill, { backgroundColor: colors.surface.overlay }]} onPress={loading || watching ? undefined : onClose} />
         <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={{ flex: 1, justifyContent: 'center', padding: spacing.lg }}>
-          <View style={{ width: '100%', maxWidth: 520, maxHeight: '88%', alignSelf: 'center', overflow: 'hidden',
+          <View style={{
+            width: '100%', maxWidth: 520, maxHeight: '88%', alignSelf: 'center', overflow: 'hidden',
             borderRadius: radii.xl, borderWidth: 1, borderColor: colors.surface.border,
-            backgroundColor: colors.surface.raised }}>
-            <View style={{ flexDirection: direction, alignItems: 'center', gap: spacing.sm, padding: spacing.lg,
-              borderBottomWidth: 1, borderBottomColor: colors.surface.border }}>
-              <View style={{ width: 42, height: 42, borderRadius: radii.md, alignItems: 'center', justifyContent: 'center',
-                backgroundColor: colors.brand.accentLight }}>
+            backgroundColor: colors.surface.raised
+          }}>
+            <View style={{
+              flexDirection: direction, alignItems: 'center', gap: spacing.sm, padding: spacing.lg,
+              borderBottomWidth: 1, borderBottomColor: colors.surface.border
+            }}>
+              <View style={{
+                width: 42, height: 42, borderRadius: radii.md, alignItems: 'center', justifyContent: 'center',
+                backgroundColor: colors.brand.accentLight
+              }}>
                 <CloudUpload size={21} color={colors.brand.primary} strokeWidth={1.9} />
               </View>
               <Text style={[typography.h2, { flex: 1, color: colors.ink.primary, textAlign }]}>{t('dashboard.syncModal.title')}</Text>
@@ -191,8 +197,10 @@ export function ManualSyncModal({ visible, onClose, shopIds, cloudEnabled }) {
               ) : null}
             </ScrollView>
 
-            <View style={{ gap: spacing.sm, paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.lg,
-              borderTopWidth: 1, borderTopColor: colors.surface.border, backgroundColor: colors.surface.raised }}>
+            <View style={{
+              gap: spacing.sm, paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.lg,
+              borderTopWidth: 1, borderTopColor: colors.surface.border, backgroundColor: colors.surface.raised
+            }}>
               <Button
                 title={loading ? t('settings.syncStatus.syncing') : t('settings.syncStatus.syncNow')}
                 icon={<CloudUpload size={18} color={colors.ink.onBrand} strokeWidth={1.8} />}
