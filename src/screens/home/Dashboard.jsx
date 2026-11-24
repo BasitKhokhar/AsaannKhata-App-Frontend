@@ -74,7 +74,7 @@ export default function Dashboard() {
   function handleRefresh() {
     refetch();
     refetchTopProducts();
-    if (adSupported) useCoinsStore.getState().refresh().catch(() => {});
+    if (adSupported) useCoinsStore.getState().refresh().catch(() => { });
   }
   const lastSyncAt = useSyncStore((s) => s.lastSyncAt);
   const lowStockAlertsEnabled = useNotificationPrefsStore((s) => s.lowStockAlerts);
@@ -93,7 +93,7 @@ export default function Dashboard() {
   useFocusEffect(
     useCallback(() => {
       if (adSupported) {
-        useCoinsStore.getState().refresh().catch(() => {});
+        useCoinsStore.getState().refresh().catch(() => { });
       }
     }, [adSupported])
   );
@@ -120,42 +120,42 @@ export default function Dashboard() {
       <View style={{ flex: 1 }}>
         <View style={{ backgroundColor: colors.surface.bg }}>
           <SafeAreaView edges={['top']}>
-          <View style={{ flexDirection: rowDirection, alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingVertical: spacing.md }}>
-            <Pressable
-              onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
-              style={{
-                flex: 1,
-                flexDirection: rowDirection,
-                alignItems: 'center',
-                gap: spacing.sm,
-              }}
-            >
-              <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.brand.primary, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={[typography.label, { color: colors.ink.onBrand }]}>{activeShop?.name?.slice(0, 2)?.toUpperCase() || 'AK'}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text numberOfLines={1} style={[typography.h3, { color: colors.ink.primary }]}>{activeShop?.name || t('nav.selectShop')}</Text>
-                <Text style={[typography.caption, { color: colors.ink.secondary }]}>{businessLabel}</Text>
-              </View>
-            </Pressable>
-            <View style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.sm }}>
-              <Pressable
-                onPress={() => setLanguageOpen(true)}
-                accessibilityRole="button"
-                accessibilityLabel={t('settings.chooseLanguage')}
-                style={{ width: 40, height: 40, borderRadius: radii.md, borderWidth: 1, borderColor: colors.surface.border, backgroundColor: colors.surface.card, alignItems: 'center', justifyContent: 'center', gap: 1 }}
-              >
-                <Globe2 size={17} color={colors.ink.primary} strokeWidth={1.8} />
-                <Text style={[typography.label, { color: colors.ink.secondary, fontSize: 9, lineHeight: 11 }]}>{lang.toUpperCase()}</Text>
-              </Pressable>
+            <View style={{ flexDirection: rowDirection, alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingVertical: spacing.md }}>
               <Pressable
                 onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
-                accessibilityRole="button"
-                accessibilityLabel={t('common.menu')}
-                style={{ width: 40, height: 40, borderRadius: radii.md, borderWidth: 1, borderColor: colors.surface.border, backgroundColor: colors.surface.card, alignItems: 'center', justifyContent: 'center' }}
-              ><Menu size={21} color={colors.ink.primary} strokeWidth={1.9} /></Pressable>
+                style={{
+                  flex: 1,
+                  flexDirection: rowDirection,
+                  alignItems: 'center',
+                  gap: spacing.sm,
+                }}
+              >
+                <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.brand.primary, alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={[typography.label, { color: colors.ink.onBrand }]}>{activeShop?.name?.slice(0, 2)?.toUpperCase() || 'AK'}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text numberOfLines={1} style={[typography.h3, { color: colors.ink.primary }]}>{activeShop?.name || t('nav.selectShop')}</Text>
+                  <Text style={[typography.caption, { color: colors.ink.secondary }]}>{businessLabel}</Text>
+                </View>
+              </Pressable>
+              <View style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.sm }}>
+                <Pressable
+                  onPress={() => setLanguageOpen(true)}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('settings.chooseLanguage')}
+                  style={{ width: 40, height: 40, borderRadius: radii.md, borderWidth: 1, borderColor: colors.surface.border, backgroundColor: colors.surface.card, alignItems: 'center', justifyContent: 'center', gap: 1 }}
+                >
+                  <Globe2 size={17} color={colors.ink.primary} strokeWidth={1.8} />
+                  <Text style={[typography.label, { color: colors.ink.secondary, fontSize: 9, lineHeight: 11 }]}>{lang.toUpperCase()}</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('common.menu')}
+                  style={{ width: 40, height: 40, borderRadius: radii.md, borderWidth: 1, borderColor: colors.surface.border, backgroundColor: colors.surface.card, alignItems: 'center', justifyContent: 'center' }}
+                ><Menu size={21} color={colors.ink.primary} strokeWidth={1.9} /></Pressable>
+              </View>
             </View>
-          </View>
           </SafeAreaView>
         </View>
 
@@ -177,163 +177,163 @@ export default function Dashboard() {
           contentContainerStyle={{ padding: spacing.md, paddingBottom: 96, gap: spacing.md }}
           refreshControl={<RefreshControl refreshing={isRefetching || usageLoading} onRefresh={handleRefresh} tintColor={colors.brand.primary} />}
         >
-        {adSupported ? (
-          <Card style={{ padding: spacing.md, gap: spacing.md }} level="sm">
-            <View style={{ flexDirection: rowDirection, alignItems: 'center', justifyContent: 'space-between' }}>
-              <View style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.sm }}>
-                <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: colors.semantic.warningBg, alignItems: 'center', justifyContent: 'center' }}>
-                  <Coins size={17} color={colors.semantic.warning} strokeWidth={2} />
+          {adSupported ? (
+            <Card style={{ padding: spacing.md, gap: spacing.md }} level="sm">
+              <View style={{ flexDirection: rowDirection, alignItems: 'center', justifyContent: 'space-between' }}>
+                <View style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.sm }}>
+                  <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: colors.semantic.warningBg, alignItems: 'center', justifyContent: 'center' }}>
+                    <Coins size={17} color={colors.semantic.warning} strokeWidth={2} />
+                  </View>
+                  <Text style={[typography.h3, { color: colors.ink.primary, fontSize: 16 }]}>{t('dashboard.dailyUsage')}</Text>
                 </View>
-                <Text style={[typography.h3, { color: colors.ink.primary, fontSize: 16 }]}>{t('dashboard.dailyUsage')}</Text>
+                <View style={{ flexDirection: rowDirection, alignItems: 'center', gap: 5, backgroundColor: colors.semantic.warningBg, paddingHorizontal: 10, paddingVertical: 6, borderRadius: radii.pill }}>
+                  <Coins size={15} color={colors.semantic.warning} strokeWidth={2} />
+                  {usageSnapshotReady ? <Text style={[typography.label, { color: colors.semantic.warning }]}>{adCoins}</Text> : <Skeleton width={18} height={12} />}
+                </View>
               </View>
-              <View style={{ flexDirection: rowDirection, alignItems: 'center', gap: 5, backgroundColor: colors.semantic.warningBg, paddingHorizontal: 10, paddingVertical: 6, borderRadius: radii.pill }}>
-                <Coins size={15} color={colors.semantic.warning} strokeWidth={2} />
-                {usageSnapshotReady ? <Text style={[typography.label, { color: colors.semantic.warning }]}>{adCoins}</Text> : <Skeleton width={18} height={12} />}
+              <View style={{ flexDirection: rowDirection, alignItems: 'center' }}>
+                <View style={{ flex: 1, alignItems: 'center', gap: 3 }}>
+                  <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: 'center' }]}>{t('dashboard.billsToday')}</Text>
+                  {usageSnapshotReady ? <Text style={[typography.h2, { color: colors.ink.primary, fontSize: 20 }]}>{billsUsedToday}/{freeDailyRecordLimit}</Text> : <Skeleton width={52} height={20} />}
+                </View>
+                <View style={{ width: 1, height: 38, backgroundColor: colors.surface.border }} />
+                <View style={{ flex: 1, alignItems: 'center', gap: 3 }}>
+                  <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: 'center' }]}>{t('dashboard.adsWatchedToday')}</Text>
+                  {usageSnapshotReady ? <Text style={[typography.h2, { color: colors.ink.primary, fontSize: 20 }]}>{adsWatchedToday}/{maxRewardAdsPerDay}</Text> : <Skeleton width={52} height={20} />}
+                </View>
               </View>
-            </View>
-            <View style={{ flexDirection: rowDirection, alignItems: 'center' }}>
-              <View style={{ flex: 1, alignItems: 'center', gap: 3 }}>
-                <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: 'center' }]}>{t('dashboard.billsToday')}</Text>
-                {usageSnapshotReady ? <Text style={[typography.h2, { color: colors.ink.primary, fontSize: 20 }]}>{billsUsedToday}/{freeDailyRecordLimit}</Text> : <Skeleton width={52} height={20} />}
-              </View>
-              <View style={{ width: 1, height: 38, backgroundColor: colors.surface.border }} />
-              <View style={{ flex: 1, alignItems: 'center', gap: 3 }}>
-                <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: 'center' }]}>{t('dashboard.adsWatchedToday')}</Text>
-                {usageSnapshotReady ? <Text style={[typography.h2, { color: colors.ink.primary, fontSize: 20 }]}>{adsWatchedToday}/{maxRewardAdsPerDay}</Text> : <Skeleton width={52} height={20} />}
-              </View>
-            </View>
-            <Pressable
-              onPress={() => navigation.navigate('EarnCoins')}
-              style={({ pressed }) => ({ flexDirection: rowDirection, alignItems: 'center', justifyContent: 'center', gap: spacing.sm, minHeight: 44, borderRadius: radii.md, borderWidth: 1, borderColor: colors.brand.primary, backgroundColor: colors.brand.primary, opacity: pressed ? 0.72 : 1 })}
-            >
-              <PlayCircle size={17} color={colors.ink.onBrand} strokeWidth={2} />
-              <Text style={[typography.label, { color: colors.ink.onBrand }]}>{t('dashboard.earnCoins')}</Text>
-            </Pressable>
-          </Card>
-        ) : null}
-
-        <AdBanner />
-
-        <DateFilterSection selectedRange={dateRangeLabel(dateRange, dateRangeId, t)} onPress={() => setDateFilterOpen(true)} />
-
-        {syncEnabled ? <Pressable
-          onPress={() => setSyncOpen(true)}
-          accessibilityRole="button"
-          accessibilityLabel={t('dashboard.sync')}
-          style={({ pressed }) => ({ flexDirection: rowDirection, alignItems: 'center', gap: spacing.md, padding: spacing.md, borderRadius: radii.lg, borderWidth: 1, borderColor: colors.surface.border, backgroundColor: colors.surface.card, opacity: pressed ? 0.72 : 1 })}
-        >
-          <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.brand.accentLight, alignItems: 'center', justifyContent: 'center' }}>
-            <Cloud size={19} color={colors.brand.primary} strokeWidth={2} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={[typography.bodyMedium, { color: colors.ink.primary, textAlign }]}>{t('dashboard.sync')}</Text>
-            <Text style={[typography.caption, { color: colors.ink.secondary, textAlign }]}>
-              {lastSyncAt ? t('dashboard.syncedRelative').replace('{time}', formatRelativeTime(lastSyncAt)) : t('dashboard.notSyncedYet')}
-            </Text>
-          </View>
-          <ChevronDown size={16} color={colors.ink.secondary} style={{ transform: [{ rotate: '-90deg' }] }} />
-        </Pressable> : null}
-
-        <View style={{ flexDirection: rowDirection, flexWrap: 'wrap', gap: spacing.sm }}>
-          {metrics.map((metric) => (
-            <Card key={metric.key} style={{ width: '31.5%', minHeight: 112, padding: spacing.md, justifyContent: 'space-between' }} level="xs">
-              <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: metric.color + '16', alignItems: 'center', justifyContent: 'center' }}>
-                <metric.icon size={16} color={metric.color} strokeWidth={2} />
-              </View>
-              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72} style={[typography.h3, { color: colors.ink.primary, fontSize: 15, textAlign }]}>{metric.value}</Text>
-              <Text numberOfLines={2} style={[typography.caption, { color: colors.ink.secondary, fontSize: 9, lineHeight: 12, textTransform: 'uppercase', textAlign }]}>{metric.label}</Text>
+              <Pressable
+                onPress={() => navigation.navigate('EarnCoins')}
+                style={({ pressed }) => ({ flexDirection: rowDirection, alignItems: 'center', justifyContent: 'center', gap: spacing.sm, minHeight: 44, borderRadius: radii.md, borderWidth: 1, borderColor: colors.brand.primary, backgroundColor: colors.brand.primary, opacity: pressed ? 0.72 : 1 })}
+              >
+                <PlayCircle size={17} color={colors.ink.onBrand} strokeWidth={2} />
+                <Text style={[typography.label, { color: colors.ink.onBrand }]}>{t('dashboard.earnCoins')}</Text>
+              </Pressable>
             </Card>
-          ))}
-        </View>
-
-        <Card>
-          <SectionHeader title={t('dashboard.revenueThisWeek')} style={{ flexDirection: rowDirection }} />
-          {chartData.length ? (
-            <BarChart
-              data={chartData}
-              barWidth={18}
-              spacing={18}
-              roundedTop
-              hideRules
-              hideYAxisText
-              yAxisThickness={0}
-              xAxisThickness={0}
-              xAxisLabelTextStyle={{ color: colors.ink.secondary, fontSize: 11 }}
-              height={80}
-              noOfSections={3}
-            />
           ) : null}
-        </Card>
 
-        {lowStockAlertsEnabled ? (
+          <AdBanner />
+
+          <DateFilterSection selectedRange={dateRangeLabel(dateRange, dateRangeId, t)} onPress={() => setDateFilterOpen(true)} />
+
+          {syncEnabled ? <Pressable
+            onPress={() => setSyncOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel={t('dashboard.sync')}
+            style={({ pressed }) => ({ flexDirection: rowDirection, alignItems: 'center', gap: spacing.md, padding: spacing.md, borderRadius: radii.lg, borderWidth: 1, borderColor: colors.surface.border, backgroundColor: colors.surface.card, opacity: pressed ? 0.72 : 1 })}
+          >
+            <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.brand.accentLight, alignItems: 'center', justifyContent: 'center' }}>
+              <Cloud size={19} color={colors.brand.primary} strokeWidth={2} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[typography.bodyMedium, { color: colors.ink.primary, textAlign }]}>{t('dashboard.sync')}</Text>
+              <Text style={[typography.caption, { color: colors.ink.secondary, textAlign }]}>
+                {lastSyncAt ? t('dashboard.syncedRelative').replace('{time}', formatRelativeTime(lastSyncAt)) : t('dashboard.notSyncedYet')}
+              </Text>
+            </View>
+            <ChevronDown size={16} color={colors.ink.secondary} style={{ transform: [{ rotate: '-90deg' }] }} />
+          </Pressable> : null}
+
+          <View style={{ flexDirection: rowDirection, flexWrap: 'wrap', gap: spacing.sm }}>
+            {metrics.map((metric) => (
+              <Card key={metric.key} style={{ width: '31.5%', minHeight: 112, padding: spacing.md, justifyContent: 'space-between' }} level="xs">
+                <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: metric.color + '16', alignItems: 'center', justifyContent: 'center' }}>
+                  <metric.icon size={16} color={metric.color} strokeWidth={2} />
+                </View>
+                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72} style={[typography.h3, { color: colors.ink.primary, fontSize: 15, textAlign }]}>{metric.value}</Text>
+                <Text numberOfLines={2} style={[typography.caption, { color: colors.ink.secondary, fontSize: 9, lineHeight: 12, textTransform: 'uppercase', textAlign }]}>{metric.label}</Text>
+              </Card>
+            ))}
+          </View>
+
           <Card>
-            <SectionHeader title={t('dashboard.topLowStocked')} style={{ flexDirection: rowDirection }} />
-            {(stats?.lowStockAlerts || []).length === 0 ? (
-              <Text style={[typography.caption, { color: colors.ink.secondary, textAlign }]}>{t('dashboard.nothingLowStock')}</Text>
+            <SectionHeader title={t('dashboard.revenueThisWeek')} style={{ flexDirection: rowDirection }} />
+            {chartData.length ? (
+              <BarChart
+                data={chartData}
+                barWidth={18}
+                spacing={18}
+                roundedTop
+                hideRules
+                hideYAxisText
+                yAxisThickness={0}
+                xAxisThickness={0}
+                xAxisLabelTextStyle={{ color: colors.ink.secondary, fontSize: 11 }}
+                height={80}
+                noOfSections={3}
+              />
+            ) : null}
+          </Card>
+
+          {lowStockAlertsEnabled ? (
+            <Card>
+              <SectionHeader title={t('dashboard.topLowStocked')} style={{ flexDirection: rowDirection }} />
+              {(stats?.lowStockAlerts || []).length === 0 ? (
+                <Text style={[typography.caption, { color: colors.ink.secondary, textAlign }]}>{t('dashboard.nothingLowStock')}</Text>
+              ) : (
+                stats.lowStockAlerts.map((item) => (
+                  <ListRow
+                    key={item.id}
+                    style={{ paddingHorizontal: 0, flexDirection: rowDirection }}
+                    title={item.name}
+                    titleStyle={{ textAlign }}
+                    trailing={
+                      <Badge
+                        label={item.stock <= 0 ? t('dashboard.out') : t('dashboard.left').replace('{count}', item.stock)}
+                        tone={item.stock <= 0 ? 'danger' : 'warning'}
+                      />
+                    }
+                  />
+                ))
+              )}
+            </Card>
+          ) : null}
+
+          <Card>
+            <View style={{ flexDirection: rowDirection, alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm }}>
+              <Text style={[typography.h3, { color: colors.ink.primary }]}>{t('dashboard.topProducts')}</Text>
+            </View>
+            {topProductsError ? (
+              <Text style={[typography.caption, { color: colors.ink.secondary, textAlign }]}>{t('dashboard.couldntLoad')}</Text>
+            ) : (topProducts?.data || []).length === 0 ? (
+              <Text style={[typography.caption, { color: colors.ink.secondary, textAlign }]}>{t('dashboard.noSalesYet')}</Text>
             ) : (
-              stats.lowStockAlerts.map((item) => (
+              topProducts.data.map((product) => (
                 <ListRow
-                  key={item.id}
+                  key={product.productId}
                   style={{ paddingHorizontal: 0, flexDirection: rowDirection }}
-                  title={item.name}
+                  title={product.name}
                   titleStyle={{ textAlign }}
+                  trailing={<Text style={[typography.bodyMedium, { color: colors.ink.primary }]}>{formatCurrency(product.revenue)}</Text>}
+                />
+              ))
+            )}
+          </Card>
+
+          <Card>
+            <SectionHeader title={t('dashboard.recentInvoices')} style={{ flexDirection: rowDirection }} />
+            {(stats?.recentInvoices || []).length === 0 ? (
+              <Text style={[typography.caption, { color: colors.ink.secondary, textAlign }]}>{t('dashboard.noInvoicesYet')}</Text>
+            ) : (
+              stats.recentInvoices.map((invoice) => (
+                <ListRow
+                  key={invoice.id}
+                  style={{ paddingHorizontal: 0, flexDirection: rowDirection }}
+                  title={invoice.customer || t('billing.payment.walkIn')}
+                  titleStyle={{ textAlign }}
+                  subtitle={`#${invoice.serverId || String(invoice.id).slice(0, 8)} · ${new Date(invoice.date).toLocaleDateString()} · ${formatCurrency(invoice.amount)}`}
+                  subtitleStyle={{ textAlign }}
+                  leading={<ReceiptText size={18} color={colors.brand.primary} strokeWidth={1.8} />}
+                  onPress={() => navigation.navigate('Records', { screen: 'RecordDetail', params: { billId: invoice.id } })}
                   trailing={
-                    <Badge
-                      label={item.stock <= 0 ? t('dashboard.out') : t('dashboard.left').replace('{count}', item.stock)}
-                      tone={item.stock <= 0 ? 'danger' : 'warning'}
-                    />
+                    <Text style={[typography.bodyMedium, { color: invoice.status === 'PAID' ? colors.semantic.success : colors.semantic.warning }]}>
+                      {invoice.status === 'PAID' ? t('dashboard.paid') : t('dashboard.pending')}
+                    </Text>
                   }
                 />
               ))
             )}
           </Card>
-        ) : null}
-
-        <Card>
-          <View style={{ flexDirection: rowDirection, alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm }}>
-            <Text style={[typography.h3, { color: colors.ink.primary }]}>{t('dashboard.topProducts')}</Text>
-          </View>
-          {topProductsError ? (
-            <Text style={[typography.caption, { color: colors.ink.secondary, textAlign }]}>{t('dashboard.couldntLoad')}</Text>
-          ) : (topProducts?.data || []).length === 0 ? (
-            <Text style={[typography.caption, { color: colors.ink.secondary, textAlign }]}>{t('dashboard.noSalesYet')}</Text>
-          ) : (
-            topProducts.data.map((product) => (
-              <ListRow
-                key={product.productId}
-                style={{ paddingHorizontal: 0, flexDirection: rowDirection }}
-                title={product.name}
-                titleStyle={{ textAlign }}
-                trailing={<Text style={[typography.bodyMedium, { color: colors.ink.primary }]}>{formatCurrency(product.revenue)}</Text>}
-              />
-            ))
-          )}
-        </Card>
-
-        <Card>
-          <SectionHeader title={t('dashboard.recentInvoices')} style={{ flexDirection: rowDirection }} />
-          {(stats?.recentInvoices || []).length === 0 ? (
-            <Text style={[typography.caption, { color: colors.ink.secondary, textAlign }]}>{t('dashboard.noInvoicesYet')}</Text>
-          ) : (
-            stats.recentInvoices.map((invoice) => (
-              <ListRow
-                key={invoice.id}
-                style={{ paddingHorizontal: 0, flexDirection: rowDirection }}
-                title={invoice.customer || t('billing.payment.walkIn')}
-                titleStyle={{ textAlign }}
-                subtitle={`#${invoice.serverId || String(invoice.id).slice(0, 8)} · ${new Date(invoice.date).toLocaleDateString()} · ${formatCurrency(invoice.amount)}`}
-                subtitleStyle={{ textAlign }}
-                leading={<ReceiptText size={18} color={colors.brand.primary} strokeWidth={1.8} />}
-                onPress={() => navigation.navigate('Records', { screen: 'RecordDetail', params: { billId: invoice.id } })}
-                trailing={
-                  <Text style={[typography.bodyMedium, { color: invoice.status === 'PAID' ? colors.semantic.success : colors.semantic.warning }]}>
-                    {invoice.status === 'PAID' ? t('dashboard.paid') : t('dashboard.pending')}
-                  </Text>
-                }
-              />
-            ))
-          )}
-        </Card>
         </ScrollView>
 
         <View style={{ position: 'absolute', bottom: 16, right: spacing.lg }}>
