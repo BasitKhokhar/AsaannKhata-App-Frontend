@@ -101,9 +101,9 @@ export default function App() {
     return () => { mounted = false; };
   }, []);
 
-  // initFcm runs early, before auth/shop hydration. Retry token registration
-  // once the signed-in account is available. Push setup is account-scoped and
-  // must not depend on active-shop hydration or cloud-sync entitlement.
+  // Retry token registration once the signed-in account is available. Push
+  // setup is account-scoped and must not depend on active-shop hydration or
+  // cloud-sync entitlement.
   useEffect(() => {
     if (!adminId) return undefined;
     registerCurrentToken().catch(() => {});
@@ -172,11 +172,16 @@ export default function App() {
     // Fire-and-forget: never gates `ready`/splash-hide on ad SDK init, since
     // ads are a free-tier extra, not something the app depends on to run.
     initAds().catch(() => {});
-    // Same treatment for analytics + push — neither should block first
-    // paint, and both are best-effort by design (see their own files).
+    // Analytics is also best-effort and must not block first paint.
     initAnalytics().catch(() => {});
-    initFcm().catch(() => {});
   }, []);
+
+  useEffect(() => {
+    // Push permission belongs to the signed-in account flow. Do not ask on
+    // onboarding/login startup; wait until authentication has succeeded.
+    if (!adminId) return;
+    initFcm().catch(() => {});
+  }, [adminId]);
 
   const onLayoutRootView = useCallback(async () => {
     if (ready) {

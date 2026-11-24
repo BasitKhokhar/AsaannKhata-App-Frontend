@@ -16,6 +16,7 @@ export function Sheet({ visible, onClose, title, children, footer, scrollable = 
   const Body = scrollable ? ScrollView : View;
   const bodyProps = scrollable
     ? {
+      style: { flex: 1 },
       contentContainerStyle: { padding: spacing.lg, gap: spacing.md },
       keyboardShouldPersistTaps: 'handled',
       keyboardDismissMode: Platform.OS === 'ios' ? 'interactive' : 'on-drag',

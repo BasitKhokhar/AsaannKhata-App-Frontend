@@ -242,7 +242,7 @@ Home popup campaigns are also online-only. After Home is active for 1.2 seconds,
 - SQLite, SecureStore, fonts, image picker, sharing/file system
 - Firebase app, Sentry, Google Mobile Ads
 - Android `allowBackup: false`
-- App icon and both splash variants use `assets/icon.png`; keep this tracked asset present in build uploads. Android edge-to-edge uses the SDK default without the removed `edgeToEdgeEnabled` setting.
+- The app icon uses `assets/icon.png`; both native and React splash screens use the transparent `assets/splash-icon.png` at a 96-point display width, with the same Emerald background. Keep both tracked assets present in build uploads. Android edge-to-edge uses the SDK default without the removed `edgeToEdgeEnabled` setting.
 - Explicit Android `INTERNET` and `POST_NOTIFICATIONS` permissions
 - a local Kotlin compiler workaround plugin
 - Android release hardening plugins that keep generated manifests resizable, strip deprecated edge-to-edge theme attributes, enable R8 minification/resource shrinking, and use the optimizing ProGuard profile

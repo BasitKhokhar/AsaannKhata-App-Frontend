@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { AppState, Linking, Modal, Text, View } from 'react-native';
+import { AppState, KeyboardAvoidingView, Linking, Modal, Platform, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useIsFocused } from '@react-navigation/native';
@@ -35,7 +35,8 @@ function Scanner({ onClose, onScan }) {
     } catch (cause) { consumed.current = false; setError(t(cause.message || 'barcode.invalid')); }
   }
   return <Modal animationType="slide" onRequestClose={onClose}>
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface.bg, padding: spacing.lg, gap: spacing.md }}>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface.bg, padding: spacing.lg, gap: spacing.md }}>
       <Text style={[typography.h2, { color: colors.ink.primary }]}>{t('barcode.scan')}</Text>
       {permission?.granted && focused && active ? <CameraView style={{ flex: 1 }} facing="back" enableTorch={torch}
         barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128', 'code39', 'itf14', 'qr'] }}
@@ -49,6 +50,7 @@ function Scanner({ onClose, onScan }) {
       <Button title={t('barcode.useCode')} onPress={() => submit(manual)} disabled={!manual.trim()} />
       {permission?.granted ? <Button title={t('barcode.torch')} variant="outline" onPress={() => setTorch(!torch)} /> : null}
       <Button title={t('common.cancel')} variant="ghost" onPress={onClose} />
-    </SafeAreaView>
+      </SafeAreaView>
+    </KeyboardAvoidingView>
   </Modal>;
 }

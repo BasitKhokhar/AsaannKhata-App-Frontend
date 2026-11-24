@@ -30,6 +30,12 @@ async function requestPermission() {
   // prompt (declared in app.config.js's android.permissions); on older
   // Android and iOS it resolves per that platform's own rules.
   const status = await requestMessagingPermission(getMessaging());
+  console.log('[backend-notifications] FCM permission result', {
+    source: 'backend-fcm',
+    platform: Platform.OS,
+    status,
+    granted: status === AuthorizationStatus.AUTHORIZED || status === AuthorizationStatus.PROVISIONAL,
+  });
   return status === AuthorizationStatus.AUTHORIZED || status === AuthorizationStatus.PROVISIONAL;
 }
 
@@ -42,7 +48,10 @@ export async function registerCurrentToken() {
   const pendingRegistration = (async () => {
     const device = deviceRepository.getOrCreate();
     const fcmToken = await getToken(getMessaging());
-    if (!fcmToken) return null;
+    if (!fcmToken) {
+      console.warn('[backend-notifications] FCM token unavailable', { source: 'backend-fcm', platform: Platform.OS });
+      return null;
+    }
     await notificationsApi.registerToken({
       installationId: device.deviceId,
       fcmToken,
@@ -75,12 +84,20 @@ export async function initFcm() {
 
   try {
     const granted = await requestPermission();
-    if (!granted) return;
+    if (!granted) {
+      console.warn('[backend-notifications] FCM notifications not authorized', { source: 'backend-fcm', platform: Platform.OS });
+      return;
+    }
 
     // Notifee owns the visible foreground notification. The channel must exist
     // before the first FCM message arrives, especially on Android 13+.
     await ensureNotifeeChannels();
-    await requestNotifeePermission();
+    const notifeeGranted = await requestNotifeePermission();
+    console.log('[backend-notifications] Notifee permission result', {
+      source: 'backend-fcm',
+      platform: Platform.OS,
+      granted: notifeeGranted,
+    });
 
     await registerCurrentToken();
 
@@ -111,6 +128,12 @@ export async function initFcm() {
     });
   } catch (err) {
     // Permission denied, Play Services unavailable, etc. — push is best-effort.
+    console.warn('[backend-notifications] FCM initialization failed', {
+      source: 'backend-fcm',
+      platform: Platform.OS,
+      message: err?.message,
+      code: err?.code,
+    });
   }
 }
 

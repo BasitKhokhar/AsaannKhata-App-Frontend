@@ -7,7 +7,7 @@ import { lineFor, assertCartStock } from '../../utils/cartLines';
 import { showToast } from '../../store/toastStore';
 import { BarcodeUnknown } from '../../components/barcode/BarcodeUnknown';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Image, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -219,8 +219,8 @@ export default function NewBill() {
       <Modal visible={!!selected} transparent animationType="fade" onRequestClose={() => setSelected(null)}>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.lg }}>
           <Pressable onPress={() => setSelected(null)} style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: colors.surface.overlay }} />
-          {selected ? <View style={[{ width: '100%', maxWidth: 440, maxHeight: '86%', borderRadius: radii.xl, backgroundColor: colors.surface.card, overflow: 'hidden' }, elevation.xl]}>
-            <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }} keyboardShouldPersistTaps="handled">
+          {selected ? <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={[{ width: '100%', maxWidth: 440, maxHeight: '86%', borderRadius: radii.xl, backgroundColor: colors.surface.card, overflow: 'hidden' }, elevation.xl]}>
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1, padding: spacing.lg, paddingBottom: spacing.lg, gap: spacing.md }} keyboardShouldPersistTaps="handled" keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'} automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}>
               <View style={{ alignItems: 'center', gap: spacing.sm }}>
                 <View style={{ width: 88, height: 88, borderRadius: radii.xl, overflow: 'hidden', backgroundColor: colors.brand.accentLight, alignItems: 'center', justifyContent: 'center' }}>
                   {selected.imageLocalUri || selected.imageRemoteUrl ? <Image source={{ uri: selected.imageLocalUri || selected.imageRemoteUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" /> : <Text style={[typography.h1, { color: colors.brand.primary }]}>{selected.name.trim().charAt(0).toLocaleUpperCase()}</Text>}
@@ -264,7 +264,7 @@ export default function NewBill() {
               <Button title={t('billing.addToCart')} onPress={addToCart} />
               <Button title={t('common.cancel')} variant="ghost" compact onPress={() => setSelected(null)} />
             </ScrollView>
-          </View> : null}
+          </KeyboardAvoidingView> : null}
         </View>
       </Modal>
       <BarcodeScanner visible={scanning} onClose={() => setScanning(false)} onScan={scan} />

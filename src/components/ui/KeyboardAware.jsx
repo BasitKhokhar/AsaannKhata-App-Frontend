@@ -16,13 +16,14 @@ export function KeyboardAwareView({ children, style, ...props }) {
   );
 }
 
-export function KeyboardAwareScrollView({ children, style, ...props }) {
+export function KeyboardAwareScrollView({ children, style, contentContainerStyle, ...props }) {
   return (
     <ScrollView
-      style={style}
+      style={[{ flex: 1 }, style]}
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
       automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+      contentContainerStyle={[{ flexGrow: 1, paddingBottom: 32 }, contentContainerStyle]}
       {...props}
     >
       {children}
