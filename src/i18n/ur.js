@@ -134,6 +134,7 @@ export const ur = {
   'common.add': 'شامل کریں',
   'common.confirm': 'تصدیق کریں',
   'common.back': 'واپس',
+  'common.menu': 'مینو کھولیں',
   'common.next': 'اگلا',
   'common.retry': 'دوبارہ کوشش کریں',
   'common.loading': 'لوڈ ہو رہا ہے…',
@@ -717,6 +718,8 @@ export const ur = {
   'home.shopsList.addShop': 'دکان شامل کریں',
   'home.shopsList.active': 'فعال',
   'home.shopsList.defaultShopType': 'دکان',
+  'home.shopsList.limit': '{used} میں سے {limit} دکانیں استعمال ہوئیں',
+  'home.shopsList.limitReached': 'دکانوں کی حد پوری ہو گئی',
 
   'home.addShop.title': 'دکان شامل کریں',
   'home.addShop.shopName': 'دکان کا نام',

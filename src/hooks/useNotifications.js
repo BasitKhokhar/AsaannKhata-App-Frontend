@@ -33,6 +33,30 @@ export function useMarkNotificationRead() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id) => notificationsApi.markRead(id),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['notifications'] });
+      const previous = queryClient.getQueriesData({ queryKey: ['notifications'] });
+      queryClient.setQueriesData({ queryKey: ['notifications', 'list'] }, (current) => {
+        if (!current?.pages) return current;
+        return {
+          ...current,
+          pages: current.pages.map((page) => {
+            const key = Array.isArray(page.notifications) ? 'notifications' : 'data';
+            return { ...page, [key]: (page[key] || []).map((item) => String(item.id) === String(id) ? { ...item, isRead: true, read: true } : item) };
+          }),
+        };
+      });
+      queryClient.setQueriesData({ queryKey: ['notifications', 'unreadCount'] }, (current) => {
+        if (!current) return current;
+        const count = current.unreadCount ?? current.count;
+        if (typeof count !== 'number' || count <= 0) return current;
+        return current.unreadCount != null ? { ...current, unreadCount: count - 1 } : { ...current, count: count - 1 };
+      });
+      return { previous };
+    },
+    onError: (_error, _id, context) => {
+      context?.previous?.forEach(([key, value]) => queryClient.setQueryData(key, value));
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
@@ -43,6 +67,22 @@ export function useMarkAllNotificationsRead() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: notificationsApi.markAllRead,
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ['notifications'] });
+      const previous = queryClient.getQueriesData({ queryKey: ['notifications'] });
+      queryClient.setQueriesData({ queryKey: ['notifications', 'list'] }, (current) => {
+        if (!current?.pages) return current;
+        return { ...current, pages: current.pages.map((page) => {
+          const key = Array.isArray(page.notifications) ? 'notifications' : 'data';
+          return { ...page, [key]: (page[key] || []).map((item) => ({ ...item, isRead: true, read: true })) };
+        }) };
+      });
+      queryClient.setQueriesData({ queryKey: ['notifications', 'unreadCount'] }, (current) => current ? { ...current, unreadCount: 0, count: 0 } : current);
+      return { previous };
+    },
+    onError: (_error, _variables, context) => {
+      context?.previous?.forEach(([key, value]) => queryClient.setQueryData(key, value));
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },

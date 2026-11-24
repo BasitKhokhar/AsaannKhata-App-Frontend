@@ -6,15 +6,16 @@ import {
   onTokenRefresh,
   requestPermission as requestMessagingPermission,
 } from '@react-native-firebase/messaging';
+import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 import { deviceRepository } from '../db/repositories/deviceRepository';
 import { notificationsApi } from './notificationsApi';
-import { displayFcmNotification } from './notifeeService';
+import { displayFcmNotification, ensureNotifeeChannels, requestNotifeePermission } from './notifeeService';
 
 // FCM token lifecycle + message handling — ported to this app's own
-// conventions: deviceRepository's stable deviceId (the same one used for
-// cloud sync's POST /sync/devices/register, see src/sync/syncEngine.js) is
-// reused as the identity a push token is attached to, matching the backend's
-// /notifications/register-token contract. Backend push uses
+// conventions: deviceRepository's stable installation UUID is used as the
+// account-scoped push-installation identity. It is intentionally separate
+// from shop-scoped cloud-sync device registration. Backend push uses
 // @react-native-firebase/messaging directly; Notifee is the display layer for
 // both backend and device-local notifications. The background/quit-state handler is registered
 // separately in index.js (must run before App.jsx even mounts).
@@ -22,6 +23,7 @@ import { displayFcmNotification } from './notifeeService';
 let unsubscribeTokenRefresh = null;
 let unsubscribeForegroundMessage = null;
 let initialized = false;
+let registrationPromise = null;
 
 async function requestPermission() {
   // On Android 13+ (API 33+) this triggers the runtime POST_NOTIFICATIONS
@@ -31,26 +33,37 @@ async function requestPermission() {
   return status === AuthorizationStatus.AUTHORIZED || status === AuthorizationStatus.PROVISIONAL;
 }
 
+function getDeviceName() {
+  return Constants.deviceName || Constants.platform?.ios?.model || `AsaanKhata ${Platform.OS} device`;
+}
+
 export async function registerCurrentToken() {
-  const device = deviceRepository.getOrCreate();
-  if (!device.registered) {
-    // Mirrors ensureDeviceRegistered() in src/sync/syncEngine.js — a device
-    // must exist on the backend (via /sync/devices/register) before a push
-    // token can be attached to it. If sync hasn't registered it yet, skip
-    // silently; the next successful sync followed by the next app-open or
-    // token-refresh cycle will retry.
+  if (registrationPromise) return registrationPromise;
+  const pendingRegistration = (async () => {
+    const device = deviceRepository.getOrCreate();
+    const fcmToken = await getToken(getMessaging());
+    if (!fcmToken) return null;
+    await notificationsApi.registerToken({
+      installationId: device.deviceId,
+      fcmToken,
+      deviceName: getDeviceName(),
+      platform: Platform.OS,
+    });
+    console.log('[backend-notifications] FCM token registered', { source: 'backend-fcm', installationId: device.deviceId, deviceName: getDeviceName() });
+    return fcmToken;
+  })().catch((err) => {
+    console.warn('[backend-notifications] FCM token registration failed', {
+      message: err?.message,
+      status: err?.response?.status,
+      code: err?.response?.data?.code,
+      serverMessage: err?.response?.data?.message,
+    });
     return null;
-  }
-  const fcmToken = await getToken(getMessaging());
-  if (!fcmToken) return null;
-  try {
-    await notificationsApi.registerToken({ deviceId: device.deviceId, fcmToken });
-    console.log('[backend-notifications] FCM token registered', { source: 'backend-fcm', deviceId: device.deviceId });
-  } catch (err) {
-    // Best-effort — a failed registration just means this device won't get
-    // pushes until the next successful attempt (app open / token refresh).
-  }
-  return fcmToken;
+  }).finally(() => {
+    registrationPromise = null;
+  });
+  registrationPromise = pendingRegistration;
+  return pendingRegistration;
 }
 
 // Call once at app startup (see App.jsx, alongside initAds()/initAnalytics()).
@@ -64,13 +77,18 @@ export async function initFcm() {
     const granted = await requestPermission();
     if (!granted) return;
 
+    // Notifee owns the visible foreground notification. The channel must exist
+    // before the first FCM message arrives, especially on Android 13+.
+    await ensureNotifeeChannels();
+    await requestNotifeePermission();
+
     await registerCurrentToken();
 
     unsubscribeTokenRefresh = onTokenRefresh(getMessaging(), async (fcmToken) => {
       const device = deviceRepository.getOrCreate();
-      if (!device.registered || !fcmToken) return;
+      if (!fcmToken) return;
       try {
-        await notificationsApi.registerToken({ deviceId: device.deviceId, fcmToken });
+        await notificationsApi.registerToken({ installationId: device.deviceId, fcmToken, deviceName: getDeviceName(), platform: Platform.OS });
       } catch (err) {
         // best-effort, see above
       }
@@ -102,7 +120,7 @@ export async function initFcm() {
 export async function unregisterCurrentDevice() {
   try {
     const device = deviceRepository.getOrCreate();
-    await notificationsApi.removeToken({ deviceId: device.deviceId });
+    await notificationsApi.removeToken({ installationId: device.deviceId });
   } catch (err) {
     // best-effort
   }

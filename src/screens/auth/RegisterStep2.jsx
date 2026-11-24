@@ -9,14 +9,13 @@ import { Button } from '../../components/ui/Button';
 import { KeyboardAwareScrollView, KeyboardAwareView } from '../../components/ui/KeyboardAware';
 import { useTheme } from '../../theme';
 import { useRegisterStore } from '../../store/registerStore';
-import { useT, useIsUrdu } from '../../store/languageStore';
+import { useT } from '../../store/languageStore';
 
 export default function RegisterStep2() {
   const navigation = useNavigation();
   const { colors, typography, spacing } = useTheme();
   const store = useRegisterStore();
   const t = useT();
-  const isUrdu = useIsUrdu();
   const [shopName, setShopName] = useState(store.shopName);
   const [shopAddress, setShopAddress] = useState(store.shopAddress);
   const [shopPhone, setShopPhone] = useState(store.shopPhone);
@@ -40,9 +39,6 @@ export default function RegisterStep2() {
             <TextField label={t('auth.register2.shopName')} value={shopName} onChangeText={setShopName} placeholder={t('auth.shopDetails.namePlaceholder')} />
             <TextField label={t('auth.shopDetails.address')} value={shopAddress} onChangeText={setShopAddress} placeholder={t('auth.shopDetails.addressPlaceholder')} multiline style={{ minHeight: 64 }} />
             <TextField label={t('auth.shopDetails.phone')} value={shopPhone} onChangeText={setShopPhone} keyboardType="phone-pad" placeholder={t('auth.shopDetails.phonePlaceholder')} />
-            <TextField label={t('auth.shopDetails.country')} value={t('auth.shopDetails.pakistan')} editable={false} />
-            <TextField label={t('auth.shopDetails.currency')} value={t('auth.shopDetails.pkr')} editable={false} />
-            <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: isUrdu ? 'right' : 'left' }]}>{t('auth.shopDetails.currencyNote')}</Text>
             {error ? <Text style={[typography.caption, { color: colors.semantic.danger }]}>{error}</Text> : null}
           </KeyboardAwareScrollView>
           <View style={{ padding: spacing.lg }}><Button title={t('common.next')} onPress={next} /></View>

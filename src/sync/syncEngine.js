@@ -7,7 +7,6 @@ import { syncMetaRepository } from '../db/repositories/syncMetaRepository';
 import { useShopStore } from '../store/shopStore';
 import { useSyncStore } from '../store/syncStore';
 import { useAuthStore } from '../store/authStore';
-import { registerCurrentToken } from '../services/fcmService';
 import { applyPullPage, cachePulledProductImages } from './pull';
 import { pushAllPending, pushPendingCoinUsage } from './push';
 import { queryClient } from '../services/queryClient';
@@ -29,7 +28,6 @@ async function ensureDeviceRegistered(shopId, replaceExisting) {
     replaceExisting,
   });
   deviceRepository.markRegistered({ platform: 'android' });
-  if (String(useShopStore.getState().activeShopId) === String(shopId)) registerCurrentToken().catch(() => {});
   return device.deviceId;
 }
 

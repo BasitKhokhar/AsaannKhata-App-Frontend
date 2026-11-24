@@ -132,6 +132,7 @@ export const hi = {
   'common.add': 'जोड़ें',
   'common.confirm': 'पुष्टि करें',
   'common.back': 'वापस',
+  'common.menu': 'मेनू खोलें',
   'common.next': 'अगला',
   'common.retry': 'पुनः प्रयास करें',
   'common.loading': 'लोड हो रहा है…',
@@ -715,6 +716,8 @@ export const hi = {
   'home.shopsList.addShop': 'दुकान जोड़ें',
   'home.shopsList.active': 'सक्रिय',
   'home.shopsList.defaultShopType': 'दुकान',
+  'home.shopsList.limit': '{used} में से {limit} दुकानें उपयोग हुईं',
+  'home.shopsList.limitReached': 'दुकानों की सीमा पूरी हो गई',
 
   'home.addShop.title': 'दुकान जोड़ें',
   'home.addShop.shopName': 'दुकान का नाम',

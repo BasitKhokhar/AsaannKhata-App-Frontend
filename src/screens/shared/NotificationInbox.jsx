@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, Text, ScrollView, Pressable, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, Pressable, RefreshControl, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Bell, CheckCheck } from 'lucide-react-native';
+import { Bell, CheckCheck, X, ChevronRight, CalendarDays, Tag } from 'lucide-react-native';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { Header } from '../../components/ui/Header';
 import { Card } from '../../components/ui/Card';
@@ -35,8 +35,18 @@ export default function NotificationInbox() {
   const { data: unreadCountData } = useUnreadNotificationCount();
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
+  const [selectedNotification, setSelectedNotification] = React.useState(null);
   const items = data?.pages?.flatMap((page) => page?.notifications || page?.data || []) || [];
   const unreadCount = unreadCountData?.unreadCount ?? unreadCountData?.count ?? 0;
+
+  const openNotification = (item) => {
+    setSelectedNotification(item);
+    if (!(item.isRead ?? item.read ?? false)) markRead.mutate(item.id);
+  };
+
+  const selectedMessage = selectedNotification?.message || selectedNotification?.body || '';
+  const selectedTitle = selectedNotification?.title || selectedMessage || t('notifications.inboxTitle');
+  const selectedDate = selectedNotification?.createdAt || selectedNotification?.sentAt || selectedNotification?.updatedAt;
 
   return (
     <AnimatedScreen>
@@ -69,7 +79,7 @@ export default function NotificationInbox() {
                 const isRead = item.isRead ?? item.read ?? false;
                 const message = item.message || item.body || '';
                 return (
-                  <Pressable key={item.id} onPress={() => { if (!isRead) markRead.mutate(item.id); }}>
+                  <Pressable key={item.id} onPress={() => openNotification(item)} accessibilityRole="button">
                     <Card
                       level="xs"
                       style={{
@@ -91,6 +101,7 @@ export default function NotificationInbox() {
                         {message && message !== item.title ? <Text style={[typography.body, { color: colors.ink.secondary, textAlign }]}>{message}</Text> : null}
                         {item.createdAt ? <Text style={[typography.caption, { color: colors.ink.secondary, textAlign }]}>{formatRelativeTime(item.createdAt)}</Text> : null}
                       </View>
+                      <ChevronRight size={18} color={colors.ink.secondary} style={{ marginTop: 10, transform: [{ scaleX: isUrdu ? -1 : 1 }] }} />
                     </Card>
                   </Pressable>
                 );
@@ -99,6 +110,24 @@ export default function NotificationInbox() {
             </>
           )}
         </ScrollView>
+        <Modal visible={!!selectedNotification} transparent animationType="fade" onRequestClose={() => setSelectedNotification(null)}>
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.lg, backgroundColor: 'rgba(10, 18, 30, 0.52)' }}>
+            <View style={{ width: '100%', maxWidth: 520, maxHeight: '82%', backgroundColor: colors.surface.bg, borderRadius: radii.xl, padding: spacing.xl, gap: spacing.lg, borderWidth: 1, borderColor: colors.surface.border }}>
+              <View style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.md }}>
+                <View style={{ width: 48, height: 48, borderRadius: radii.lg, backgroundColor: colors.brand.primary + '1A', alignItems: 'center', justifyContent: 'center' }}><Bell size={23} color={colors.brand.primary} /></View>
+                <View style={{ flex: 1 }}><Text style={[typography.h2, { color: colors.ink.primary, textAlign }]}>{t('notifications.detailTitle')}</Text><Text style={[typography.caption, { color: colors.ink.secondary, textAlign }]}>{t('notifications.detailSubtitle')}</Text></View>
+                <Pressable onPress={() => setSelectedNotification(null)} hitSlop={10}><X size={22} color={colors.ink.secondary} /></Pressable>
+              </View>
+              <Card bordered={false} style={{ gap: spacing.md, backgroundColor: colors.surface.raised }}>
+                <Text style={[typography.h2, { color: colors.ink.primary, textAlign }]}>{selectedTitle}</Text>
+                {selectedMessage && selectedMessage !== selectedTitle ? <Text style={[typography.body, { color: colors.ink.secondary, textAlign }]}>{selectedMessage}</Text> : null}
+                <View style={{ height: 1, backgroundColor: colors.surface.border }} />
+                {selectedNotification?.type ? <View style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.sm }}><Tag size={16} color={colors.brand.primary} /><Text style={[typography.caption, { color: colors.ink.secondary, textAlign }]}>{String(selectedNotification.type)}</Text></View> : null}
+                {selectedDate ? <View style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.sm }}><CalendarDays size={16} color={colors.brand.primary} /><Text style={[typography.caption, { color: colors.ink.secondary, textAlign }]}>{new Date(selectedDate).toLocaleString()}</Text></View> : null}
+              </Card>
+            </View>
+          </View>
+        </Modal>
       </SafeAreaView>
     </AnimatedScreen>
   );

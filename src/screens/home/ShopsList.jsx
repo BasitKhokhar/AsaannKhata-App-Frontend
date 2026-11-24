@@ -9,6 +9,7 @@ import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { Badge } from '../../components/ui/Badge';
 import { useTheme } from '../../theme';
 import { useShops } from '../../hooks/useShops';
+import { useEntitlement } from '../../hooks/useEntitlement';
 import { useShopStore } from '../../store/shopStore';
 import { useT, useIsUrdu } from '../../store/languageStore';
 
@@ -16,11 +17,13 @@ export default function ShopsList() {
   const navigation = useNavigation();
   const { colors, radii, typography, spacing } = useTheme();
   const { data: shops = [], isLoading } = useShops();
+  const { data: entitlement } = useEntitlement();
   const activeShopId = useShopStore((s) => s.activeShopId);
   const setActiveShopId = useShopStore((s) => s.setActiveShopId);
   const t = useT();
   const isUrdu = useIsUrdu();
   const rowDirection = isUrdu ? 'row-reverse' : 'row';
+  const shopLimitReached = entitlement?.maxShops != null && shops.length >= entitlement.maxShops;
 
   return (
     <AnimatedScreen>
@@ -70,13 +73,25 @@ export default function ShopsList() {
         />
 
         <View style={{ padding: spacing.lg }}>
+          {entitlement?.maxShops != null ? (
+            <Text
+              style={[typography.caption, {
+                color: shopLimitReached ? colors.semantic.warning : colors.ink.secondary,
+                textAlign: isUrdu ? 'right' : 'left',
+                marginBottom: spacing.sm,
+              }]}
+            >
+              {t('home.shopsList.limit').replace('{used}', String(shops.length)).replace('{limit}', String(entitlement.maxShops))}
+            </Text>
+          ) : null}
           <Pressable
+            disabled={shopLimitReached}
             onPress={() => navigation.navigate('AddShop')}
             style={{
               height: 48,
               borderRadius: radii.lg,
               borderWidth: 1.5,
-              borderColor: colors.brand.primary,
+              borderColor: shopLimitReached ? colors.surface.border : colors.brand.primary,
               borderStyle: 'dashed',
               flexDirection: rowDirection,
               alignItems: 'center',
@@ -87,7 +102,7 @@ export default function ShopsList() {
             <Svg width={16} height={16} viewBox="0 0 16 16">
               <Path d="M8 2v12M2 8h12" stroke={colors.brand.primary} strokeWidth={1.8} strokeLinecap="round" />
             </Svg>
-            <Text style={[typography.h3, { color: colors.brand.primary }]}>{t('home.shopsList.addShop')}</Text>
+            <Text style={[typography.h3, { color: shopLimitReached ? colors.ink.secondary : colors.brand.primary }]}>{shopLimitReached ? t('home.shopsList.limitReached') : t('home.shopsList.addShop')}</Text>
           </Pressable>
         </View>
       </SafeAreaView>

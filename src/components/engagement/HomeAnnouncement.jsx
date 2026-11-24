@@ -9,10 +9,12 @@ import { WebView } from 'react-native-webview';
 import { getHomePopup } from '../../services/engagementApi';
 import { useT, useIsUrdu } from '../../store/languageStore';
 import { useTheme } from '../../theme';
-import { cooldownReady, normalizePopup, youtubeId } from '../../utils/engagement';
+import { normalizePopup, POPUP_COOLDOWN_MS, youtubeId } from '../../utils/engagement';
 
 const LAST_SHOWN_KEY = 'home-popup-last-shown-v1';
+const LAST_DISMISSED_KEY = 'home-popup-last-dismissed-v1';
 let lastShownInSession = 0;
+let dismissedInSession = false;
 const escapeAttribute = (value) => value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 const PopupVideo = memo(function PopupVideo({ url, colors }) {
@@ -51,13 +53,21 @@ export function HomeAnnouncement() {
   const shown = useRef(false);
 
   useEffect(() => {
-    const subscription = AppState.addEventListener('change', (state) => setAppActive(state === 'active'));
+    const subscription = AppState.addEventListener('change', (state) => {
+      const active = state === 'active';
+      setAppActive(active);
+      if (!active) {
+        // Re-opening the app creates a new eligibility check. Staying on the
+        // Dashboard must never retrigger the popup after five minutes.
+        attempted.current = false;
+        setCampaign(null);
+      }
+    });
     return () => subscription.remove();
   }, []);
 
   useEffect(() => {
     if (!focused || !appActive) {
-      attempted.current = false;
       setCampaign(null);
     }
   }, [focused, appActive]);
@@ -67,16 +77,20 @@ export function HomeAnnouncement() {
     let cancelled = false;
     const timer = setTimeout(async () => {
       try {
-        const stored = await SecureStore.getItemAsync(LAST_SHOWN_KEY);
+        const [storedShown, storedDismissed] = await Promise.all([
+          SecureStore.getItemAsync(LAST_SHOWN_KEY),
+          SecureStore.getItemAsync(LAST_DISMISSED_KEY),
+        ]);
         if (cancelled) return;
-        if (!cooldownReady(Math.max(Number(stored) || 0, lastShownInSession))) {
-          attempted.current = true;
-          return;
-        }
+        const lastShown = Math.max(Number(storedShown) || 0, lastShownInSession);
+        const lastDismissed = Math.max(Number(storedDismissed) || 0, dismissedInSession ? lastShown : 0);
+        const isFirstOpen = !lastShown;
+        const reopenedSoonAfterDismissal = lastDismissed > 0 && Date.now() - lastDismissed < POPUP_COOLDOWN_MS;
+        if (!isFirstOpen && !reopenedSoonAfterDismissal) return;
         const popup = normalizePopup(await getHomePopup());
         if (cancelled) return;
         attempted.current = true;
-        if (!popup || !cooldownReady(lastShownInSession)) return;
+        if (!popup) return;
         shown.current = false;
         setImageFailed(false);
         setCloseDeadline(null);
@@ -98,7 +112,12 @@ export function HomeAnnouncement() {
   }, [campaign, closeDeadline, focused, appActive]);
 
   const dismiss = useCallback(() => {
-    if (closeDeadline !== null && Date.now() >= closeDeadline) setCampaign(null);
+    if (closeDeadline !== null && Date.now() >= closeDeadline) {
+      const dismissedAt = Date.now();
+      dismissedInSession = true;
+      setCampaign(null);
+      SecureStore.setItemAsync(LAST_DISMISSED_KEY, String(dismissedAt)).catch(() => {});
+    }
   }, [closeDeadline]);
 
   if (!campaign || !focused || !appActive) return null;
@@ -118,6 +137,7 @@ export function HomeAnnouncement() {
       if (shown.current) return;
       shown.current = true;
       lastShownInSession = Date.now();
+      dismissedInSession = false;
       setCloseDeadline(lastShownInSession + 5000);
       SecureStore.setItemAsync(LAST_SHOWN_KEY, String(lastShownInSession)).catch(() => {});
     }}

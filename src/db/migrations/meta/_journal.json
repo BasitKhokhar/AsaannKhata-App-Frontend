@@ -64,6 +64,13 @@
       "when": 1794763273460,
       "tag": "0008_liquid_stock",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794850000000,
+      "tag": "0009_dynamic_shop_entitlements",
+      "breakpoints": true
     }
   ]
 }

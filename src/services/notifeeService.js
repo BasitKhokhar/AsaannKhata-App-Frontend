@@ -26,13 +26,13 @@ function notificationData(remoteMessage) {
 
 export async function displayFcmNotification(remoteMessage) {
   const data = notificationData(remoteMessage);
-  const title = remoteMessage?.notification?.title || data.title || data.notificationTitle || 'Asaan Dukaan';
-  const body = remoteMessage?.notification?.body || data.body || data.notificationBody || 'You have a new notification.';
+  const title = remoteMessage?.notification?.title || data.title || data.notificationTitle || data.subject || 'Asaan Dukaan';
+  const body = remoteMessage?.notification?.body || data.body || data.notificationBody || data.message || 'You have a new notification.';
   await ensureNotifeeChannels();
   const id = await notifee.displayNotification({
     title,
     body,
-    data: { ...data, source: 'backend-fcm' },
+    data: { ...data, source: 'backend-fcm', notificationId: String(data.notificationId || data.id || remoteMessage?.messageId || '') },
     android: { channelId: BACKEND_CHANNEL_ID, pressAction: { id: 'default' }, smallIcon: 'ic_launcher' },
     ios: { foregroundPresentationOptions: { alert: true, badge: true, sound: true } },
   });

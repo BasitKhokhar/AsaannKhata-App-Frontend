@@ -9,8 +9,9 @@ import m0005 from './0005_thankful_piledriver.sql';
 import m0006 from './0006_product_image_sync.sql';
 import m0007 from './0007_barcode_receipts.sql';
 import m0008 from './0008_liquid_stock.sql';
+import m0009 from './0009_dynamic_shop_entitlements.sql';
 
 export default {
   journal,
-  migrations: { m0000, m0001, m0002, m0003, m0004, m0005, m0006, m0007, m0008 },
+  migrations: { m0000, m0001, m0002, m0003, m0004, m0005, m0006, m0007, m0008, m0009 },
 };

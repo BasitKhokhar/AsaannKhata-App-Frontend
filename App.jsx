@@ -31,7 +31,7 @@ import * as secureSession from './src/services/secureSession';
 import { useSyncTriggers } from './src/sync/triggers';
 import { initAds } from './src/services/adsService';
 import { initAnalytics } from './src/services/analyticsService';
-import { initFcm } from './src/services/fcmService';
+import { initFcm, registerCurrentToken } from './src/services/fcmService';
 import { syncLocalLowStockNotifications } from './src/services/localLowStockNotifications';
 import { handleInitialNotifeeNotification, subscribeToNotifeeEvents } from './src/services/notifeeService';
 import { useNotificationPrefsStore } from './src/store/notificationPrefsStore';
@@ -100,6 +100,18 @@ export default function App() {
 
     return () => { mounted = false; };
   }, []);
+
+  // initFcm runs early, before auth/shop hydration. Retry token registration
+  // once the signed-in account is available. Push setup is account-scoped and
+  // must not depend on active-shop hydration or cloud-sync entitlement.
+  useEffect(() => {
+    if (!adminId) return undefined;
+    registerCurrentToken().catch(() => {});
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') registerCurrentToken().catch(() => {});
+    });
+    return () => subscription.remove();
+  }, [adminId]);
 
   useEffect(() => {
     if (!migrationsReady || !adminId || !activeShopId) return undefined;

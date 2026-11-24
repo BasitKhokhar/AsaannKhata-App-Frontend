@@ -266,6 +266,7 @@ export const entitlementCache = sqliteTable('entitlement_cache', {
   cloudEnabled: integer('cloud_enabled', { mode: 'boolean' }).notNull().default(false),
   offlineEnabled: integer('offline_enabled', { mode: 'boolean' }).notNull().default(true),
   maxDevices: integer('max_devices').notNull().default(1),
+  maxShops: integer('max_shops'),
   expiryDate: text('expiry_date'),
   isTrial: integer('is_trial', { mode: 'boolean' }).notNull().default(false),
   canWrite: integer('can_write', { mode: 'boolean' }).notNull().default(true),

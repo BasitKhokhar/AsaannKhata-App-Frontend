@@ -1,9 +1,9 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, Pressable, ScrollView, RefreshControl } from 'react-native';
+import { View, Text, Pressable, ScrollView, RefreshControl, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect, DrawerActions } from '@react-navigation/native';
 import { BarChart } from 'react-native-gifted-charts';
-import { ChevronDown, Menu, Boxes, Plus, Cloud, Coins, Users, Bell, AlertTriangle, Wallet, BadgeDollarSign, TrendingUp, PlayCircle, ReceiptText } from 'lucide-react-native';
+import { ChevronDown, Menu, Globe2, Boxes, Plus, Cloud, Coins, Users, AlertTriangle, Wallet, BadgeDollarSign, TrendingUp, PlayCircle, ReceiptText, Check } from 'lucide-react-native';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { PulseFab } from '../../components/motion/PulseFab';
 import { Card } from '../../components/ui/Card';
@@ -27,19 +27,20 @@ import { useShopStore } from '../../store/shopStore';
 import { useSyncStore } from '../../store/syncStore';
 import { useCoinsStore } from '../../store/coinsStore';
 import { useNotificationPrefsStore } from '../../store/notificationPrefsStore';
-import { useT, useIsUrdu } from '../../store/languageStore';
+import { useLanguageStore, useT, useIsUrdu } from '../../store/languageStore';
 import { formatCurrency } from '../../utils/money';
 import { isLowStock, isOutOfStock } from '../../utils/stock';
 import { formatRelativeTime } from '../../utils/dates';
 import { dateRangeForPreset, dateRangeLabel } from '../../utils/dateRanges';
 import { hasSyncEntitlement, isAdSupportedEntitlement } from '../../utils/entitlements';
-import { useUnreadNotificationCount } from '../../hooks/useNotifications';
 
 export default function Dashboard() {
   const navigation = useNavigation();
   const { colors, radii, typography, spacing } = useTheme();
   const t = useT();
   const isUrdu = useIsUrdu();
+  const lang = useLanguageStore((s) => s.lang);
+  const setLang = useLanguageStore((s) => s.setLang);
   const rowDirection = isUrdu ? 'row-reverse' : 'row';
   const textAlign = isUrdu ? 'right' : 'left';
   const { data: shops = [] } = useShops();
@@ -63,8 +64,12 @@ export default function Dashboard() {
   const adSupported = isAdSupportedEntitlement(entitlement);
   const syncEnabled = hasSyncEntitlement(entitlement);
   const [syncOpen, setSyncOpen] = useState(false);
-  const { data: unreadNotificationData } = useUnreadNotificationCount();
-  const unreadNotificationCount = unreadNotificationData?.unreadCount ?? unreadNotificationData?.count ?? 0;
+  const [languageOpen, setLanguageOpen] = useState(false);
+  const languages = [
+    { code: 'en', label: 'English' },
+    { code: 'ur', label: 'اردو' },
+    { code: 'hi', label: 'हिन्दी' },
+  ];
 
   function handleRefresh() {
     refetch();
@@ -132,18 +137,40 @@ export default function Dashboard() {
                 <Text numberOfLines={1} style={[typography.h3, { color: colors.ink.primary }]}>{activeShop?.name || t('nav.selectShop')}</Text>
                 <Text style={[typography.caption, { color: colors.ink.secondary }]}>{businessLabel}</Text>
               </View>
-              <ChevronDown size={14} color={colors.ink.secondary} strokeWidth={1.8} />
             </Pressable>
             <View style={{ flexDirection: rowDirection, alignItems: 'center', gap: spacing.sm }}>
-              <Pressable onPress={() => navigation.getParent()?.navigate('Notifications')} hitSlop={8} style={{ position: 'relative' }}>
-                <Bell size={20} color={colors.ink.primary} strokeWidth={1.8} />
-                {unreadNotificationCount > 0 ? <View style={{ position: 'absolute', top: -2, right: -2, width: 7, height: 7, borderRadius: 4, backgroundColor: colors.semantic.danger }} /> : null}
+              <Pressable
+                onPress={() => setLanguageOpen(true)}
+                accessibilityRole="button"
+                accessibilityLabel={t('settings.chooseLanguage')}
+                style={{ width: 40, height: 40, borderRadius: radii.md, borderWidth: 1, borderColor: colors.surface.border, backgroundColor: colors.surface.card, alignItems: 'center', justifyContent: 'center', gap: 1 }}
+              >
+                <Globe2 size={17} color={colors.ink.primary} strokeWidth={1.8} />
+                <Text style={[typography.label, { color: colors.ink.secondary, fontSize: 9, lineHeight: 11 }]}>{lang.toUpperCase()}</Text>
               </Pressable>
-              <Pressable onPress={() => navigation.dispatch(DrawerActions.openDrawer())} hitSlop={8}><Menu size={20} color={colors.ink.primary} strokeWidth={1.8} /></Pressable>
+              <Pressable
+                onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+                accessibilityRole="button"
+                accessibilityLabel={t('common.menu')}
+                style={{ width: 40, height: 40, borderRadius: radii.md, borderWidth: 1, borderColor: colors.surface.border, backgroundColor: colors.surface.card, alignItems: 'center', justifyContent: 'center' }}
+              ><Menu size={21} color={colors.ink.primary} strokeWidth={1.9} /></Pressable>
             </View>
           </View>
           </SafeAreaView>
         </View>
+
+        <Modal visible={languageOpen} transparent animationType="fade" onRequestClose={() => setLanguageOpen(false)}>
+          <Pressable style={{ flex: 1, backgroundColor: 'rgba(10, 18, 30, 0.32)', alignItems: 'flex-end', paddingTop: 86, paddingRight: spacing.lg }} onPress={() => setLanguageOpen(false)}>
+            <View style={{ width: 170, borderRadius: radii.lg, paddingVertical: spacing.xs, backgroundColor: colors.surface.raised, borderWidth: 1, borderColor: colors.surface.border, elevation: 8 }}>
+              {languages.map((language) => (
+                <Pressable key={language.code} onPress={() => { setLang(language.code); setLanguageOpen(false); }} style={{ flexDirection: rowDirection, alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingVertical: spacing.md, backgroundColor: lang === language.code ? colors.brand.primary + '12' : 'transparent' }}>
+                  <Text style={[typography.bodyMedium, { color: lang === language.code ? colors.brand.primary : colors.ink.primary }]}>{language.label}</Text>
+                  {lang === language.code ? <Check size={17} color={colors.brand.primary} strokeWidth={2.2} /> : null}
+                </Pressable>
+              ))}
+            </View>
+          </Pressable>
+        </Modal>
 
         <ScrollView
           style={{ flex: 1 }}

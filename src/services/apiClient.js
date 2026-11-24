@@ -21,6 +21,9 @@ apiClient.interceptors.request.use((config) => {
   if (activeShopId && !config.headers['X-Shop-Id']) {
     config.headers['X-Shop-Id'] = String(activeShopId);
   }
+  if (__DEV__) {
+    console.log('[API Request]', config.method?.toUpperCase(), config.url, config.params || '');
+  }
   return config;
 });
 
@@ -39,10 +42,19 @@ async function refreshAccessToken() {
 }
 
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (__DEV__) {
+      console.log('[API Response]', response.config.method?.toUpperCase(), response.config.url, response.status, response.data);
+    }
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
     const status = error.response?.status;
+
+    if (__DEV__) {
+      console.log('[API Error]', originalRequest?.method?.toUpperCase(), originalRequest?.url, status || 'NETWORK_ERROR', error.response?.data || error.message);
+    }
 
     if (status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
@@ -58,10 +70,10 @@ apiClient.interceptors.response.use(
         await secureSession.clearSession();
         // Local SQLite data is deliberately untouched — offline-first means
         // logging back in as the same shop owner should see data instantly.
-        return Promise.reject(refreshError);
+        throw refreshError;
       }
     }
 
-    return Promise.reject(error);
+    throw error;
   }
 );
