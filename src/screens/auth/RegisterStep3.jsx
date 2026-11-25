@@ -76,11 +76,11 @@ export default function RegisterStep3() {
         <RegisterWizardHeader step={2} />
         <KeyboardAwareView>
           <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
-            <TextField label={t('auth.register1.fullName')} value={name} onChangeText={setName} placeholder={t('auth.account.namePlaceholder')} />
-            <TextField label={t('auth.register1.email')} value={email} onChangeText={setEmail} placeholder={t('auth.account.emailPlaceholder')} autoCapitalize="none" keyboardType="email-address" />
-            <TextField label={t('auth.register1.phone')} value={phone} onChangeText={setPhone} placeholder={t('auth.shopDetails.phonePlaceholder')} keyboardType="phone-pad" />
-            <TextField label={t('auth.register1.password')} value={password} onChangeText={setPassword} placeholder={t('auth.account.passwordPlaceholder')} secureTextEntry />
-            <TextField label={t('auth.register1.confirmPassword')} value={confirmPassword} onChangeText={setConfirmPassword} placeholder={t('auth.account.confirmPlaceholder')} secureTextEntry />
+            <TextField fieldHeight={54} label={t('auth.register1.fullName')} value={name} onChangeText={setName} placeholder={t('auth.account.namePlaceholder')} />
+            <TextField fieldHeight={54} label={t('auth.register1.email')} value={email} onChangeText={setEmail} placeholder={t('auth.account.emailPlaceholder')} autoCapitalize="none" keyboardType="email-address" />
+            <TextField fieldHeight={54} label={t('auth.register1.phone')} value={phone} onChangeText={setPhone} placeholder={t('auth.shopDetails.phonePlaceholder')} keyboardType="phone-pad" />
+            <TextField fieldHeight={54} label={t('auth.register1.password')} value={password} onChangeText={setPassword} placeholder={t('auth.account.passwordPlaceholder')} secureTextEntry />
+            <TextField fieldHeight={54} label={t('auth.register1.confirmPassword')} value={confirmPassword} onChangeText={setConfirmPassword} placeholder={t('auth.account.confirmPlaceholder')} secureTextEntry />
             <View style={{ flexDirection: isUrdu ? 'row-reverse' : 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.sm }}>
               <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: agreed }} onPress={() => setAgreed((value) => !value)} hitSlop={8} style={{ width: 28, height: 28, alignItems: 'center', justifyContent: 'center' }}>
                 <View style={{ width: 19, height: 19, borderRadius: radii.sm / 2, borderWidth: 1.5, borderColor: agreed ? colors.brand.primary : colors.surface.border, backgroundColor: agreed ? colors.brand.primary : colors.surface.raised, alignItems: 'center', justifyContent: 'center' }}>

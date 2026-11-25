@@ -5,6 +5,7 @@ import { palette } from '../theme/colors';
 import { en } from '../i18n/en';
 import { ur } from '../i18n/ur';
 import { hi } from '../i18n/hi';
+import { formatInvoiceId } from './invoiceId';
 
 export const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 
@@ -54,7 +55,7 @@ export function buildReceiptHtml({ shopName, bill, config: input, statement = fa
     <header>${config.showLogo && config.logoData ? `<img src="${config.logoData}" alt="">` : ''}<h1>${e(config.displayName || shopName || 'AsaanKhata')}</h1>
     ${config.address ? `<p>${e(config.address)}</p>` : ''}${config.phone ? `<p dir="ltr">${e(config.phone)}</p>` : ''}</header>
     <div class="meta"><strong>${e(t(statement ? 'receipt.statement' : 'receipt.title'))}</strong>
-    <p dir="ltr">#${e(snapshot?.invoiceId || bill.serverId || bill.id)}</p><p>${e(new Date(bill.createdAt).toLocaleString(config.language === 'ur' ? 'ur-PK' : config.language === 'hi' ? 'hi-IN' : 'en-PK'))}</p>
+    <p dir="ltr">${e(formatInvoiceId(bill))}</p><p>${e(new Date(bill.createdAt).toLocaleString(config.language === 'ur' ? 'ur-PK' : config.language === 'hi' ? 'hi-IN' : 'en-PK'))}</p>
     ${config.showCustomer ? `<p>${e(bill.customerName)}</p>${config.showPhone && bill.customerPhone ? `<p dir="ltr">${e(bill.customerPhone)}</p>` : ''}` : ''}</div>
     <table><thead><tr><th>${e(t('records.items'))}</th><th class="amount">${e(t('billing.total'))}</th></tr></thead><tbody>${items}</tbody></table>
     <table class="summary">${row(t('billing.subtotal'), bill.subtotal)}${bill.discount > 0 ? row(t('billing.discount'), -bill.discount) : ''}${tax > 0.005 ? row(t('billing.tax'), tax) : ''}${row(t('billing.total'), bill.totalAmount, 'total')}${row(t('records.paidAmount'), Math.min(bill.totalAmount, received))}${row(t('billing.remainingDue'), due, 'total')}${!statement && bill.changeDue > 0 ? row(t('receipt.change'), bill.changeDue) : ''}</table>

@@ -36,9 +36,9 @@ export default function RegisterStep2() {
         <RegisterWizardHeader step={1} />
         <KeyboardAwareView>
           <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg }}>
-            <TextField label={t('auth.register2.shopName')} value={shopName} onChangeText={setShopName} placeholder={t('auth.shopDetails.namePlaceholder')} />
+            <TextField fieldHeight={54} label={t('auth.register2.shopName')} value={shopName} onChangeText={setShopName} placeholder={t('auth.shopDetails.namePlaceholder')} />
             <TextField label={t('auth.shopDetails.address')} value={shopAddress} onChangeText={setShopAddress} placeholder={t('auth.shopDetails.addressPlaceholder')} multiline style={{ minHeight: 64 }} />
-            <TextField label={t('auth.shopDetails.phone')} value={shopPhone} onChangeText={setShopPhone} keyboardType="phone-pad" placeholder={t('auth.shopDetails.phonePlaceholder')} />
+            <TextField fieldHeight={54} label={t('auth.shopDetails.phone')} value={shopPhone} onChangeText={setShopPhone} keyboardType="phone-pad" placeholder={t('auth.shopDetails.phonePlaceholder')} />
             {error ? <Text style={[typography.caption, { color: colors.semantic.danger }]}>{error}</Text> : null}
           </KeyboardAwareScrollView>
           <View style={{ padding: spacing.lg }}><Button title={t('common.next')} onPress={next} /></View>

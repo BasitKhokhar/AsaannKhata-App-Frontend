@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, TextInput } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Header } from '../../components/ui/Header';
@@ -123,28 +123,15 @@ export default function StockAdjustment() {
             {unitOptions.length > 1 ? <View style={{ flexDirection: rowDirection, flexWrap: 'wrap', gap: spacing.xs, marginBottom: spacing.sm }}>
               {unitOptions.map((option) => <Pressable key={option.key} onPress={() => setUnit(option.key)} style={{ paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radii.md, borderWidth: 1, borderColor: unit === option.key ? colors.brand.primary : colors.surface.border, backgroundColor: unit === option.key ? colors.brand.primary : colors.surface.raised }}><Text style={[typography.caption, { color: unit === option.key ? colors.ink.onBrand : colors.ink.secondary }]}>{option.label}</Text></Pressable>)}
             </View> : null}
-            <View
-              style={{
-                height: 46,
-                borderRadius: radii.md,
-                borderWidth: 1,
-                borderColor: colors.surface.border,
-                flexDirection: rowDirection,
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                paddingHorizontal: spacing.md,
-              }}
-            >
-              <TextInput
-                value={quantity}
-                onChangeText={setQuantity}
-                placeholder="0"
-                placeholderTextColor={colors.ink.secondary}
-                keyboardType="numeric"
-                style={[typography.h3, { flex: 1, color: colors.ink.primary, paddingVertical: 0, textAlign }]}
-              />
-              <Text style={[typography.caption, { color: colors.ink.secondary, marginLeft: spacing.sm }]}>{t('stock.adjustment.newValue').replace('{value}', `${round(preview / (unitOption?.factor || 1))} ${unitOption?.label}`)}</Text>
-            </View>
+            <TextField
+              label={`${t('stock.adjustment.quantity')} (${unitOption?.label})`}
+              value={quantity}
+              onChangeText={setQuantity}
+              placeholder="0"
+              keyboardType="numeric"
+              textAlign={textAlign}
+              right={<Text style={[typography.caption, { color: colors.ink.secondary, marginLeft: spacing.sm }]}>{t('stock.adjustment.newValue').replace('{value}', `${round(preview / (unitOption?.factor || 1))} ${unitOption?.label}`)}</Text>}
+            />
           </View>
 
           <TextField label={t('stock.adjustment.reason')} value={reason} onChangeText={setReason} placeholder="Purchase from supplier" style={{ textAlign }} />

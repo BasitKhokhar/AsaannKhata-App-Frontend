@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Image, Text, TextInput, View } from 'react-native';
+import { Image, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { AlertTriangle, ArrowDownCircle, ArrowUpCircle, Boxes, Eye, History, Package, Plus, Search, SlidersHorizontal } from 'lucide-react-native';
@@ -23,6 +23,7 @@ import { formatStockLabel, isLowStock, isOutOfStock } from '../../utils/stock';
 import { formatCurrency } from '../../utils/money';
 import { formatRelativeTime } from '../../utils/dates';
 import { useT, useIsUrdu } from '../../store/languageStore';
+import { TextField } from '../../components/ui/TextField';
 
 export default function StockOverview() {
   const navigation = useNavigation();
@@ -62,10 +63,7 @@ export default function StockOverview() {
                 <CompactMetric icon={<Boxes size={15} color={colors.brand.primary} />} value={totalSkus} label={t('stock.overview.totalSkus')} />
                 <CompactMetric icon={<AlertTriangle size={15} color={lowStockCount > 0 ? colors.semantic.danger : colors.semantic.warning} />} value={lowStockCount} label={t('stock.overview.lowStock')} danger={lowStockCount > 0} />
               </View>
-              <View style={{ height: 42, borderRadius: radii.md, borderWidth: 1, borderColor: colors.surface.border, backgroundColor: colors.surface.card, flexDirection: rowDirection, alignItems: 'center', paddingHorizontal: spacing.md, gap: spacing.sm }}>
-                <Search size={16} color={colors.ink.secondary} strokeWidth={1.8} />
-                <TextInput value={search} onChangeText={setSearch} placeholder={t('billing.searchProducts')} placeholderTextColor={colors.ink.secondary} style={[typography.body, { flex: 1, color: colors.ink.primary, textAlign }]} />
-              </View>
+              <TextField label={t('billing.searchProducts')} value={search} onChangeText={setSearch} textAlign={textAlign} left={<Search size={16} color={colors.ink.secondary} strokeWidth={1.8} />} />
               <View style={{ flexDirection: rowDirection, gap: spacing.sm, flexWrap: 'wrap' }}>{filters.map((item) => <Chip key={item.key} label={item.label} selected={filter === item.key} onPress={() => setFilter(item.key)} />)}</View>
               <View style={{ flexDirection: rowDirection, alignItems: 'center', justifyContent: 'space-between' }}><SectionHeader title={t('stock.overview.inventoryTitle')} /><Text style={[typography.caption, { color: colors.ink.secondary }]}>{t('stock.overview.pageSize')}</Text></View>
             </View>
@@ -113,5 +111,5 @@ function ProductPickerSheet({ visible, onClose, onPick }) {
   const [search, setSearch] = useState('');
   const { rows: products } = useProductPages({ search });
   const t = useT();
-  return <Sheet visible={visible} onClose={onClose} title={t('stock.overview.pickerTitle')}><View style={{ height: 42, borderRadius: radii.md, borderWidth: 1, borderColor: colors.surface.border, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md, gap: spacing.sm }}><Search size={15} color={colors.ink.secondary} /><TextInput value={search} onChangeText={setSearch} placeholder={t('billing.searchProducts')} placeholderTextColor={colors.ink.secondary} style={[typography.body, { flex: 1, color: colors.ink.primary }]} /></View>{products.slice(0, 20).map((product) => <Button key={product.id} title={product.name} variant="ghost" compact onPress={() => onPick(product)} style={{ justifyContent: 'flex-start' }} />)}</Sheet>;
+  return <Sheet visible={visible} onClose={onClose} title={t('stock.overview.pickerTitle')}><TextField label={t('billing.searchProducts')} value={search} onChangeText={setSearch} left={<Search size={15} color={colors.ink.secondary} />} />{products.slice(0, 20).map((product) => <Button key={product.id} title={product.name} variant="ghost" compact onPress={() => onPick(product)} style={{ justifyContent: 'flex-start' }} />)}</Sheet>;
 }

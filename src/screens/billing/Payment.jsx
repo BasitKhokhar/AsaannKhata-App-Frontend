@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Banknote, Check, CreditCard, HandCoins, List, Minus, Plus, Smartphone, Trash2, UserRound } from 'lucide-react-native';
@@ -280,10 +280,5 @@ function MiniStep({ icon: Icon, onPress, colors, radii }) {
 }
 
 function CompactAmountField({ flex, label, value, onChangeText, colors, radii, typography, spacing }) {
-  const [focused, setFocused] = useState(false);
-  const floating = focused || value.length > 0;
-  return <View style={{ flex: flex ? 1 : undefined, position: 'relative', marginTop: floating ? spacing.xs : 0 }}>
-    {floating ? <Text style={[typography.caption, { position: 'absolute', zIndex: 1, top: -spacing.xs, left: spacing.md, paddingHorizontal: spacing.xs, color: focused ? colors.brand.primary : colors.ink.secondary, backgroundColor: colors.surface.card }]}>{label}</Text> : null}
-    <TextInput value={value} onChangeText={onChangeText} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} keyboardType="decimal-pad" placeholder={floating ? '0' : label} placeholderTextColor={colors.ink.secondary} style={[typography.body, { height: 48, borderWidth: focused ? 1.5 : 1, borderColor: focused ? colors.brand.primary : colors.surface.border, borderRadius: radii.md, color: colors.ink.primary, paddingHorizontal: spacing.md, paddingVertical: 0, textAlignVertical: 'center' }]} />
-  </View>;
+  return <TextField style={{ flex: flex ? 1 : undefined }} label={label} value={value} onChangeText={onChangeText} keyboardType="decimal-pad" placeholder="0" />;
 }

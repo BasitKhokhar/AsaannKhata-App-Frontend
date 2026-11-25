@@ -15,6 +15,7 @@ import { paymentTime } from '../../db/repositories/billSettlementRepository';
 import { formatCurrency } from '../../utils/money';
 import { paymentMethodLabelKey } from '../../utils/paymentMethod';
 import { useT, useIsUrdu } from '../../store/languageStore';
+import { formatInvoiceId } from '../../utils/invoiceId';
 import { formatBillItemQuantity } from '../../utils/billItems';
 import { resetToPos, resetToRecords } from '../../navigation/flowResets';
 
@@ -48,7 +49,7 @@ export default function RecordDetail() {
               <ReceiptText size={23} color={colors.brand.primary} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[typography.h2, { color: colors.ink.primary, textAlign: align }]}>#{bill.serverId || bill.id.slice(0, 8)}</Text>
+              <Text style={[typography.h2, { color: colors.ink.primary, textAlign: align }]}>{formatInvoiceId(bill)}</Text>
               <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: align }]}>{new Date(bill.createdAt).toLocaleString()}</Text>
             </View>
             <Badge label={t(`records.${bill.status.toLowerCase()}`)} tone={bill.status === 'PAID' ? 'success' : 'warning'} />

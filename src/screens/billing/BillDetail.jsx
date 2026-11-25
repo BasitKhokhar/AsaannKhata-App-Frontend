@@ -18,6 +18,7 @@ import { useT, useIsUrdu } from '../../store/languageStore';
 import { formatBillItemQuantity } from '../../utils/billItems';
 import { adsService } from '../../services/adsService';
 import { resetToPos, resetToRecordDetail } from '../../navigation/flowResets';
+import { formatInvoiceId } from '../../utils/invoiceId';
 
 export default function BillDetail() {
   const navigation = useNavigation();
@@ -50,7 +51,7 @@ export default function BillDetail() {
     <AnimatedScreen>
       <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1 }}>
         <Header
-          title={t('billing.billDetail.title').replace('{id}', bill.serverId || bill.id.slice(0, 6))}
+          title={t('billing.billDetail.title').replace('{id}', formatInvoiceId(bill))}
           onBack={() => resetToPos(navigation)}
         />
 
@@ -66,7 +67,7 @@ export default function BillDetail() {
               <Text style={[typography.h3, { color: colors.ink.primary, marginTop: spacing.xs }]}>{shopName || 'AsaanKhata'}</Text>
               <Text style={[typography.label, { color: colors.brand.primary, marginTop: spacing.xs }]}>{t('receipt.title')}</Text>
               <Text style={[typography.caption, { color: colors.ink.secondary }]}>
-                {new Date(bill.createdAt).toLocaleString()} · #{bill.serverId || bill.id.slice(0, 6)}
+                {new Date(bill.createdAt).toLocaleString()} · {formatInvoiceId(bill)}
               </Text>
             </View>
 

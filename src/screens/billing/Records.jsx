@@ -20,6 +20,7 @@ import { DateFilterSection } from '../../components/ui/DateFilterSection';
 import { DateFilterSheet } from '../../components/ui/DateFilterSheet';
 import { DataTable } from '../../components/ui/DataTable';
 import { dateIsInRange, dateRangeForPreset, dateRangeLabel } from '../../utils/dateRanges';
+import { formatInvoiceId } from '../../utils/invoiceId';
 
 export default function Records() {
   const navigation = useNavigation();
@@ -44,7 +45,7 @@ export default function Records() {
     return bills.filter((bill) => {
       if (status !== 'all' && bill.status !== status) return false;
       if (!dateIsInRange(bill.createdAt, dateRange)) return false;
-      return !query || `${bill.customerName} ${bill.customerPhone || ''} ${bill.serverId || ''} ${bill.id}`.toLocaleLowerCase().includes(query);
+      return !query || `${bill.customerName} ${bill.customerPhone || ''} ${formatInvoiceId(bill)}`.toLocaleLowerCase().includes(query);
     });
   }, [bills, search, status, dateRange]);
 
@@ -61,7 +62,7 @@ export default function Records() {
   }
 
   const columns = [
-    { key: 'invoice', label: t('records.invoice'), width: 105, render: (item) => `#${item.serverId || item.id.slice(0, 8)}` },
+    { key: 'invoice', label: t('records.invoice'), width: 125, render: (item) => formatInvoiceId(item) },
     { key: 'customer', label: t('records.customer'), width: 145, render: (item) => <View><Text numberOfLines={1} style={[typography.bodyMedium, { color: colors.ink.primary, textAlign: align }]}>{item.customerName}</Text>{item.customerPhone ? <Text numberOfLines={1} style={[typography.caption, { color: colors.ink.secondary, textAlign: align }]}>{item.customerPhone}</Text> : null}</View> },
     { key: 'total', label: t('billing.total'), width: 105, render: (item) => formatCurrency(item.totalAmount) },
     { key: 'status', label: t('records.status'), width: 100, align: 'center', render: (item) => <Badge label={t(`records.${item.status.toLowerCase()}`)} tone={item.status === 'PAID' ? 'success' : 'warning'} /> },

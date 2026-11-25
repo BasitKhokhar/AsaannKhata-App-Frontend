@@ -116,7 +116,7 @@ Syncable rows use these conventions:
 
 ### Bills
 
-`NewBill` builds the cart, and `Payment` records cash/card/mobile-wallet/credit settlement through `useCreateBill` -> `billRepository.createBillWithItems`. Checkout accepts separate first/last-name fields backed by the existing combined customer `name`; choosing a saved customer links it, while completing a bill with a new entered name creates and links the customer in the same local transaction. Card and wallet are records of external payments; the app does not process those payments. The local operation immediately:
+`NewBill` builds the cart, and `Payment` records cash/card/mobile-wallet/credit settlement through `useCreateBill` -> `billRepository.createBillWithItems`. Checkout accepts separate first/last-name fields backed by the existing combined customer `name`; choosing a saved customer links it, while completing a bill with a new entered name creates and links the customer in the same local transaction. Card and wallet are records of external payments; the app does not process those payments. User-facing invoice labels go through `src/utils/invoiceId.js`, which formats numeric synced IDs and offline UUID fallbacks as consistent string IDs with an `INV-` prefix. The local operation immediately:
 
 1. Insert bill and items.
 2. Decrement product stock using the product's stock mode.
@@ -216,7 +216,7 @@ Home popup campaigns are also online-only. After Home is active for 1.2 seconds,
 - Rewarded ads are limited by the backend and a client-side ceiling of 10 per day. After three consecutive rewarded ads, the persisted 30-minute cooldown displays a live countdown and disables the watch button.
 - Adaptive banners are mounted only on Dashboard and Sales Report.
 - Interstitials are eligible only at completed workflow breaks: leaving a newly created bill receipt, product save, stock adjustment, or later bill payment. A persisted 90-second cooldown applies across all placements; ordinary navigation never triggers an interstitial.
-- Interstitial navigation has a watchdog and must never block navigation indefinitely.
+- Interstitial navigation proceeds immediately. A preloaded eligible interstitial may show after the navigation transition; unavailable ads are skipped without delaying navigation, and ad display has a watchdog for SDK failures.
 - Backend FCM reception uses `@react-native-firebase/messaging`; Notifee displays backend FCM and device-local scheduled notifications. Foreground push notifications are normalized from both notification and data-only payloads, and the inbox uses optimistic React Query updates while the read state is persisted through the backend API.
 - Firebase Messaging and Analytics use the named modular APIs from React Native Firebase 26; those packages no longer export callable defaults.
 - The background message handler must remain registered in `index.js` before the app root.
@@ -226,8 +226,8 @@ Home popup campaigns are also online-only. After Home is active for 1.2 seconds,
 
 - Use `useTheme()` and tokens from `src/theme`; do not add raw hex colors outside `src/theme/colors.js`. `colors.js` provides Emerald, Ocean, Indigo, Amber, Rose, Slate, and Classic presets in light/dark modes. The app's default is Emerald, while existing navy/gold remains available as Classic.
 - Brand headings use Outfit; body text uses IBM Plex Sans. Font keys must match `App.jsx` loading keys.
-- Use components from `src/components/ui` and motion primitives before duplicating patterns.
-- Full-page forms use `KeyboardAwareView` with `KeyboardAwareScrollView`; input sheets inherit the same keyboard-safe behavior from the shared `Sheet`. The shared native-modal sheet defaults to the modal window bottom so it overlays the app's custom bottom navigation, and also supports centered capped-height pickers; footer actions apply their own system safe-area padding. Android is explicitly configured with `softwareKeyboardLayoutMode: resize`.
+- Use components from `src/components/ui` and motion primitives before duplicating patterns. `TextField` is the single shared text-entry primitive: it uses the outlined field style with the label inside the field until focus/value, then floats the label onto the top border; use its `left`/`right` slots for icons or adornments instead of creating another `TextInput` wrapper. The barcode HID field also uses `TextField` while retaining its ref-driven submit/clear behavior.
+- Full-page forms use `KeyboardAwareView` with `KeyboardAwareScrollView`; input sheets inherit the same keyboard-safe behavior from the shared `Sheet`. `KeyboardAwareScrollView` tracks focused `TextField` controls and scrolls them above the keyboard immediately on focus, adding Android keyboard-height content space so the lowest field can be reached. The shared native-modal sheet defaults to the modal window bottom so it overlays the app's custom bottom navigation, and also supports centered capped-height pickers; footer actions apply their own system safe-area padding. Android is explicitly configured with `softwareKeyboardLayoutMode: resize`.
 - Use `showToast()` for transient feedback and `await showConfirm()` for confirmation prompts.
 - English is the i18n source of truth. Add every new key to `en.js`, `ur.js`, and `hi.js`; missing translations fall back to English.
 - Urdu RTL is implemented manually per screen with flex direction/text alignment. Do not enable global `I18nManager.forceRTL()` without redesigning that behavior.

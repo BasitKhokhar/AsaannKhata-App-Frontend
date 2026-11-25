@@ -44,6 +44,7 @@ export default function Login() {
 
             <View style={{ marginTop: spacing.xxl, gap: spacing.md }}>
               <TextField
+                fieldHeight={54}
                 label={t('auth.login.emailOrPhone')}
                 value={email}
                 onChangeText={setEmail}
@@ -52,6 +53,7 @@ export default function Login() {
                 keyboardType="email-address"
               />
               <TextField
+                fieldHeight={54}
                 label={t('auth.login.password')}
                 value={password}
                 onChangeText={setPassword}

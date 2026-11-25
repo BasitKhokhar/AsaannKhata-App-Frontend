@@ -28,6 +28,7 @@ import { useSyncStore } from '../../store/syncStore';
 import { useCoinsStore } from '../../store/coinsStore';
 import { useNotificationPrefsStore } from '../../store/notificationPrefsStore';
 import { useLanguageStore, useT, useIsUrdu } from '../../store/languageStore';
+import { formatInvoiceId } from '../../utils/invoiceId';
 import { formatCurrency } from '../../utils/money';
 import { isLowStock, isOutOfStock } from '../../utils/stock';
 import { formatRelativeTime } from '../../utils/dates';
@@ -321,7 +322,7 @@ export default function Dashboard() {
                   style={{ paddingHorizontal: 0, flexDirection: rowDirection }}
                   title={invoice.customer || t('billing.payment.walkIn')}
                   titleStyle={{ textAlign }}
-                  subtitle={`#${invoice.serverId || String(invoice.id).slice(0, 8)} · ${new Date(invoice.date).toLocaleDateString()} · ${formatCurrency(invoice.amount)}`}
+                  subtitle={`${formatInvoiceId(invoice)} · ${new Date(invoice.date).toLocaleDateString()} · ${formatCurrency(invoice.amount)}`}
                   subtitleStyle={{ textAlign }}
                   leading={<ReceiptText size={18} color={colors.brand.primary} strokeWidth={1.8} />}
                   onPress={() => navigation.navigate('Records', { screen: 'RecordDetail', params: { billId: invoice.id } })}

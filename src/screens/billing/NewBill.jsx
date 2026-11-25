@@ -7,7 +7,7 @@ import { lineFor, assertCartStock } from '../../utils/cartLines';
 import { showToast } from '../../store/toastStore';
 import { BarcodeUnknown } from '../../components/barcode/BarcodeUnknown';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Image, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -191,10 +191,7 @@ export default function NewBill() {
         } />
         <SubscriptionBanner />
         <View style={{ marginHorizontal: spacing.lg, marginVertical: spacing.sm, flexDirection: direction, alignItems: 'center', gap: spacing.sm }}>
-          <View style={{ flex: 1, height: 46, borderRadius: radii.md, backgroundColor: colors.surface.raised, borderWidth: 1, borderColor: colors.surface.border, flexDirection: direction, alignItems: 'center', paddingHorizontal: spacing.md, gap: spacing.sm }}>
-            <Search size={17} color={colors.ink.secondary} />
-            <TextInput value={search} onChangeText={setSearch} maxLength={128} placeholder={t('billing.searchProducts')} placeholderTextColor={colors.ink.secondary} style={[typography.body, { flex: 1, color: colors.ink.primary, textAlign: align }]} />
-          </View>
+          <TextField style={{ flex: 1 }} label={t('billing.searchProducts')} value={search} onChangeText={setSearch} maxLength={128} textAlign={align} left={<Search size={17} color={colors.ink.secondary} />} />
           <Pressable
             onPress={() => navigation.navigate('AddProduct')}
             accessibilityRole="button"

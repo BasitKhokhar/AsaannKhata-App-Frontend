@@ -54,7 +54,7 @@ export default function RegisterStep1() {
         <RegisterWizardHeader step={0} />
         <KeyboardAwareView>
           <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
-            <TextField label={t('auth.register2.shopType')} value={search} onChangeText={setSearch} placeholder={t('auth.businessType.search')} />
+            <TextField fieldHeight={54} label={t('auth.register2.shopType')} value={search} onChangeText={setSearch} placeholder={t('auth.businessType.search')} />
             {isLoading ? <ActivityIndicator color={colors.brand.primary} /> : null}
             {isError ? <Button title={t('auth.businessType.retry')} variant="outline" onPress={refetch} /> : null}
             <View style={{ flexDirection: isUrdu ? 'row-reverse' : 'row', flexWrap: 'wrap', gap: spacing.sm }}>

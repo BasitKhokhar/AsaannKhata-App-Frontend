@@ -1,5 +1,6 @@
 import Constants from 'expo-constants';
 import NetInfo from '@react-native-community/netinfo';
+import { InteractionManager } from 'react-native';
 import mobileAds, {
   MaxAdContentRating,
   TestIds,
@@ -128,19 +129,28 @@ export function preloadInterstitialAd() {
     .catch(() => {});
 }
 
-// Shows the preloaded interstitial if one is ready and the cooldown has
-// elapsed, then calls `proceed()`. MUST NEVER block the caller's navigation:
-// `proceed()` always fires, either when the ad's CLOSED/ERROR event lands or
-// — as a safety net in case those events never fire — when the watchdog
-// timer below elapses, whichever comes first.
-export async function showInterstitialThenContinue(proceed, { requirePriorShow = false } = {}) {
-  let settled = false;
-  const done = () => {
-    if (settled) return;
-    settled = true;
+// Navigation must never wait for an interstitial. Continue immediately, then
+// try to show an already-loaded ad after the transition has settled. If no ad
+// is ready (or AdMob has no inventory), navigation has already completed and
+// the next preload happens in the background.
+export function showInterstitialThenContinue(proceed, { requirePriorShow = false } = {}) {
+  try {
     proceed();
-  };
-  const watchdog = setTimeout(done, INTERSTITIAL_WATCHDOG_MS);
+  } catch (err) {
+    // Preserve the caller's navigation error semantics without allowing ad
+    // handling to create a second navigation attempt.
+    return;
+  }
+
+  InteractionManager.runAfterInteractions(() => {
+    void showInterstitialIfReady({ requirePriorShow });
+  });
+}
+
+let interstitialShowing = false;
+
+async function showInterstitialIfReady({ requirePriorShow = false } = {}) {
+  if (interstitialShowing) return;
 
   try {
     const { lastInterstitialShownAt } = useCoinsStore.getState();
@@ -149,35 +159,34 @@ export async function showInterstitialThenContinue(proceed, { requirePriorShow =
     const eligible = hasRequiredPriorShow && offCooldown && interstitialLoaded && interstitial && (await canShowAds());
 
     if (!eligible) {
-      clearTimeout(watchdog);
-      done();
-      preloadInterstitialAd(); // keep one warm for next time
+      preloadInterstitialAd();
       return;
     }
 
     const ad = interstitial;
-    const unsubClosed = ad.addAdEventListener(AdEventType.CLOSED, () => {
-      unsubClosed();
-      unsubError();
+    interstitialShowing = true;
+    interstitialLoaded = false;
+    let settled = false;
+    let watchdog;
+    const finish = (wasShown) => {
+      if (settled) return;
+      settled = true;
       clearTimeout(watchdog);
-      useCoinsStore.getState().setLastInterstitialShownAt(Date.now());
-      interstitialLoaded = false;
-      done();
+      unsubClosed?.();
+      unsubError?.();
+      interstitialShowing = false;
+      if (wasShown) useCoinsStore.getState().setLastInterstitialShownAt(Date.now());
       preloadInterstitialAd();
-    });
-    const unsubError = ad.addAdEventListener(AdEventType.ERROR, () => {
-      unsubClosed();
-      unsubError();
-      clearTimeout(watchdog);
-      interstitialLoaded = false;
-      done();
-      preloadInterstitialAd();
-    });
+    };
+    const unsubClosed = ad.addAdEventListener(AdEventType.CLOSED, () => finish(true));
+    const unsubError = ad.addAdEventListener(AdEventType.ERROR, () => finish(false));
+    watchdog = setTimeout(() => finish(false), INTERSTITIAL_WATCHDOG_MS);
 
     await ad.show();
   } catch (err) {
-    clearTimeout(watchdog);
-    done();
+    interstitialShowing = false;
+    interstitialLoaded = false;
+    preloadInterstitialAd();
   }
 }
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Image } from 'react-native';
+import { View, Text, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Search, Plus, Package, ScanBarcode } from 'lucide-react-native';
@@ -21,6 +21,7 @@ import { useProductPages } from '../../hooks/useProducts';
 import { formatStockLabel, isLowStock, isOutOfStock } from '../../utils/stock';
 import { formatCurrency } from '../../utils/money';
 import { useT, useIsUrdu } from '../../store/languageStore';
+import { TextField } from '../../components/ui/TextField';
 
 const MODE_BADGE = { QUANTITY: 'QTY', AREA: 'AREA', LENGTH: 'LENGTH', PACK: 'PACK', LIQUID: 'LITRE' };
 
@@ -64,29 +65,7 @@ export default function ProductsList() {
         <SubscriptionBanner />
 
         <View style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.sm }}>
-          <View
-            style={{
-              height: 42,
-              borderRadius: radii.md,
-              borderWidth: 1,
-              borderColor: colors.surface.border,
-              backgroundColor: colors.surface.card,
-              flexDirection: rowDirection,
-              alignItems: 'center',
-              paddingHorizontal: spacing.md,
-              gap: spacing.sm,
-            }}
-          >
-            <Search size={16} color={colors.ink.secondary} strokeWidth={1.8} />
-            <TextInput
-              value={search}
-              maxLength={128}
-              onChangeText={setSearch}
-              placeholder={t('billing.searchProducts')}
-              placeholderTextColor={colors.ink.secondary}
-              style={[typography.body, { flex: 1, color: colors.ink.primary, textAlign }]}
-            />
-          </View>
+          <TextField label={t('billing.searchProducts')} value={search} maxLength={128} onChangeText={setSearch} textAlign={textAlign} left={<Search size={16} color={colors.ink.secondary} strokeWidth={1.8} />} />
         </View>
 
         <View style={{ flexDirection: rowDirection, gap: spacing.sm, paddingHorizontal: spacing.lg, paddingBottom: spacing.sm }}>
