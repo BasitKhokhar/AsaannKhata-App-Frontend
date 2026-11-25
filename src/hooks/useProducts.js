@@ -223,14 +223,14 @@ function patchForStockType(product, signedQty) {
 
 // Query only a bounded page after a short typing pause. Scans bypass this
 // hook entirely and use the unique barcode index synchronously.
-export function useProductPages({ search = '', categoryId, lowStock = false } = {}) {
+export function useProductPages({ search = '', categoryId, lowStock = false, outOfStock = false } = {}) {
   const shopId = useShopStore((s) => s.activeShopId);
   const [debounced, setDebounced] = useState(search);
   useEffect(() => { const timer = setTimeout(() => setDebounced(search), 150); return () => clearTimeout(timer); }, [search]);
   const query = useInfiniteQuery({
-    queryKey: ['products', shopId, 'pages', debounced, categoryId, lowStock],
+    queryKey: ['products', shopId, 'pages', debounced, categoryId, lowStock, outOfStock],
     initialPageParam: null,
-    queryFn: ({ pageParam }) => productRepository.searchPage(shopId, { search: debounced, categoryId, lowStock, cursor: pageParam }),
+      queryFn: ({ pageParam }) => productRepository.searchPage(shopId, { search: debounced, categoryId, lowStock, outOfStock, cursor: pageParam }),
     getNextPageParam: (page) => page.nextCursor,
     enabled: !!shopId,
     staleTime: 15000,

@@ -11,7 +11,7 @@ import { Image, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Te
 import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { Minus, Plus, ReceiptText, ScanBarcode, Search, ShoppingCart } from 'lucide-react-native';
+import { Minus, Plus, ReceiptText, ScanBarcode, Search, ShoppingCart, X, Tag, PackageCheck } from 'lucide-react-native';
 import { Header } from '../../components/ui/Header';
 import { AnimatedScreen } from '../../components/motion/AnimatedScreen';
 import { Button } from '../../components/ui/Button';
@@ -76,6 +76,7 @@ export default function NewBill() {
   const [selected, setSelected] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [measurementUnit, setMeasurementUnit] = useState('feet');
+  const [salePrice, setSalePrice] = useState('');
   const [width, setWidth] = useState('');
   const [height, setHeight] = useState('');
   const [error, setError] = useState('');
@@ -116,6 +117,7 @@ export default function NewBill() {
     if (isOutOfStock(product)) return;
     setSaleUnit(product.stockType === 'LIQUID' ? 'liter' : product.barcodeUnit || (product.stockType === 'PACK' && !product.stockPacks ? 'loose' : 'default'));
     setMeasurementUnit('feet');
+    setSalePrice(String(displaySalePrice(product, product.stockType === 'LIQUID' ? 'liter' : product.barcodeUnit || 'default', 'feet')));
     setWidth('');
     setHeight('');
     setSelected(product);
@@ -123,12 +125,29 @@ export default function NewBill() {
     setError('');
   }
 
+  function normalizedSalePrice(value = salePrice) {
+    const entered = Number(value);
+    if (!Number.isFinite(entered) || value === '' || entered < 0 || !selected) return null;
+    if (selected.stockType === 'AREA') {
+      const factor = measurementUnit === 'meter' ? 100 : measurementUnit === 'feet' ? 30.48 : measurementUnit === 'inch' ? 2.54 : 1;
+      return entered / (factor * factor);
+    }
+    if (selected.stockType === 'LENGTH') return entered / 100;
+    if (selected.stockType === 'LIQUID' && saleUnit === 'liter') return entered / 1000;
+    return entered;
+  }
+
+  function updateMeasurementUnit(nextUnit) {
+    setMeasurementUnit(nextUnit);
+    if (selected) setSalePrice(String(displaySalePrice(selected, saleUnit, nextUnit)));
+  }
+
   function addToCart() {
     if (!selected) return;
     try {
       const fresh = productRepository.getById(selected.id);
       if (!fresh || fresh.shopId !== shopId || fresh.isDeleted) throw new Error('barcode.notFound');
-      const line = lineFor(fresh, quantity, saleUnit, { width, height, unit: measurementUnit });
+      const line = lineFor(fresh, quantity, saleUnit, { width, height, unit: measurementUnit, priceOverride: normalizedSalePrice() });
       assertCartStock(fresh, useCartStore.getState().lines, line);
       cart.addLine(line);
     } catch (cause) { setError(t(cause.message)); return; }
@@ -139,7 +158,7 @@ export default function NewBill() {
   function lineTotal() {
     if (!selected) return 0;
     try {
-      return lineFor(selected, quantity, saleUnit, { width, height, unit: measurementUnit }).total;
+      return lineFor(selected, quantity, saleUnit, { width, height, unit: measurementUnit, priceOverride: normalizedSalePrice() }).total;
     } catch {
       return 0;
     }
@@ -217,34 +236,41 @@ export default function NewBill() {
         </View>
       </SafeAreaView>
       <Modal visible={!!selected} transparent animationType="fade" onRequestClose={() => setSelected(null)}>
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.lg }}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.lg }}>
           <Pressable onPress={() => setSelected(null)} style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: colors.surface.overlay }} />
-          {selected ? <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={[{ width: '100%', maxWidth: 440, maxHeight: '86%', borderRadius: radii.xl, backgroundColor: colors.surface.card, overflow: 'hidden' }, elevation.xl]}>
-            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1, padding: spacing.lg, paddingBottom: spacing.lg, gap: spacing.md }} keyboardShouldPersistTaps="handled" keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'} automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}>
-              <View style={{ alignItems: 'center', gap: spacing.sm }}>
-                <View style={{ width: 88, height: 88, borderRadius: radii.xl, overflow: 'hidden', backgroundColor: colors.brand.accentLight, alignItems: 'center', justifyContent: 'center' }}>
-                  {selected.imageLocalUri || selected.imageRemoteUrl ? <Image source={{ uri: selected.imageLocalUri || selected.imageRemoteUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" /> : <Text style={[typography.h1, { color: colors.brand.primary }]}>{selected.name.trim().charAt(0).toLocaleUpperCase()}</Text>}
+          {selected ? <View style={[{ width: '100%', maxWidth: 440, maxHeight: '86%', borderRadius: radii.xl, backgroundColor: colors.surface.card, overflow: 'hidden' }, elevation.xl]}>
+            <ScrollView style={{ maxHeight: '86%' }} contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.lg, gap: spacing.md }} keyboardShouldPersistTaps="handled" keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'} automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}>
+              <View style={{ flexDirection: direction, alignItems: 'center', justifyContent: 'space-between', gap: spacing.md }}>
+                <View style={{ flexDirection: direction, alignItems: 'center', gap: spacing.sm, flex: 1 }}>
+                  <View style={{ width: 58, height: 58, borderRadius: radii.lg, overflow: 'hidden', backgroundColor: colors.brand.accentLight, alignItems: 'center', justifyContent: 'center' }}>
+                    {selected.imageLocalUri || selected.imageRemoteUrl ? <Image source={{ uri: selected.imageLocalUri || selected.imageRemoteUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" /> : <Text style={[typography.h2, { color: colors.brand.primary }]}>{selected.name.trim().charAt(0).toLocaleUpperCase()}</Text>}
+                  </View>
+                  <View style={{ flex: 1, gap: 2 }}>
+                    <Text numberOfLines={2} style={[typography.h3, { color: colors.ink.primary, textAlign: align }]}>{selected.name}</Text>
+                    <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: align }]}>{formatStockLabel(selected)}</Text>
+                  </View>
                 </View>
-                <Text style={[typography.h2, { color: colors.ink.primary, textAlign: 'center' }]}>{selected.name}</Text>
-                <Text style={[typography.h2, { color: colors.brand.primary }]}>{formatCurrency(displaySalePrice(selected, saleUnit, measurementUnit))}{displayPriceUnit(selected, saleUnit, measurementUnit, t) ? ` / ${displayPriceUnit(selected, saleUnit, measurementUnit, t)}` : ''}</Text>
-                <Text style={[typography.caption, { color: colors.ink.secondary }]}>{formatStockLabel(selected)}</Text>
+                <Pressable onPress={() => setSelected(null)} hitSlop={10} accessibilityRole="button" accessibilityLabel={t('common.cancel')} style={{ width: 36, height: 36, borderRadius: radii.pill, backgroundColor: colors.surface.raised, alignItems: 'center', justifyContent: 'center' }}>
+                  <X size={19} color={colors.ink.secondary} strokeWidth={2} />
+                </Pressable>
               </View>
+              <View style={{ height: 1, backgroundColor: colors.surface.border }} />
               {selected.stockType === 'PACK' ? <View style={{ flexDirection: direction, gap: spacing.sm }}>
-                <Chip label={t('barcode.defaultUnit')} selected={saleUnit !== 'loose'} onPress={() => { setSaleUnit('default'); setQuantity(1); }} />
-                <Chip label={t('barcode.loose')} selected={saleUnit === 'loose'} onPress={() => { setSaleUnit('loose'); setQuantity(1); }} />
+                <Chip label={t('barcode.defaultUnit')} selected={saleUnit !== 'loose'} onPress={() => { setSaleUnit('default'); setQuantity(1); setSalePrice(String(displaySalePrice(selected, 'default', measurementUnit))); }} />
+                <Chip label={t('barcode.loose')} selected={saleUnit === 'loose'} onPress={() => { setSaleUnit('loose'); setQuantity(1); setSalePrice(String(displaySalePrice(selected, 'loose', measurementUnit))); }} />
               </View> : null}
               {selected.stockType === 'LIQUID' ? <View style={{ gap: spacing.sm }}>
                 <Text style={[typography.label, { color: colors.ink.secondary, textAlign: align }]}>{t('billing.liquidUnit')}</Text>
                 <View style={{ flexDirection: direction, gap: spacing.sm }}>
-                  <Chip label={t('billing.liters')} selected={saleUnit === 'liter'} onPress={() => { setSaleUnit('liter'); setQuantity(1); }} />
-                  <Chip label={t('billing.milliliters')} selected={saleUnit === 'ml'} onPress={() => { setSaleUnit('ml'); setQuantity(500); }} />
+                  <Chip label={t('billing.liters')} selected={saleUnit === 'liter'} onPress={() => { setSaleUnit('liter'); setQuantity(1); setSalePrice(String(displaySalePrice(selected, 'liter', measurementUnit))); }} />
+                  <Chip label={t('billing.milliliters')} selected={saleUnit === 'ml'} onPress={() => { setSaleUnit('ml'); setQuantity(500); setSalePrice(String(displaySalePrice(selected, 'ml', measurementUnit))); }} />
                 </View>
                 <TextField label={t('billing.volume')} value={String(quantity)} keyboardType="decimal-pad" onChangeText={setQuantity} />
               </View> : null}
               {selected.stockType === 'AREA' ? <View style={{ gap: spacing.sm }}>
                 <Text style={[typography.label, { color: colors.ink.secondary, textAlign: align }]}>{t('billing.measurementUnit')}</Text>
                 <View style={{ flexDirection: direction, flexWrap: 'wrap', gap: spacing.xs }}>
-                  {['cm', 'inch', 'feet', 'meter'].map((unit) => <Chip key={unit} label={t(`billing.unit.${unit}`)} selected={measurementUnit === unit} onPress={() => setMeasurementUnit(unit)} />)}
+                  {['cm', 'inch', 'feet', 'meter'].map((unit) => <Chip key={unit} label={t(`billing.unit.${unit}`)} selected={measurementUnit === unit} onPress={() => updateMeasurementUnit(unit)} />)}
                 </View>
                 <View style={{ flexDirection: direction, gap: spacing.sm }}>
                   <TextField label={t('billing.width')} value={width} keyboardType="decimal-pad" onChangeText={setWidth} style={{ flex: 1 }} />
@@ -259,13 +285,27 @@ export default function NewBill() {
                 <View style={{ minWidth: 72, alignItems: 'center' }}><Text style={[typography.h1, { color: colors.ink.primary }]}>{quantity}</Text><Text style={[typography.caption, { color: colors.ink.secondary }]}>{selected.stockType === 'AREA' ? t('billing.pieces') : saleUnit === 'loose' ? t('barcode.loose') : t('billing.quantity')}</Text></View>
                 <QuantityButton icon={Plus} onPress={() => setQuantity((value) => selected.stockType === 'AREA' ? Number(value) + 1 : Math.max(value, Math.min(saleUnit === 'loose' ? selected.stockLooseUnits : availableUnits(selected), Number(value) + 1)))} colors={colors} radii={radii} />
               </View> : null}
-              <View style={{ flexDirection: direction, justifyContent: 'space-between' }}><Text style={[typography.body, { color: colors.ink.secondary }]}>{t('billing.lineTotal')}</Text><Text style={[typography.h3, { color: colors.ink.primary }]}>{formatCurrency(lineTotal())}</Text></View>
+              <View style={{ backgroundColor: colors.brand.primary + '10', borderRadius: radii.lg, borderWidth: 1, borderColor: colors.brand.primary + '32', padding: spacing.md, gap: spacing.sm }}>
+                <View style={{ flexDirection: direction, alignItems: 'center', gap: spacing.xs }}>
+                  <Tag size={16} color={colors.brand.primary} strokeWidth={2} />
+                  <Text style={[typography.label, { color: colors.brand.primary, textAlign: align }]}>{t('billing.pricingSection')}</Text>
+                </View>
+                <View style={{ flexDirection: direction, justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: align }]}>{t('billing.defaultSalePrice')}</Text>
+                  <Text style={[typography.bodyMedium, { color: colors.ink.secondary }]}>{formatCurrency(displaySalePrice(selected, saleUnit, measurementUnit))}</Text>
+                </View>
+                <TextField label={`${t('billing.finalSalePrice')}${displayPriceUnit(selected, saleUnit, measurementUnit, t) ? ` / ${displayPriceUnit(selected, saleUnit, measurementUnit, t)}` : ''}`} value={salePrice} keyboardType="decimal-pad" onChangeText={(value) => setSalePrice(value.replace(/[^0-9.]/g, ''))} />
+                <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: align }]}>{t('billing.finalSalePriceHint')}</Text>
+              </View>
+              <View style={{ flexDirection: direction, justifyContent: 'space-between', alignItems: 'center', backgroundColor: colors.surface.raised, borderRadius: radii.md, padding: spacing.md }}><View style={{ flexDirection: direction, alignItems: 'center', gap: spacing.xs }}><PackageCheck size={17} color={colors.ink.secondary} /><Text style={[typography.body, { color: colors.ink.secondary, textAlign: align }]}>{t('billing.lineTotal')}</Text></View><Text style={[typography.h3, { color: colors.ink.primary }]}>{formatCurrency(lineTotal())}</Text></View>
               {error ? <Text style={[typography.caption, { color: colors.semantic.danger, textAlign: align }]}>{error}</Text> : null}
-              <Button title={t('billing.addToCart')} onPress={addToCart} />
-              <Button title={t('common.cancel')} variant="ghost" compact onPress={() => setSelected(null)} />
             </ScrollView>
-          </KeyboardAvoidingView> : null}
-        </View>
+            <View style={{ flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.lg, paddingBottom: spacing.sm, backgroundColor: colors.surface.card }}>
+              <Button title={t('common.cancel')} variant="outline" compact onPress={() => setSelected(null)} style={{ flex: 1 }} />
+              <Button title={t('billing.addToCart')} compact onPress={addToCart} style={{ flex: 1 }} />
+            </View>
+          </View> : null}
+        </KeyboardAvoidingView>
       </Modal>
       <BarcodeScanner visible={scanning} onClose={() => setScanning(false)} onScan={scan} />
       <BarcodeUnknown code={unknown} onClose={() => setUnknown(null)} onLinked={scan} />

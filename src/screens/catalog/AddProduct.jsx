@@ -426,6 +426,7 @@ export default function AddProduct() {
               style={{ flex: 1 }}
             />
           </View>
+          <Text style={[typography.caption, { color: colors.ink.secondary, textAlign }]}>{t('catalog.addProduct.salePriceHint')}</Text>
 
           <TextField
             label={`${t('catalog.addProduct.lowStockThresholdOptional')}${stockType === 'AREA' ? ` (${unit}²)` : stockType === 'LENGTH' || stockType === 'LIQUID' ? ` (${unit})` : ''}`}

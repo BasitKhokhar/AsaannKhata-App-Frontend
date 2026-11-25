@@ -16,6 +16,7 @@ import { formatCurrency } from '../../utils/money';
 import { paymentMethodLabelKey } from '../../utils/paymentMethod';
 import { useT, useIsUrdu } from '../../store/languageStore';
 import { formatBillItemQuantity } from '../../utils/billItems';
+import { resetToPos, resetToRecords } from '../../navigation/flowResets';
 
 export default function RecordDetail() {
   const navigation = useNavigation();
@@ -27,7 +28,7 @@ export default function RecordDetail() {
   const align = isUrdu ? 'right' : 'left';
   const { data: bill } = useBill(route.params?.billId);
 
-  if (!bill) return <AnimatedScreen><Header title={t('records.details')} /></AnimatedScreen>;
+  if (!bill) return <AnimatedScreen><Header title={t('records.details')} onBack={route.params?.fromCheckout ? () => resetToRecords(navigation) : undefined} /></AnimatedScreen>;
   const checkoutPaid = Math.max(0, bill.totalReceived - bill.payments.reduce((sum, payment) => sum + payment.amount, 0));
   const taxAmount = Math.max(0, Number(bill.totalAmount) - (Number(bill.subtotal) - Number(bill.discount)));
   const row = (label, value, color) => (
@@ -40,7 +41,7 @@ export default function RecordDetail() {
   return (
     <AnimatedScreen>
       <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1 }}>
-        <Header title={t('records.details')} />
+        <Header title={t('records.details')} onBack={route.params?.fromCheckout ? () => resetToRecords(navigation) : undefined} />
         <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.lg }}>
           <View style={{ flexDirection: direction, alignItems: 'center', gap: spacing.md }}>
             <View style={{ width: 46, height: 46, borderRadius: radii.md, backgroundColor: colors.brand.accentLight, alignItems: 'center', justifyContent: 'center' }}>
@@ -95,6 +96,7 @@ export default function RecordDetail() {
           </View>
 
           <ReceiptActions bill={bill} />
+          {route.params?.fromCheckout ? <Button title={t('billing.billDetail.goToPos')} onPress={() => resetToPos(navigation)} /> : null}
           {bill.remainingDue > 0 && bill.customerId ? <Button title={t('records.addPayment')} onPress={() => navigation.navigate('RecordPayment', { billId: bill.id })} /> : null}
         </ScrollView>
       </SafeAreaView>

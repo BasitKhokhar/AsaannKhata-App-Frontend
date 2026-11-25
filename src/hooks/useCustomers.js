@@ -3,6 +3,20 @@ import { customerRepository } from '../db/repositories/customerRepository';
 import { customerPaymentRepository } from '../db/repositories/customerPaymentRepository';
 import { useShopStore } from '../store/shopStore';
 
+function normalize(value) {
+  return String(value || '').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+}
+
+function duplicateCustomer(shopId, name, phone, excludeId) {
+  const normalizedName = normalize(name);
+  const normalizedPhone = normalize(phone);
+  return customerRepository.listByShop(shopId).find((customer) => {
+    if (customer.id === excludeId) return false;
+    if (normalizedPhone && normalize(customer.phone) === normalizedPhone) return true;
+    return !normalizedPhone && !customer.phone && normalize(customer.name) === normalizedName;
+  });
+}
+
 export function useCustomers() {
   const activeShopId = useShopStore((s) => s.activeShopId);
   return useQuery({
@@ -30,8 +44,30 @@ export function useCreateCustomer() {
   return {
     mutate: ({ name, phone }, options) => {
       try {
+        if (!activeShopId) throw new Error('billing.creditCustomers.shopRequired');
+        if (duplicateCustomer(activeShopId, name, phone)) throw new Error('billing.creditCustomers.duplicate');
         const customer = customerRepository.create({ shopId: activeShopId, name, phone: phone || null, balance: 0 });
         queryClient.invalidateQueries({ queryKey: ['customers', activeShopId] });
+        options?.onSuccess?.(customer);
+      } catch (err) {
+        options?.onError?.(err);
+      }
+    },
+  };
+}
+
+export function useUpdateCustomer() {
+  const queryClient = useQueryClient();
+  const activeShopId = useShopStore((s) => s.activeShopId);
+  return {
+    mutate: (customerId, { name, phone }, options) => {
+      try {
+        const existing = customerRepository.getById(customerId);
+        if (!existing || existing.shopId !== activeShopId || existing.isDeleted) throw new Error('billing.creditCustomers.notFound');
+        if (duplicateCustomer(activeShopId, name, phone, customerId)) throw new Error('billing.creditCustomers.duplicate');
+        const customer = customerRepository.update(customerId, { name, phone: phone || null });
+        queryClient.invalidateQueries({ queryKey: ['customers', activeShopId] });
+        queryClient.invalidateQueries({ queryKey: ['customer', activeShopId, customerId] });
         options?.onSuccess?.(customer);
       } catch (err) {
         options?.onError?.(err);

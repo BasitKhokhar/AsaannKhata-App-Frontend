@@ -17,6 +17,7 @@ import { paymentMethodLabelKey } from '../../utils/paymentMethod';
 import { useT, useIsUrdu } from '../../store/languageStore';
 import { formatBillItemQuantity } from '../../utils/billItems';
 import { adsService } from '../../services/adsService';
+import { resetToPos, resetToRecordDetail } from '../../navigation/flowResets';
 
 export default function BillDetail() {
   const navigation = useNavigation();
@@ -42,13 +43,16 @@ export default function BillDetail() {
     });
   }, [navigation, route.params?.interstitialEligible]);
 
-  if (!bill) return <AnimatedScreen><Header title={t('records.details')} /></AnimatedScreen>;
+  if (!bill) return <AnimatedScreen><Header title={t('records.details')} onBack={() => resetToPos(navigation)} /></AnimatedScreen>;
   const taxAmount = Math.max(0, Number(bill.totalAmount) - (Number(bill.subtotal) - Number(bill.discount)));
 
   return (
     <AnimatedScreen>
       <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1 }}>
-        <Header title={t('billing.billDetail.title').replace('{id}', bill.serverId || bill.id.slice(0, 6))} />
+        <Header
+          title={t('billing.billDetail.title').replace('{id}', bill.serverId || bill.id.slice(0, 6))}
+          onBack={() => resetToPos(navigation)}
+        />
 
         <ScrollView contentContainerStyle={{ padding: spacing.lg }}>
           <View
@@ -123,8 +127,8 @@ export default function BillDetail() {
 
         <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.sm }}><ReceiptActions bill={bill} /></View>
         <View style={{ padding: spacing.lg, paddingTop: spacing.sm, gap: spacing.sm }}>
-          <Button title={t('billing.billDetail.goToPos')} onPress={() => navigation.navigate('NewBill')} />
-          <Button title={t('records.viewPaymentRecord')} variant="outline" onPress={() => navigation.navigate('Records', { screen: 'RecordDetail', params: { billId: bill.id } })} />
+          <Button title={t('billing.billDetail.goToPos')} onPress={() => resetToPos(navigation)} />
+          <Button title={t('records.viewPaymentRecord')} variant="outline" onPress={() => resetToRecordDetail(navigation, bill.id)} />
         </View>
       </SafeAreaView>
     </AnimatedScreen>

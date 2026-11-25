@@ -65,7 +65,7 @@ function findByBarcode(shopId, value) {
     WHERE b.shop_id = ? AND b.code = ? AND p.shop_id = ? AND p.is_deleted = 0 LIMIT 1`, String(shopId), code, String(shopId));
 }
 
-async function searchPage(shopId, { search = '', categoryId, lowStock = false, cursor, limit = 60 } = {}) {
+async function searchPage(shopId, { search = '', categoryId, lowStock = false, outOfStock = false, cursor, limit = 60 } = {}) {
   if (!shopId) return { rows: [], nextCursor: undefined };
   const size = Math.max(1, Math.min(100, limit));
   const where = ['p.shop_id = ?', 'p.is_deleted = 0'];
@@ -79,6 +79,7 @@ async function searchPage(shopId, { search = '', categoryId, lowStock = false, c
   }
   if (categoryId) { where.push('p.category_id = ?'); args.push(categoryId); }
   if (lowStock) where.push(`p.low_stock_threshold IS NOT NULL AND (CASE p.stock_type WHEN 'AREA' THEN p.stock_area_cm2 WHEN 'LENGTH' THEN p.stock_length_cm WHEN 'PACK' THEN p.stock_packs + p.stock_loose_units WHEN 'LIQUID' THEN p.stock_volume_ml ELSE p.stock_quantity END) <= p.low_stock_threshold`);
+  if (outOfStock) where.push(`(CASE p.stock_type WHEN 'AREA' THEN p.stock_area_cm2 WHEN 'LENGTH' THEN p.stock_length_cm WHEN 'PACK' THEN p.stock_packs + p.stock_loose_units WHEN 'LIQUID' THEN p.stock_volume_ml ELSE p.stock_quantity END) <= 0`);
   if (cursor) { where.push('(p.name, p.id) > (?, ?)'); args.push(cursor.name, cursor.id); }
   const rows = await expoDb.getAllAsync(`SELECT ${projection} FROM products p WHERE ${where.join(' AND ')} ORDER BY p.name, p.id LIMIT ?`, ...args, size + 1);
   const hasMore = rows.length > size;

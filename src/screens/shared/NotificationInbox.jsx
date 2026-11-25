@@ -81,15 +81,25 @@ export default function NotificationInbox() {
                 return (
                   <Pressable key={item.id} onPress={() => openNotification(item)} accessibilityRole="button">
                     <Card
-                      level="xs"
+                      bordered={false}
+                      level="none"
                       style={{
                         flexDirection: rowDirection,
                         alignItems: 'flex-start',
                         gap: spacing.md,
-                        borderColor: isRead ? colors.surface.border : colors.brand.primary + '66',
-                        backgroundColor: isRead ? colors.surface.card : colors.brand.primary + '0D',
+                        backgroundColor: colors.surface.card,
                       }}
                     >
+                      <View
+                        accessible={false}
+                        style={{
+                          width: 3,
+                          alignSelf: 'stretch',
+                          minHeight: 40,
+                          borderRadius: 2,
+                          backgroundColor: isRead ? 'transparent' : colors.brand.primary,
+                        }}
+                      />
                       <View style={{ width: 40, height: 40, borderRadius: radii.md, backgroundColor: colors.brand.primary + '1A', alignItems: 'center', justifyContent: 'center' }}>
                         <Bell size={19} color={colors.brand.primary} strokeWidth={1.8} />
                       </View>

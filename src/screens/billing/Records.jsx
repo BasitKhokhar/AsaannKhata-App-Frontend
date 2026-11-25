@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Download, Eye, Pencil, ReceiptText, Search } from 'lucide-react-native';
@@ -18,13 +18,11 @@ import { showToast } from '../../store/toastStore';
 import { useT, useIsUrdu } from '../../store/languageStore';
 import { DateFilterSection } from '../../components/ui/DateFilterSection';
 import { DateFilterSheet } from '../../components/ui/DateFilterSheet';
+import { DataTable } from '../../components/ui/DataTable';
 import { dateIsInRange, dateRangeForPreset, dateRangeLabel } from '../../utils/dateRanges';
-
-const TABLE_WIDTH = 760;
 
 export default function Records() {
   const navigation = useNavigation();
-  const { width } = useWindowDimensions();
   const { colors, radii, typography, spacing } = useTheme();
   const t = useT();
   const isUrdu = useIsUrdu();
@@ -62,8 +60,14 @@ export default function Records() {
     }
   }
 
-  const columns = { invoice: 105, customer: 145, total: 105, status: 100, date: 150, actions: 125 };
-  const headerCell = (label, size, centered) => <Text style={[typography.caption, { width: size, color: colors.ink.secondary, textTransform: 'uppercase', textAlign: centered ? 'center' : align }]}>{label}</Text>;
+  const columns = [
+    { key: 'invoice', label: t('records.invoice'), width: 105, render: (item) => `#${item.serverId || item.id.slice(0, 8)}` },
+    { key: 'customer', label: t('records.customer'), width: 145, render: (item) => <View><Text numberOfLines={1} style={[typography.bodyMedium, { color: colors.ink.primary, textAlign: align }]}>{item.customerName}</Text>{item.customerPhone ? <Text numberOfLines={1} style={[typography.caption, { color: colors.ink.secondary, textAlign: align }]}>{item.customerPhone}</Text> : null}</View> },
+    { key: 'total', label: t('billing.total'), width: 105, render: (item) => formatCurrency(item.totalAmount) },
+    { key: 'status', label: t('records.status'), width: 100, align: 'center', render: (item) => <Badge label={t(`records.${item.status.toLowerCase()}`)} tone={item.status === 'PAID' ? 'success' : 'warning'} /> },
+    { key: 'date', label: t('records.date'), width: 150, render: (item) => <View><Text style={[typography.body, { color: colors.ink.primary, textAlign: align }]}>{new Date(item.createdAt).toLocaleDateString()}</Text><Text style={[typography.caption, { color: colors.ink.secondary, textAlign: align }]}>{new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text></View> },
+    { key: 'actions', label: t('records.actions'), width: 125, align: 'center', render: (item) => { const canEdit = item.remainingDue > 0 && item.customerId; return <View style={{ flexDirection: direction, justifyContent: 'center', gap: spacing.sm }}><Action icon={Eye} label={t('records.view')} onPress={() => navigation.navigate('RecordDetail', { billId: item.id })} colors={colors} radii={radii} /><Action icon={Pencil} label={t('records.edit')} onPress={() => canEdit && navigation.navigate('RecordPayment', { billId: item.id })} disabled={!canEdit} colors={colors} radii={radii} /></View>; } },
+  ];
 
   return (
     <AnimatedScreen>
@@ -78,39 +82,8 @@ export default function Records() {
           <Pressable onPress={exportReport} disabled={exporting} style={{ flexDirection: direction, alignItems: 'center', justifyContent: 'center', gap: spacing.xs, minHeight: 42, borderRadius: radii.md, backgroundColor: colors.brand.primary, opacity: exporting ? 0.65 : 1 }}><Download size={17} color={colors.ink.onBrand} /><Text style={[typography.label, { color: colors.ink.onBrand }]}>{exporting ? t('records.exporting') : t('records.exportPdf')}</Text></Pressable>
         </View>
 
-        <View style={{ flex: 1, margin: spacing.lg, borderWidth: 1, borderColor: colors.surface.border, borderRadius: radii.lg, overflow: 'hidden', backgroundColor: colors.surface.card }}>
-          <ScrollView horizontal showsHorizontalScrollIndicator contentContainerStyle={{ minWidth: Math.max(TABLE_WIDTH, width - spacing.lg * 2) }}>
-            <View style={{ width: Math.max(TABLE_WIDTH, width - spacing.lg * 2), flex: 1 }}>
-              <View style={{ flexDirection: direction, alignItems: 'center', padding: spacing.md, backgroundColor: colors.surface.raised, borderBottomWidth: 1, borderBottomColor: colors.surface.border }}>
-                {headerCell(t('records.invoice'), columns.invoice)}
-                {headerCell(t('records.customer'), columns.customer)}
-                {headerCell(t('billing.total'), columns.total)}
-                {headerCell(t('records.status'), columns.status, true)}
-                {headerCell(t('records.date'), columns.date)}
-                {headerCell(t('records.actions'), columns.actions, true)}
-              </View>
-              <FlatList
-                data={visible}
-                keyExtractor={(bill) => bill.id}
-                refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.brand.primary} />}
-                ListEmptyComponent={<View style={{ alignItems: 'center', padding: spacing.xxl, gap: spacing.sm }}><ReceiptText size={32} color={colors.ink.secondary} /><Text style={[typography.body, { color: colors.ink.secondary }]}>{t('records.empty')}</Text></View>}
-                renderItem={({ item }) => {
-                  const canEdit = item.remainingDue > 0 && item.customerId;
-                  return <View style={{ flexDirection: direction, alignItems: 'center', padding: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.surface.border }}>
-                    <Text numberOfLines={1} style={[typography.bodyMedium, { width: columns.invoice, color: colors.ink.primary, textAlign: align }]}>#{item.serverId || item.id.slice(0, 8)}</Text>
-                    <View style={{ width: columns.customer }}><Text numberOfLines={1} style={[typography.bodyMedium, { color: colors.ink.primary, textAlign: align }]}>{item.customerName}</Text>{item.customerPhone ? <Text numberOfLines={1} style={[typography.caption, { color: colors.ink.secondary, textAlign: align }]}>{item.customerPhone}</Text> : null}</View>
-                    <Text style={[typography.bodyMedium, { width: columns.total, color: colors.ink.primary, textAlign: align }]}>{formatCurrency(item.totalAmount)}</Text>
-                    <View style={{ width: columns.status, alignItems: 'center' }}><Badge label={t(`records.${item.status.toLowerCase()}`)} tone={item.status === 'PAID' ? 'success' : 'warning'} /></View>
-                    <View style={{ width: columns.date }}><Text style={[typography.body, { color: colors.ink.primary, textAlign: align }]}>{new Date(item.createdAt).toLocaleDateString()}</Text><Text style={[typography.caption, { color: colors.ink.secondary, textAlign: align }]}>{new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text></View>
-                    <View style={{ width: columns.actions, flexDirection: direction, justifyContent: 'center', gap: spacing.sm }}>
-                      <Action icon={Eye} label={t('records.view')} onPress={() => navigation.navigate('RecordDetail', { billId: item.id })} colors={colors} radii={radii} />
-                      <Action icon={Pencil} label={t('records.edit')} onPress={() => canEdit && navigation.navigate('RecordPayment', { billId: item.id })} disabled={!canEdit} colors={colors} radii={radii} />
-                    </View>
-                  </View>;
-                }}
-              />
-            </View>
-          </ScrollView>
+        <View style={{ flex: 1, margin: spacing.lg }}>
+          <DataTable columns={columns} data={visible} keyExtractor={(bill) => bill.id} refreshing={isRefetching} onRefresh={refetch} estimatedItemSize={66} renderEmpty={<View style={{ alignItems: 'center', padding: spacing.xxl, gap: spacing.sm }}><ReceiptText size={32} color={colors.ink.secondary} /><Text style={[typography.body, { color: colors.ink.secondary }]}>{t('records.empty')}</Text></View>} />
         </View>
       </SafeAreaView>
       <DateFilterSheet

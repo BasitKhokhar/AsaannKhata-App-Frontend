@@ -4,6 +4,7 @@ export function lineFor(product, amount, unit = 'default', measurements = {}) {
   const quantity = Number(amount);
   if (!Number.isFinite(quantity) || quantity <= 0) throw new Error('barcode.quantity');
   const common = { productId: product.id, productName: product.name, stockType: product.stockType, quantity };
+  const priceOverride = measurements.priceOverride != null && Number.isFinite(Number(measurements.priceOverride)) ? Number(measurements.priceOverride) : null;
   if (product.stockType === 'AREA') {
     const width = Number(measurements.width);
     const height = Number(measurements.height);
@@ -11,22 +12,26 @@ export function lineFor(product, amount, unit = 'default', measurements = {}) {
     if (!(width > 0) || !(height > 0)) throw new Error('billing.areaMeasurementsRequired');
     const unitArea = areaInCm2(width, height, measurementUnit);
     const totalArea = unitArea * quantity;
-    return { ...common, unit: measurementUnit, width, height, unitArea, totalArea, pricePerUnit: product.salePrice, total: round2(totalArea * product.salePrice) };
+    const pricePerUnit = priceOverride ?? product.salePrice;
+    return { ...common, unit: measurementUnit, width, height, unitArea, totalArea, pricePerUnit, total: round2(totalArea * pricePerUnit) };
   }
   if (product.stockType === 'LENGTH') {
     const lengthCm = quantity * 100;
-    return { ...common, unit: 'meter', lengthCm, pricePerUnit: product.salePrice, total: round2(lengthCm * product.salePrice) };
+    const pricePerUnit = priceOverride ?? product.salePrice;
+    return { ...common, unit: 'meter', lengthCm, pricePerUnit, total: round2(lengthCm * pricePerUnit) };
   }
   if (product.stockType === 'PACK') {
     const loose = unit === 'loose';
-    const pricePerUnit = loose ? product.salePrice : product.packSalePrice ?? product.salePrice * (product.packSize || 1);
+    const pricePerUnit = priceOverride ?? (loose ? product.salePrice : product.packSalePrice ?? product.salePrice * (product.packSize || 1));
     return { ...common, unit: loose ? 'loose' : 'pack', packQuantity: loose ? 0 : quantity, looseQuantity: loose ? quantity : 0, pricePerUnit, total: round2(quantity * pricePerUnit) };
   }
   if (product.stockType === 'LIQUID') {
     const volumeMl = unit === 'liter' ? quantity * 1000 : quantity;
-    return { ...common, unit, volumeMl, pricePerUnit: product.salePrice, total: round2(volumeMl * product.salePrice) };
+    const pricePerUnit = priceOverride ?? product.salePrice;
+    return { ...common, unit, volumeMl, pricePerUnit, total: round2(volumeMl * pricePerUnit) };
   }
-  return { ...common, unit: 'piece', pricePerUnit: product.salePrice, total: round2(quantity * product.salePrice) };
+  const pricePerUnit = priceOverride ?? product.salePrice;
+  return { ...common, unit: 'piece', pricePerUnit, total: round2(quantity * pricePerUnit) };
 }
 
 export function assertCartStock(product, lines, added) {

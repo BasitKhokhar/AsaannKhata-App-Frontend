@@ -54,7 +54,7 @@ Firebase Analytics screen views are emitted on navigation route changes.
 - Auth: `Login`, three registration steps (business type, shop details, account), `ForgotPassword`, `OtpVerification`, and `LegalWebPage` for opening Privacy Policy and Terms before registration. Finishing or skipping first-run onboarding enters the business-type registration step, which has a prominent existing-account Login action. Later signed-out launches and explicit logout enter Login, where account creation is also a full-width action. Registration creates the account, first shop, and free entitlement in one backend call; login and registration responses both include the resolved entitlement. The frontend writes shop/entitlement state into SQLite and React Query before switching from Auth to the app navigator, so Free-plan surfaces exist on Dashboard's first frame. Paid plan selection is available after sign-in. ForgotPassword requests a 6-digit email code; OtpVerification confirms the code and sets a new password through backend auth endpoints.
 - Drawer routes:
   - `HomeStack`: `Dashboard`
-  - `BillingStack`: `NewBill`, `Payment`, `BillDetail`, `CreditCustomers`, `CustomerDetail`, `RecordDetail`, `RecordPayment`, `AddProduct`
+  - `BillingStack`: `NewBill`, `Payment`, `BillDetail`, `CreditCustomers` (visible Customers directory), `CustomerDetail` (retained customer ledger route), `RecordDetail`, `RecordPayment`, `AddProduct`
   - `CatalogStack`: `ProductsList`, `ProductDetail`, `EditProduct`, `AddProduct`, `StockAdjustment`
   - `StockStack`: `StockOverview`, `StockAdjustment`
   - `ShopsStack`: `ShopsList`, `AddShop`
@@ -63,13 +63,14 @@ Firebase Analytics screen views are emitted on navigation route changes.
   - `SettingsStack`: `Settings`, `ScannerSettings`, `ReceiptSettings`, `PrinterSettings`, `SyncStatus`, `Profile`, `StaffManagement`, `Notifications` (device-local alert preferences), `HelpSupport`, `ContactSupport`, `About`, `LegalWebPage`
 - `AddProduct` exists in both Billing and Catalog stacks so a product created during billing returns to `NewBill`; `StockAdjustment` deliberately exists in both Catalog and Stock stacks so each stack can navigate locally.
 - Customer-history bill taps open `RecordDetail`, the same invoice details used by Records. `RecordDetail` and `RecordPayment` are also registered in Billing so the detail/payment flow stays in the customer's stack and Back returns to customer history. `BillDetail` remains the post-checkout screen.
+- Post-checkout navigation is a flow boundary: `BillDetail` header Back and `Go to POS` reset the drawer to a fresh `BillingStack > NewBill`, while `View payment record` resets to `Records > RecordDetail` with checkout history removed. The checkout-origin `RecordDetail` Back action resets to the Records list, so neither route can walk back through the completed checkout screens.
 - Cross-drawer navigation usually uses `navigation.navigate('SomeStack', { screen: 'SomeScreen' })`.
 - Dashboard, Products, Reports, and Settings also render a shared four-destination bottom navigation (Home, Products, Reports, Settings). Secondary routes, including `NewBill`, remain in the drawer/stacks. All authenticated secondary screens use the shared `Header` with a left-side back button, including loading/missing-detail and inactive-sync states. The drawer uses history-based back navigation; the shared header falls back to Dashboard when no history exists.
 
 ## Directory ownership
 
 - `src/screens/`: route-level UI grouped by domain.
-- `src/components/ui/`: reusable branded primitives. Prefer these over one-off screen controls.
+- `src/components/ui/`: reusable branded primitives. Prefer these over one-off screen controls. `CalendarPicker` is the shared custom month-grid calendar; `DatePickerSheet` and `DatePickerField` provide the single-date flow, while `DateFilterSheet` uses the same calendar for date ranges.
 - `src/components/motion/`: reusable animation/presentation components.
 - `src/components/drawer/SidebarContent.jsx`: custom drawer menu and shop/account surface.
 - `src/hooks/`: UI-facing orchestration. Hooks read repositories/API services and invalidate query keys.
@@ -137,6 +138,7 @@ Stock types are `QUANTITY`, `AREA`, `LENGTH`, `PACK`, and `LIQUID`.
 - LIQUID stock and bill lines are normalized to millilitres; product and sale forms accept litres or millilitres while prices are stored per mL.
 - Product creation also writes an initial `IN` stock transaction when initial stock is positive.
 - Selecting a product opens a shop-scoped detail screen. `AddProduct` is the shared create/edit form: `EditProduct` routes to it with a product ID, preloads the existing values, and updates metadata, category, prices, image and low-stock threshold locally. Inventory fields are visible but locked while editing; quantity changes remain in the dedicated Stock Adjustment flow so every change retains an audit row.
+- Product creation stores a default sale price for catalog/POS prefill. The billing product sheet exposes a final sale price override for each transaction (for local-market bargaining) without changing the product default; the overridden unit price is carried on the cart line and completed bill item.
 - Product photos are resized/compressed to JPEGs no larger than 50 KiB and stored under app document storage; SQLite keeps separate local-file and remote-URL fields. Sync uploads local photos to the backend bucket before pushing product rows, and downloads/compresses remote photos before advancing the pull cursor so restored products retain offline images.
 - Every stock adjustment changes counters on `products` and appends a stock transaction.
 - The Stock History screen pages SQLite transactions by selected shop and type (100 per page); cloud changes arrive through sync rather than a second unbounded history request.
@@ -145,7 +147,7 @@ Stock types are `QUANTITY`, `AREA`, `LENGTH`, `PACK`, and `LIQUID`.
 
 ### Credit customers
 
-Customer balances live on the customer row. Credit bills increase the balance. Standalone payments append `customer_payments` and decrement the balance.
+The visible Customers screen is a lightweight shop-scoped customer directory: it lists name/phone data, supports add/edit, and is reused by checkout as the customer picker. Bill/payment status and payment history remain in Records and RecordDetail. Customer balances live on the customer row. Credit bills increase the balance. Standalone payments append `customer_payments` and decrement the balance.
 The Records stack uses `billSettlementRepository` to associate later customer payments with a bill via a stable `asaankhata:bill:<bill client ID or server ID>|<payment ISO time>` note, using the existing sync payload. A payment and customer-balance adjustment commit in one SQLite transaction. The table, full-screen record detail, and customer history derive displayed due/status from the original bill plus its linked payments; no bill items or stock are rewritten when collecting a later payment. The timestamp in the note preserves the actual offline payment time after the backend assigns its receive time. The initial checkout payment is shown as the first history entry when positive.
 
 ### Expenses
@@ -225,7 +227,7 @@ Home popup campaigns are also online-only. After Home is active for 1.2 seconds,
 - Use `useTheme()` and tokens from `src/theme`; do not add raw hex colors outside `src/theme/colors.js`. `colors.js` provides Emerald, Ocean, Indigo, Amber, Rose, Slate, and Classic presets in light/dark modes. The app's default is Emerald, while existing navy/gold remains available as Classic.
 - Brand headings use Outfit; body text uses IBM Plex Sans. Font keys must match `App.jsx` loading keys.
 - Use components from `src/components/ui` and motion primitives before duplicating patterns.
-- Full-page forms use `KeyboardAwareView` with `KeyboardAwareScrollView`; input sheets inherit the same keyboard-safe behavior from the shared `Sheet`. The shared native-modal sheet is anchored to the modal window bottom so it overlays the app's custom bottom navigation; footer actions apply their own system safe-area padding. Android is explicitly configured with `softwareKeyboardLayoutMode: resize`.
+- Full-page forms use `KeyboardAwareView` with `KeyboardAwareScrollView`; input sheets inherit the same keyboard-safe behavior from the shared `Sheet`. The shared native-modal sheet defaults to the modal window bottom so it overlays the app's custom bottom navigation, and also supports centered capped-height pickers; footer actions apply their own system safe-area padding. Android is explicitly configured with `softwareKeyboardLayoutMode: resize`.
 - Use `showToast()` for transient feedback and `await showConfirm()` for confirmation prompts.
 - English is the i18n source of truth. Add every new key to `en.js`, `ur.js`, and `hi.js`; missing translations fall back to English.
 - Urdu RTL is implemented manually per screen with flex direction/text alignment. Do not enable global `I18nManager.forceRTL()` without redesigning that behavior.

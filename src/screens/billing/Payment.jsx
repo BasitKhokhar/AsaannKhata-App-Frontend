@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import React, { useMemo, useRef, useState } from 'react';
+import { Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Banknote, Check, CreditCard, HandCoins, List, Minus, Plus, Smartphone, Trash2, UserRound } from 'lucide-react-native';
@@ -78,6 +78,7 @@ export default function Payment() {
   const [search, setSearch] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  const checkoutScrollRef = useRef(null);
 
   const subtotal = round2(cart.subtotal());
   const discountInput = Math.max(0, Number(cart.overallDiscount) || 0);
@@ -91,7 +92,6 @@ export default function Payment() {
   const remainingDue = round2(Math.max(0, total - safeReceived));
   const changeDue = round2(Math.max(0, safeReceived - total));
   const selectedCustomer = customers.find((customer) => customer.id === cart.customerId);
-  const visibleCustomers = customers.filter((customer) => `${customer.name} ${customer.phone || ''}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
   const enteredCustomerName = joinCustomerName(firstName, lastName);
   const matchingCustomer = enteredCustomerName
     ? customers.find((customer) => customer.name.trim().toLocaleLowerCase() === enteredCustomerName.toLocaleLowerCase())
@@ -122,14 +122,6 @@ export default function Payment() {
       customerName: joinCustomerName(nextFirstName, nextLastName),
       customerPhone: '',
     });
-  }
-
-  function selectCustomer(customer) {
-    const parts = splitCustomerName(customer.name);
-    setFirstName(parts.firstName);
-    setLastName(parts.lastName);
-    cart.setCustomer({ customerId: customer.id, customerName: customer.name, customerPhone: customer.phone });
-    setCustomerOpen(false);
   }
 
   function openNameList(target) {
@@ -179,6 +171,11 @@ export default function Payment() {
     });
   }
 
+  function revealAmountField() {
+    requestAnimationFrame(() => checkoutScrollRef.current?.scrollToEnd({ animated: true }));
+    setTimeout(() => checkoutScrollRef.current?.scrollToEnd({ animated: true }), 250);
+  }
+
   const summaryRow = (label, value, accent) => <View style={{ flexDirection: direction, justifyContent: 'space-between', gap: spacing.md }}><Text style={[typography.body, { flex: 1, color: colors.ink.secondary, textAlign: align }]}>{label}</Text><Text style={[typography.bodyMedium, { color: accent || colors.ink.primary }]}>{value}</Text></View>;
 
   return (
@@ -186,7 +183,7 @@ export default function Payment() {
       <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1 }}>
         <Header title={t('billing.checkoutTitle')} />
         <KeyboardAwareView>
-          <KeyboardAwareScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, paddingBottom: spacing.xl }}>
+          <KeyboardAwareScrollView ref={checkoutScrollRef} style={{ flex: 1 }} contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, paddingBottom: spacing.xl }}>
           <Text style={[typography.h3, { color: colors.ink.primary, textAlign: align }]}>{t('billing.cartItems')} · {cart.lines.length}</Text>
           <Card style={{ padding: 0, overflow: 'hidden' }} level="none">
             {cart.lines.map((line, index) => (
@@ -204,18 +201,16 @@ export default function Payment() {
 
           <Card style={{ gap: spacing.sm, padding: spacing.md }}>
             {summaryRow(t('billing.subtotal'), formatCurrency(subtotal))}
-            <View style={{ flexDirection: direction, alignItems: 'flex-end', gap: spacing.sm }}>
-              <View style={{ flex: 1 }}>
-                <View style={{ minHeight: 58, justifyContent: 'flex-end', gap: spacing.xs, marginBottom: spacing.xs }}>
-                  <Text style={[typography.label, { color: colors.ink.primary, textAlign: align }]}>{t('billing.discount')}</Text>
-                  <View style={{ flexDirection: direction, gap: spacing.xs }}><Chip label={t('billing.fixed')} selected={cart.discountType === 'fixed'} onPress={() => cart.setDiscountType('fixed')} /><Chip label="%" selected={cart.discountType === 'percent'} onPress={() => cart.setDiscountType('percent')} /></View>
-                </View>
-                <TextField value={String(cart.overallDiscount || '')} onChangeText={(value) => cart.setOverallDiscount(value.replace(/[^0-9.]/g, ''))} keyboardType="decimal-pad" placeholder="0" />
+            <View style={{ flexDirection: direction, alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm }}>
+              <Text style={[typography.bodyMedium, { color: colors.ink.primary, textAlign: align }]}>{t('billing.discount')}</Text>
+              <View style={{ flexDirection: direction, gap: spacing.xs }}>
+                <Chip label={t('billing.fixed')} selected={cart.discountType === 'fixed'} onPress={() => cart.setDiscountType('fixed')} />
+                <Chip label="%" selected={cart.discountType === 'percent'} onPress={() => cart.setDiscountType('percent')} />
               </View>
-              <View style={{ flex: 1 }}>
-                <View style={{ minHeight: 58, justifyContent: 'flex-end', marginBottom: spacing.xs }}><Text style={[typography.label, { color: colors.ink.primary, textAlign: align }]}>{t('billing.taxPercent')}</Text></View>
-                <TextField value={String(cart.taxPercent || '')} onChangeText={(value) => cart.setTaxPercent(value.replace(/[^0-9.]/g, ''))} keyboardType="decimal-pad" placeholder="0" />
-              </View>
+            </View>
+            <View style={{ flexDirection: direction, gap: spacing.sm }}>
+              <CompactAmountField flex label={cart.discountType === 'fixed' ? t('billing.fixed') : '%'} value={String(cart.overallDiscount || '')} onChangeText={(value) => cart.setOverallDiscount(value.replace(/[^0-9.]/g, ''))} colors={colors} radii={radii} typography={typography} spacing={spacing} />
+              <CompactAmountField flex label={t('billing.taxPercent')} value={String(cart.taxPercent || '')} onChangeText={(value) => cart.setTaxPercent(value.replace(/[^0-9.]/g, ''))} colors={colors} radii={radii} typography={typography} spacing={spacing} />
             </View>
             {discount > 0 ? summaryRow(t('billing.discount'), `- ${formatCurrency(discount)}`, colors.semantic.success) : null}
             {taxAmount > 0 ? summaryRow(`${t('billing.tax')} (${taxPercent}%)`, `+ ${formatCurrency(taxAmount)}`) : null}
@@ -234,13 +229,13 @@ export default function Payment() {
               </View>
               {resolvedCustomer ? <Check size={18} color={colors.semantic.success} /> : null}
             </View>
-            <View style={{ flexDirection: direction, alignItems: 'flex-end', gap: spacing.sm }}>
-              <TextField style={{ flex: 1 }} label={t('billing.payment.firstName')} value={firstName} onChangeText={(value) => updateEnteredCustomer(value, lastName)} placeholder={t('billing.payment.firstNamePlaceholder')} textAlign={align} />
-              <Button title={t('billing.payment.customerList')} compact icon={<List size={16} color={colors.ink.inverse} strokeWidth={1.8} />} onPress={() => openNameList('first')} style={{ minWidth: 92 }} />
+            <View style={{ flexDirection: direction, alignItems: 'center', gap: spacing.sm }}>
+              <TextField style={{ flex: 1 }} floatingLabel label={t('billing.payment.firstName')} value={firstName} onChangeText={(value) => updateEnteredCustomer(value, lastName)} placeholder={t('billing.payment.firstNamePlaceholder')} textAlign={align} />
+              <Button title={t('billing.payment.customerList')} compact height={48} icon={<List size={16} color={colors.ink.inverse} strokeWidth={1.8} />} onPress={() => openNameList('first')} style={{ minWidth: 92 }} />
             </View>
-            <View style={{ flexDirection: direction, alignItems: 'flex-end', gap: spacing.sm }}>
-              <TextField style={{ flex: 1 }} label={t('billing.payment.lastName')} value={lastName} onChangeText={(value) => updateEnteredCustomer(firstName, value)} placeholder={t('billing.payment.lastNamePlaceholder')} textAlign={align} />
-              <Button title={t('billing.payment.customerList')} compact icon={<List size={16} color={colors.ink.inverse} strokeWidth={1.8} />} onPress={() => openNameList('last')} style={{ minWidth: 92 }} />
+            <View style={{ flexDirection: direction, alignItems: 'center', gap: spacing.sm }}>
+              <TextField style={{ flex: 1 }} floatingLabel label={t('billing.payment.lastName')} value={lastName} onChangeText={(value) => updateEnteredCustomer(firstName, value)} placeholder={t('billing.payment.lastNamePlaceholder')} textAlign={align} />
+              <Button title={t('billing.payment.customerList')} compact height={48} icon={<List size={16} color={colors.ink.inverse} strokeWidth={1.8} />} onPress={() => openNameList('last')} style={{ minWidth: 92 }} />
             </View>
             {resolvedCustomer ? (
               <Text style={[typography.caption, { color: colors.semantic.success, textAlign: align }]}>
@@ -257,7 +252,7 @@ export default function Payment() {
           <View style={{ flexDirection: direction, flexWrap: 'wrap', gap: spacing.sm }}>
             {methods.map((option) => { const Icon = option.icon; const active = method === option.key; return <Pressable key={option.key} onPress={() => selectMethod(option.key)} style={{ width: '48%', minHeight: 56, backgroundColor: active ? colors.semantic.successBg : colors.surface.raised, borderWidth: active ? 1.5 : 1, borderColor: active ? colors.brand.primary : colors.surface.border, borderRadius: radii.md, alignItems: 'center', justifyContent: 'center', gap: 2 }}><Icon size={18} color={active ? colors.brand.primary : colors.ink.secondary} /><Text style={[typography.label, { color: active ? colors.brand.primary : colors.ink.primary }]}>{t(option.label)}</Text></Pressable>; })}
           </View>
-          <TextField label={t('billing.amountReceived')} value={method === 'CREDIT' ? '0' : String(receivedInput == null ? total : receivedInput)} onChangeText={setReceivedInput} keyboardType="decimal-pad" editable={method !== 'CREDIT'} />
+          <TextField label={t('billing.amountReceived')} value={method === 'CREDIT' ? '0' : String(receivedInput == null ? total : receivedInput)} onChangeText={setReceivedInput} onFocus={revealAmountField} keyboardType="decimal-pad" editable={method !== 'CREDIT'} />
           {changeDue > 0 ? summaryRow(t('billing.payment.change'), formatCurrency(changeDue), colors.semantic.success) : null}
           {remainingDue > 0 ? summaryRow(t('billing.remainingDue'), formatCurrency(remainingDue), colors.semantic.warning) : null}
           {error ? <Text style={[typography.caption, { color: colors.semantic.danger, textAlign: align }]}>{error}</Text> : null}
@@ -265,14 +260,16 @@ export default function Payment() {
           <View style={{ padding: spacing.lg, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.surface.border }}><Button title={t('billing.completeBill')} onPress={complete} loading={busy} /></View>
         </KeyboardAwareView>
       </SafeAreaView>
-      <Sheet visible={customerOpen} onClose={() => setCustomerOpen(false)} title={t('billing.payment.selectCustomer')}>
+      <Sheet visible={customerOpen} onClose={() => setCustomerOpen(false)} title={t('billing.payment.selectCustomer')} placement="center">
         <TextField value={search} onChangeText={setSearch} placeholder={t('billing.creditCustomers.searchPlaceholder')} />
-        {visibleNames.length ? <View style={{ flexDirection: direction, flexWrap: 'wrap', gap: spacing.sm }}>
-          {visibleNames.map((name) => <Pressable key={name} onPress={() => selectSuggestedName(name)} style={{ paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radii.pill, backgroundColor: colors.brand.accentLight, borderWidth: 1, borderColor: colors.brand.primary }}><Text style={[typography.label, { color: colors.brand.primary }]}>{name}</Text></Pressable>)}
-        </View> : null}
-        <View style={{ height: 1, backgroundColor: colors.surface.border }} />
-        {visibleCustomers.length ? visibleCustomers.map((customer) => <Pressable key={customer.id} onPress={() => selectCustomer(customer)} style={{ paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.surface.border, flexDirection: direction, alignItems: 'center', gap: spacing.sm }}><View style={{ flex: 1 }}><Text style={[typography.bodyMedium, { color: colors.ink.primary, textAlign: align }]}>{customer.name}</Text>{customer.phone ? <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: align }]}>{customer.phone}</Text> : null}</View>{customer.id === cart.customerId ? <Check size={17} color={colors.semantic.success} /> : null}</Pressable>) : <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: align }]}>{t('billing.payment.noCustomers')}</Text>}
-        <Button title={t('billing.creditCustomers.addCustomer')} variant="outline" onPress={() => { setCustomerOpen(false); navigation.navigate('CreditCustomers'); }} style={{ marginTop: spacing.md }} />
+        {visibleNames.length ? visibleNames.map((name) => {
+          const currentValue = nameTarget === 'first' ? firstName : lastName;
+          const selected = currentValue.trim().toLocaleLowerCase() === name.toLocaleLowerCase();
+          return <Pressable key={name} onPress={() => selectSuggestedName(name)} style={{ paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.surface.border, flexDirection: direction, alignItems: 'center', gap: spacing.sm }}>
+            <Text style={[typography.bodyMedium, { flex: 1, color: colors.ink.primary, textAlign: align }]}>{name}</Text>
+            {selected ? <Check size={17} color={colors.semantic.success} /> : null}
+          </Pressable>;
+        }) : <Text style={[typography.caption, { color: colors.ink.secondary, textAlign: align }]}>{t('billing.payment.noCustomers')}</Text>}
       </Sheet>
     </AnimatedScreen>
   );
@@ -280,4 +277,13 @@ export default function Payment() {
 
 function MiniStep({ icon: Icon, onPress, colors, radii }) {
   return <Pressable onPress={onPress} style={{ width: 28, height: 28, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.surface.border, alignItems: 'center', justifyContent: 'center' }}><Icon size={13} color={colors.ink.primary} /></Pressable>;
+}
+
+function CompactAmountField({ flex, label, value, onChangeText, colors, radii, typography, spacing }) {
+  const [focused, setFocused] = useState(false);
+  const floating = focused || value.length > 0;
+  return <View style={{ flex: flex ? 1 : undefined, position: 'relative', marginTop: floating ? spacing.xs : 0 }}>
+    {floating ? <Text style={[typography.caption, { position: 'absolute', zIndex: 1, top: -spacing.xs, left: spacing.md, paddingHorizontal: spacing.xs, color: focused ? colors.brand.primary : colors.ink.secondary, backgroundColor: colors.surface.card }]}>{label}</Text> : null}
+    <TextInput value={value} onChangeText={onChangeText} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} keyboardType="decimal-pad" placeholder={floating ? '0' : label} placeholderTextColor={colors.ink.secondary} style={[typography.body, { height: 48, borderWidth: focused ? 1.5 : 1, borderColor: focused ? colors.brand.primary : colors.surface.border, borderRadius: radii.md, color: colors.ink.primary, paddingHorizontal: spacing.md, paddingVertical: 0, textAlignVertical: 'center' }]} />
+  </View>;
 }

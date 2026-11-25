@@ -10,6 +10,19 @@ import { customerRepository } from './customerRepository';
 
 const base = createSyncableRepository(bills);
 
+function normalized(value) {
+  return String(value || '').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+}
+
+function findExistingCustomer(shopId, name, phone) {
+  const normalizedName = normalized(name);
+  const normalizedPhone = normalized(phone);
+  return customerRepository.listByShop(shopId).find((customer) => {
+    if (normalizedPhone) return normalized(customer.phone) === normalizedPhone;
+    return !customer.phone && normalized(customer.name) === normalizedName;
+  });
+}
+
 // Mirrors the backend's POST /billing/create transaction, but runs entirely
 // against local SQLite: creates the bill + line items, decrements each sold
 // product's stock, writes a StockTransaction("OUT") audit row per line, and
@@ -29,7 +42,7 @@ function createBillWithItems({ shopId, customerId, customerName, customerPhone, 
       throw new Error('Customer is not available in this shop');
     }
   } else if (createCustomer && customerName?.trim()) {
-    const customer = customerRepository.create({
+    const customer = findExistingCustomer(shopId, customerName, customerPhone) || customerRepository.create({
       shopId,
       name: customerName.trim(),
       phone: customerPhone?.trim() || null,

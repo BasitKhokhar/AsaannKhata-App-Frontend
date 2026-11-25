@@ -16,9 +16,10 @@ export function KeyboardAwareView({ children, style, ...props }) {
   );
 }
 
-export function KeyboardAwareScrollView({ children, style, contentContainerStyle, ...props }) {
+export const KeyboardAwareScrollView = React.forwardRef(function KeyboardAwareScrollView({ children, style, contentContainerStyle, ...props }, ref) {
   return (
     <ScrollView
+      ref={ref}
       style={[{ flex: 1 }, style]}
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
@@ -29,4 +30,4 @@ export function KeyboardAwareScrollView({ children, style, contentContainerStyle
       {children}
     </ScrollView>
   );
-}
+});

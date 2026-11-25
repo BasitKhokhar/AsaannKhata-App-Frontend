@@ -13,18 +13,8 @@ export const useCartStore = create((set, get) => ({
   customerName: '',
   customerPhone: '',
 
-  addLine: (line) => set({ lines: [...get().lines, line] }),
-  addScannedLine: (line) => set((state) => {
-    const index = state.lines.findIndex((item) => item.productId === line.productId && item.unit === line.unit && item.pricePerUnit === line.pricePerUnit);
-    if (index < 0) return { lines: [...state.lines, line] };
-    return { lines: state.lines.map((item, i) => i !== index ? item : {
-      ...item,
-      quantity: item.quantity + line.quantity,
-      packQuantity: (item.packQuantity || 0) + (line.packQuantity || 0),
-      looseQuantity: (item.looseQuantity || 0) + (line.looseQuantity || 0),
-      total: Math.round((item.total + line.total) * 100) / 100,
-    }) };
-  }),
+  addLine: (line) => set((state) => mergeCartLine(state.lines, line)),
+  addScannedLine: (line) => set((state) => mergeCartLine(state.lines, line)),
   updateLine: (index, patch) =>
     set({ lines: get().lines.map((l, i) => (i === index ? { ...l, ...patch } : l)) }),
   removeLine: (index) => set({ lines: get().lines.filter((_, i) => i !== index) }),
@@ -40,3 +30,28 @@ export const useCartStore = create((set, get) => ({
 
   reset: () => set({ lines: [], overallDiscount: 0, discountType: 'fixed', taxPercent: 0, customerId: null, customerName: '', customerPhone: '' }),
 }));
+
+function mergeCartLine(lines, line) {
+  const index = lines.findIndex((item) => canMergeLines(item, line));
+  if (index < 0) return { lines: [...lines, line] };
+  return {
+    lines: lines.map((item, i) => i === index ? {
+      ...item,
+      quantity: (item.quantity || 0) + (line.quantity || 0),
+      packQuantity: (item.packQuantity || 0) + (line.packQuantity || 0),
+      looseQuantity: (item.looseQuantity || 0) + (line.looseQuantity || 0),
+      totalArea: (item.totalArea || 0) + (line.totalArea || 0),
+      lengthCm: (item.lengthCm || 0) + (line.lengthCm || 0),
+      volumeMl: (item.volumeMl || 0) + (line.volumeMl || 0),
+      total: Math.round(((item.total || 0) + (line.total || 0)) * 100) / 100,
+    } : item),
+  };
+}
+
+function canMergeLines(first, second) {
+  if (first.productId !== second.productId || first.stockType !== second.stockType || first.unit !== second.unit || first.pricePerUnit !== second.pricePerUnit) return false;
+  if (first.stockType === 'AREA') {
+    return first.width === second.width && first.height === second.height && first.unitArea === second.unitArea;
+  }
+  return true;
+}
